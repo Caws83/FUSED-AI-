@@ -6,6 +6,8 @@ export type PostCardProps = {
   text: string;
   timestamp: string;
   engagement: string;
+  avatarUrl?: string;
+  verified?: boolean;
   mediaUrl?: string;
   fuseDisabled?: boolean;
   fuseLabel?: string;
@@ -18,6 +20,8 @@ export function PostCard({
   text,
   timestamp,
   engagement,
+  avatarUrl,
+  verified = false,
   mediaUrl,
   fuseDisabled = true,
   fuseLabel = "Fuse",
@@ -25,11 +29,20 @@ export function PostCard({
 }: PostCardProps) {
   return (
     <article className="fused-card fused-post">
-      <div className="fused-post-meta">
-        <strong>
-          {author} <span style={{ color: "var(--fused-muted)", fontWeight: 500 }}>@{username}</span>
-        </strong>
-        <time dateTime={timestamp}>{timestamp}</time>
+      <div className="fused-post-head">
+        <div
+          className="fused-avatar"
+          style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
+          aria-hidden="true"
+        />
+        <div className="fused-post-meta">
+          <strong>
+            {author}
+            {verified ? <span className="fused-verified" title="Verified">✓</span> : null}{" "}
+            <span style={{ color: "var(--fused-muted)", fontWeight: 500 }}>@{username}</span>
+          </strong>
+          <time dateTime={timestamp}>{timestamp}</time>
+        </div>
       </div>
       <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{text}</p>
       {mediaUrl ? <img src={mediaUrl} alt="" style={{ width: "100%", borderRadius: 16 }} /> : null}

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { DM_Sans, Syne } from "next/font/google";
-import { loadEnv, walletAvailability } from "@fused-ai/config";
+import { loadPublicEnv, publicWalletAvailability } from "@fused-ai/config";
 import { SiteHeader } from "../components/SiteHeader.tsx";
 import { Providers } from "../components/Providers.tsx";
 import "@fused-ai/ui/styles.css";
@@ -21,17 +21,18 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "FUSED AI",
   description: "Launch a token from a post. One post. One click. One token.",
+  icons: { icon: "/brand/favicon.svg" },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  const env = loadEnv();
-  const walletConfigured = walletAvailability(env).status === "OK";
+  const pub = loadPublicEnv();
+  const walletConfigured = publicWalletAvailability(pub).status === "OK";
   const wallet =
-    walletConfigured && env.chainId && env.rpcUrl
+    walletConfigured && pub.chainId && pub.rpcUrl
       ? {
-          chainId: env.chainId,
-          rpcUrl: env.rpcUrl,
-          walletConnectProjectId: env.walletConnectProjectId,
+          chainId: pub.chainId,
+          rpcUrl: pub.rpcUrl,
+          walletConnectProjectId: pub.walletConnectProjectId,
         }
       : null;
 
@@ -43,8 +44,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           {children}
           <footer className="fused-footer">
             <div className="fused-wrap" style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <span>FUSED AI · social-first launchpad</span>
-              <a href="/status">System status</a>
+              <span>FUSED AI</span>
+              <a href="/status">Status</a>
             </div>
           </footer>
         </Providers>

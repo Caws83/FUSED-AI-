@@ -5,7 +5,6 @@ export type WalletButtonProps = {
   connected?: boolean;
   address?: string;
   pending?: boolean;
-  disabledReason?: string;
   onConnect?: () => void;
   onDisconnect?: () => void;
 };
@@ -19,17 +18,10 @@ export function WalletButton({
   connected = false,
   address,
   pending = false,
-  disabledReason = "Wallet not configured",
   onConnect,
   onDisconnect,
 }: WalletButtonProps) {
-  if (!configured) {
-    return (
-      <Button type="button" variant="ghost" disabled title={disabledReason}>
-        {disabledReason}
-      </Button>
-    );
-  }
+  if (!configured) return null;
   if (connected && address) {
     return (
       <Button type="button" variant="ghost" onClick={onDisconnect} disabled={pending}>

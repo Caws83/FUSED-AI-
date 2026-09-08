@@ -1,13 +1,18 @@
 export {
   aiAvailability,
   databaseAvailability,
+  fieldState,
   indexerAvailability,
   launchContractsAvailability,
   loadEnv,
+  loadPublicEnv,
+  publicWalletAvailability,
   rpcAvailability,
   socialAvailability,
   systemStatus,
   tokenizedAssetRegistryAvailability,
   walletAvailability,
+  type ConfigState,
   type FusedEnv,
+  type PublicEnv,
 } from "./env.ts";

@@ -1,3 +1,4 @@
+import { LaunchModes } from "../../components/LaunchModes.tsx";
 import { StatusBadge } from "@fused-ai/ui";
 import { loadRuntime } from "../../lib/runtime.ts";
 import { availabilityReason, toDisplayStatus } from "../../lib/status.ts";
@@ -32,8 +33,11 @@ export default async function StatusPage() {
         <p className="fused-kicker">Developer</p>
         <h1 className="fused-h2">System status</h1>
         <p style={{ color: "var(--fused-muted)" }}>
-          Honest availability. Empty configuration is shown as empty, not mocked.
+          Internal availability only. Public pages never show these strings.
         </p>
+        {status.invalid.length ? (
+          <p style={{ color: "var(--fused-danger)" }}>Invalid fields: {status.invalid.join(", ")}</p>
+        ) : null}
         <table className="fused-status-table">
           <thead>
             <tr>
@@ -55,21 +59,12 @@ export default async function StatusPage() {
                 </tr>
               );
             })}
-            {dex.map((info) => (
-              <tr key={`dex-${info.version}`}>
-                <td>DEX Uniswap {info.version.toUpperCase()}</td>
-                <td>
-                  <StatusBadge
-                    status={
-                      info.available ? "READY" : info.implemented ? "NOT_DEPLOYED" : "PLANNED"
-                    }
-                  />
-                </td>
-                <td style={{ color: "var(--fused-muted)", fontSize: 14 }}>{info.reason ?? ""}</td>
-              </tr>
-            ))}
           </tbody>
         </table>
+        <div style={{ marginTop: 28 }}>
+          <p className="fused-kicker">DEX adapters</p>
+          <LaunchModes adapters={dex} />
+        </div>
       </div>
     </main>
   );

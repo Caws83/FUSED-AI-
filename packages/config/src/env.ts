@@ -4,12 +4,18 @@ import {
   type Availability,
   type TrendingWeights,
 } from "@fused-ai/types";
+import { loadPublicEnv, publicWalletAvailability, type PublicEnv } from "./public-env.ts";
+
+export type { PublicEnv };
+
+export type ConfigState = "configured" | "not_configured" | "invalid";
 
 export type FusedEnv = {
   siteUrl: string;
   databaseUrl: string | null;
   chainId: number | null;
   rpcUrl: string | null;
+  rpcUrlFallback: string | null;
   launchFactory: string | null;
   launchLocker: string | null;
   launchDeployBlock: number | null;
@@ -26,6 +32,8 @@ export type FusedEnv = {
   social: {
     provider: string | null;
     bearerToken: string | null;
+    apiKey: string | null;
+    apiSecret: string | null;
     trackedAccountsPath: string | null;
     weights: TrendingWeights;
   };
@@ -39,12 +47,29 @@ export type FusedEnv = {
   };
   tokenizedAssetRegistryPath: string | null;
   imageStore: string;
-  walletConnectProjectId: string | null;
+  indexer: {
+    startBlock: number | null;
+    confirmations: number;
+    intervalMs: number;
+    overlapBlocks: number;
+    lagAlertBlocks: number;
+    syncLoop: boolean;
+  };
+  public: PublicEnv;
+  invalid: readonly string[];
 };
 
 function read(name: string, env: NodeJS.Dict<string> = process.env): string | null {
   const v = env[name]?.trim();
   return v ? v : null;
+}
+
+function first(env: NodeJS.Dict<string>, ...names: string[]): string | null {
+  for (const name of names) {
+    const v = read(name, env);
+    if (v) return v;
+  }
+  return null;
 }
 
 function readInt(name: string, env: NodeJS.Dict<string> = process.env): number | null {
@@ -54,33 +79,99 @@ function readInt(name: string, env: NodeJS.Dict<string> = process.env): number |
   return Number.isInteger(n) ? n : null;
 }
 
+function firstInt(env: NodeJS.Dict<string>, ...names: string[]): number | null {
+  for (const name of names) {
+    const raw = read(name, env);
+    if (!raw) continue;
+    const n = Number(raw);
+    if (Number.isInteger(n)) return n;
+  }
+  return null;
+}
+
 function readWeight(name: string, fallback: number, env: NodeJS.Dict<string>): number {
   const n = Number(env[name] ?? fallback);
   return Number.isFinite(n) ? n : fallback;
 }
 
+const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
+
+function isAddress(value: string | null): boolean {
+  return Boolean(value && ADDRESS_RE.test(value));
+}
+
+function collectInvalid(env: NodeJS.Dict<string>): string[] {
+  const invalid: string[] = [];
+  const maybeAddress = [
+    "LAUNCH_FACTORY_ADDRESS",
+    "LAUNCH_LOCKER_ADDRESS",
+    "UNISWAP_POOL_MANAGER_ADDRESS",
+    "UNISWAP_POOL_MANAGER",
+    "UNISWAP_POSITION_MANAGER_ADDRESS",
+    "UNISWAP_POSITION_MANAGER",
+    "UNISWAP_UNIVERSAL_ROUTER_ADDRESS",
+    "UNISWAP_UNIVERSAL_ROUTER",
+    "UNISWAP_PERMIT2_ADDRESS",
+    "UNISWAP_PERMIT2",
+    "UNISWAP_STATE_VIEW",
+    "UNISWAP_QUOTER",
+    "UNISWAP_V3_FACTORY",
+    "UNISWAP_V2_FACTORY",
+  ];
+  for (const key of maybeAddress) {
+    const v = read(key, env);
+    if (v && !isAddress(v)) invalid.push(key);
+  }
+  for (const key of ["CHAIN_ID", "NEXT_PUBLIC_CHAIN_ID", "LAUNCH_DEPLOY_BLOCK", "INDEXER_START_BLOCK"]) {
+    const v = read(key, env);
+    if (v && !Number.isInteger(Number(v))) invalid.push(key);
+  }
+  const urlKeys = ["DATABASE_URL", "RPC_URL", "NEXT_PUBLIC_RPC_URL", "NEXT_PUBLIC_APP_URL", "FUSED_SITE_URL"];
+  for (const key of urlKeys) {
+    const v = read(key, env);
+    if (!v) continue;
+    try {
+      new URL(v);
+    } catch {
+      invalid.push(key);
+    }
+  }
+  return invalid;
+}
+
+export function fieldState(value: string | number | null, invalid = false): ConfigState {
+  if (invalid) return "invalid";
+  if (value === null || value === "") return "not_configured";
+  return "configured";
+}
+
 export function loadEnv(env: NodeJS.Dict<string> = process.env): FusedEnv {
+  const publicEnv = loadPublicEnv(env);
+  const startBlock = firstInt(env, "INDEXER_START_BLOCK", "LAUNCH_DEPLOY_BLOCK");
   return {
-    siteUrl: read("FUSED_SITE_URL", env) ?? "http://localhost:3000",
+    siteUrl: first(env, "NEXT_PUBLIC_APP_URL", "FUSED_SITE_URL") ?? "http://localhost:3000",
     databaseUrl: read("DATABASE_URL", env),
-    chainId: readInt("CHAIN_ID", env),
+    chainId: firstInt(env, "CHAIN_ID", "NEXT_PUBLIC_CHAIN_ID"),
     rpcUrl: read("RPC_URL", env),
-    launchFactory: read("LAUNCH_FACTORY_ADDRESS", env),
-    launchLocker: read("LAUNCH_LOCKER_ADDRESS", env),
-    launchDeployBlock: readInt("LAUNCH_DEPLOY_BLOCK", env),
+    rpcUrlFallback: read("RPC_URL_FALLBACK", env),
+    launchFactory: first(env, "LAUNCH_FACTORY_ADDRESS"),
+    launchLocker: first(env, "LAUNCH_LOCKER_ADDRESS"),
+    launchDeployBlock: startBlock,
     uniswap: {
-      poolManager: read("UNISWAP_POOL_MANAGER", env),
-      positionManager: read("UNISWAP_POSITION_MANAGER", env),
+      poolManager: first(env, "UNISWAP_POOL_MANAGER_ADDRESS", "UNISWAP_POOL_MANAGER"),
+      positionManager: first(env, "UNISWAP_POSITION_MANAGER_ADDRESS", "UNISWAP_POSITION_MANAGER"),
       stateView: read("UNISWAP_STATE_VIEW", env),
       quoter: read("UNISWAP_QUOTER", env),
-      universalRouter: read("UNISWAP_UNIVERSAL_ROUTER", env),
-      permit2: read("UNISWAP_PERMIT2", env),
+      universalRouter: first(env, "UNISWAP_UNIVERSAL_ROUTER_ADDRESS", "UNISWAP_UNIVERSAL_ROUTER"),
+      permit2: first(env, "UNISWAP_PERMIT2_ADDRESS", "UNISWAP_PERMIT2"),
       v3Factory: read("UNISWAP_V3_FACTORY", env),
       v2Factory: read("UNISWAP_V2_FACTORY", env),
     },
     social: {
       provider: read("SOCIAL_PROVIDER", env),
-      bearerToken: read("X_BEARER_TOKEN", env) ?? read("X_APP_ONLY_TOKEN", env),
+      bearerToken: first(env, "X_BEARER_TOKEN", "X_APP_ONLY_TOKEN"),
+      apiKey: read("X_API_KEY", env),
+      apiSecret: read("X_API_SECRET", env),
       trackedAccountsPath: read("TRACKED_ACCOUNTS_PATH", env),
       weights: {
         velocity: readWeight("TRENDING_VELOCITY_WEIGHT", 0.45, env),
@@ -98,12 +189,24 @@ export function loadEnv(env: NodeJS.Dict<string> = process.env): FusedEnv {
     },
     tokenizedAssetRegistryPath: read("TOKENIZED_ASSET_REGISTRY_PATH", env),
     imageStore: read("IMAGE_STORE", env) ?? "local",
-    walletConnectProjectId: read("NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID", env) ?? read("WALLETCONNECT_PROJECT_ID", env),
+    indexer: {
+      startBlock: startBlock,
+      confirmations: readInt("INDEXER_CONFIRMATIONS", env) ?? 2,
+      intervalMs: firstInt(env, "INDEXER_POLL_INTERVAL", "INDEXER_INTERVAL_MS") ?? 15_000,
+      overlapBlocks: readInt("INDEXER_OVERLAP_BLOCKS", env) ?? 50,
+      lagAlertBlocks: readInt("INDEXER_LAG_ALERT_BLOCKS", env) ?? 200,
+      syncLoop: read("INDEXER_SYNC_LOOP", env) === "1",
+    },
+    public: publicEnv,
+    invalid: collectInvalid(env),
   };
 }
 
 export function databaseAvailability(cfg: FusedEnv): Availability {
   if (!cfg.databaseUrl) return notConfigured(["DATABASE_URL"]);
+  if (cfg.invalid.includes("DATABASE_URL")) {
+    return { status: AVAILABILITY_STATUS.NOT_CONFIGURED, reason: "DATABASE_URL is invalid.", missing: ["DATABASE_URL"] };
+  }
   return { status: AVAILABILITY_STATUS.OK };
 }
 
@@ -131,14 +234,17 @@ export function aiAvailability(cfg: FusedEnv): Availability {
 }
 
 export function launchContractsAvailability(cfg: FusedEnv): Availability {
+  const factoryOk = Boolean(cfg.launchFactory) && !cfg.invalid.includes("LAUNCH_FACTORY_ADDRESS");
+  const lockerOk = Boolean(cfg.launchLocker) && !cfg.invalid.includes("LAUNCH_LOCKER_ADDRESS");
   const missing: string[] = [];
-  if (!cfg.launchFactory) missing.push("LAUNCH_FACTORY_ADDRESS");
-  if (!cfg.launchLocker) missing.push("LAUNCH_LOCKER_ADDRESS");
+  if (!factoryOk) missing.push("LAUNCH_FACTORY_ADDRESS");
+  if (!lockerOk) missing.push("LAUNCH_LOCKER_ADDRESS");
   if (missing.length) {
     return {
       status: AVAILABILITY_STATUS.CONTRACTS_NOT_DEPLOYED,
       missing,
-      reason: "Fused AI launch contracts are not configured. Upstream OpenLaunch addresses must not be used as production defaults.",
+      reason:
+        "Fused AI launch contracts are not configured. Upstream OpenLaunch addresses must not be used as production defaults.",
     };
   }
   return { status: AVAILABILITY_STATUS.OK };
@@ -167,13 +273,7 @@ export function tokenizedAssetRegistryAvailability(cfg: FusedEnv): Availability 
 }
 
 export function walletAvailability(cfg: FusedEnv): Availability {
-  const missing: string[] = [];
-  if (!cfg.chainId) missing.push("CHAIN_ID");
-  if (!cfg.rpcUrl) missing.push("RPC_URL");
-  if (missing.length) {
-    return notConfigured(missing, "Wallet stack is not configured. Connect Wallet stays disabled.");
-  }
-  return { status: AVAILABILITY_STATUS.OK };
+  return publicWalletAvailability(cfg.public);
 }
 
 export function systemStatus(cfg: FusedEnv = loadEnv()) {
@@ -186,5 +286,8 @@ export function systemStatus(cfg: FusedEnv = loadEnv()) {
     indexer: indexerAvailability(cfg),
     tokenizedAssetRegistry: tokenizedAssetRegistryAvailability(cfg),
     wallet: walletAvailability(cfg),
+    invalid: cfg.invalid,
   };
 }
+
+export { loadPublicEnv, publicWalletAvailability };

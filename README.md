@@ -2,34 +2,40 @@
 
 **Launch a token from a post.** One post. One click. One token.
 
-Fused AI is a social-first EVM launchpad. A public post becomes structured launch
-input, a human reviews it, and a wallet — never an AI process — signs the on-chain
+Fused AI is a social-first EVM launchpad. A public post becomes a launch draft,
+a human reviews it, and a **wallet** — never an AI process — signs the on-chain
 transaction.
 
-This repository is in **Phase 2: OpenLaunch core in-tree + local UI shell**.
-It does not ship mock launches, fake prices, or fake social feeds.
+## Current state
 
-## Status of this checkout
+Phase 2.5: OpenLaunch core is in `contracts/src/core/`, the public UI is a
+product shell (no developer-console copy), branding and env strategy exist.
 
-| Subsystem | Phase 2 state |
-|-----------|----------------|
-| OpenLaunch core | Copied unmodified into `contracts/src/core/` (MIT, see `NOTICE`) |
-| Quiver contracts (reference) | Vendored at `upstream/quiver-contracts` (no top-level LICENSE; not copied) |
-| Fused AI packages | Types, validation, availability, UI primitives |
-| Launch contracts | **Implemented, not deployed.** Do not use OpenLaunch live addresses |
-| Social / AI | Return `NOT_CONFIGURED` / `PROVIDER_UNAVAILABLE` without a live client |
-| DEX V2 / V3 | Planned; UI must not advertise them as live |
-| DEX V4 | `implemented = true`, `available = false` until Fused AI addresses exist |
+Not yet: local Anvil deploy, X API, AI HTTP, V2/V3, testnet.
 
-## Product flow (target)
+V4 is **implemented** in-tree and **not available** until Fused AI factory/locker
+addresses are set. V2/V3 are planned. Public pages do not advertise adapter flags.
+
+## Architecture
+
+See [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) for the end-to-end flow.
 
 ```
-POST → Social provider → SocialPost
-  → AI provider → LaunchDraft → schema validation
-  → Launch preview → wallet sign → on-chain launch
+Post → SocialProvider → AI draft → user review → wallet sign
+    → LaunchFactory → token + locked Uniswap v4 LP → indexer → Explore
 ```
 
-AI never holds private keys and never submits transactions.
+| Process | Path |
+|---------|------|
+| Web | `apps/web` |
+| API | `apps/api` |
+| Indexer | `apps/indexer` |
+| Social | `services/social-ingestion` |
+| AI | `services/ai-launch` |
+| Contracts | `contracts/` |
+
+Public routes (`/`, `/trending`, `/launch`, `/rewards`, `/explore`) use product
+language. `/status` is the developer panel.
 
 ## Quick start
 
@@ -43,13 +49,18 @@ npm run dev
 
 Local UI: http://localhost:3000
 
-```bash
-npm test
-npm run typecheck
-npm run build
-```
+## Environment
 
-Contracts:
+All variables are documented in [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md).
+Template: [`.env.example`](.env.example). Secrets stay gitignored (`.env`, `.env.local`).
+
+Never put `AI_API_KEY`, `X_BEARER_TOKEN`, `DATABASE_URL`, or a keyed RPC on
+`NEXT_PUBLIC_*`.
+
+## Contracts
+
+Unmodified OpenLaunch `LaunchFactory` / `LaunchLocker` / `LaunchToken` live in
+`contracts/src/core/`. MIT attribution: [NOTICE](NOTICE).
 
 ```bash
 cd contracts
@@ -57,21 +68,65 @@ forge build
 forge test --match-path "test/unit/*.t.sol"
 ```
 
-Fork / rug tests need `FORK_TESTS=true` and a real RPC. See `contracts/test/FORK_TESTS.md`.
+Fork/rug suites: `FORK_TESTS=true` and a real RPC. See `contracts/test/FORK_TESTS.md`.
 
-## Documentation
+## Tests
+
+```bash
+npm test
+npm run typecheck
+npm run build
+```
+
+## Local development
+
+| Command | What |
+|---------|------|
+| `npm run dev` | Next.js at http://localhost:3000 |
+| `npm run build` | Production web build |
+| `npm run status` | CLI availability dump |
+| `apps/api` `npm start` | JSON API (port 3001) |
+
+Do not deploy Fused AI contracts until Phase 3 (local Anvil).
+
+## Project structure
+
+```
+apps/web            Product UI + /status
+apps/api            Availability HTTP
+apps/indexer        Chain follower (fail closed)
+packages/*          types, config, social, ai, blockchain, ui, …
+contracts/src/core  LaunchFactory, LaunchLocker, LaunchToken
+upstream/           Unmodified OpenLaunch + Quiver snapshots
+docs/               How it works, env, security, contracts, audit
+```
+
+## Roadmap
+
+Master checklist: [TODO.md](TODO.md).
+
+Next: **Phase 3 — local Anvil deploy + real manual token launch.**
+
+## Security principles
+
+- AI never signs. Server never holds user keys.
+- Social posts are untrusted.
+- Tokenized assets: chain + contract, not ticker.
+- Ownerless factory/locker. No silent Quiver admin merge.
+- Details: [docs/SECURITY.md](docs/SECURITY.md)
+
+## Docs
 
 | Doc | Contents |
 |-----|----------|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Boundaries, data flow, why the tree looks like this |
-| [docs/UPSTREAM_AUDIT.md](docs/UPSTREAM_AUDIT.md) | OpenLaunch + Quiver inspection, licenses, reuse decisions |
-| [docs/CONTRACTS.md](docs/CONTRACTS.md) | Launch, locker, DEX adapters |
-| [docs/AI_LAUNCH.md](docs/AI_LAUNCH.md) | Provider abstraction and validation |
-| [docs/SOCIAL_INGESTION.md](docs/SOCIAL_INGESTION.md) | Tracked accounts, trending, no mocks |
-| [docs/TOKENIZED_STOCKS.md](docs/TOKENIZED_STOCKS.md) | Allowlisted assets, not tickers |
-| [docs/SECURITY.md](docs/SECURITY.md) | Keys, untrusted posts, oracles |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | Phase 3+ |
+| [TODO.md](TODO.md) | Implementation checklist |
+| [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) | End-to-end product flow |
+| [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md) | Every env var |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Package boundaries |
+| [docs/SECURITY.md](docs/SECURITY.md) | Keys, untrusted posts |
+| [docs/CONTRACTS.md](docs/CONTRACTS.md) | Factory, locker, adapters |
+| [docs/UPSTREAM_AUDIT.md](docs/UPSTREAM_AUDIT.md) | OpenLaunch + Quiver provenance |
 
 ## License
 
-MIT. See [LICENSE](LICENSE) and [NOTICE](NOTICE) for upstream attribution.
+MIT. See [LICENSE](LICENSE) and [NOTICE](NOTICE).

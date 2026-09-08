@@ -207,20 +207,36 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+}
+
+.fused-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fused-logo-mark {
+  width: 32px;
+  height: 32px;
+  display: block;
+}
+
+.fused-brand-word {
   font-family: var(--fused-display);
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.05em;
   font-size: 20px;
 }
 
-.fused-mark {
-  width: 28px;
-  height: 28px;
-  border-radius: 9px;
-  background:
-    linear-gradient(135deg, var(--fused-lime) 0 50%, transparent 50%),
-    linear-gradient(315deg, var(--fused-blue) 0 50%, var(--fused-navy) 50%);
-  box-shadow: 0 6px 16px rgba(31, 111, 255, 0.25);
+.fused-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
 }
 
 .fused-nav-links {
@@ -291,6 +307,36 @@ textarea {
   gap: 12px;
 }
 
+.fused-post-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fused-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--fused-lime), var(--fused-blue));
+  background-size: cover;
+  background-position: center;
+  flex: 0 0 auto;
+}
+
+.fused-verified {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: var(--fused-blue);
+  color: white;
+  font-size: 10px;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
 .fused-post-meta,
 .fused-launch-meta {
   display: flex;
@@ -298,6 +344,7 @@ textarea {
   gap: 12px;
   color: var(--fused-muted);
   font-size: 13px;
+  flex: 1;
 }
 
 .fused-hero {
@@ -326,57 +373,94 @@ textarea {
   font-weight: 650;
 }
 
-.fused-support span {
-  display: block;
+.fused-support {
+  margin: 0 0 20px;
+  font-size: clamp(18px, 2vw, 24px);
+  color: var(--fused-navy-2);
+  font-weight: 650;
 }
 
 .fused-cta-row {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  margin-top: 12px;
 }
 
-.fused-flow {
+.fused-pipeline {
+  position: relative;
   display: grid;
-  gap: 8px;
+  gap: 0;
+  padding: 22px 20px;
+  background:
+    radial-gradient(280px 180px at 80% 10%, rgba(200, 245, 74, 0.35), transparent 60%),
+    radial-gradient(260px 200px at 10% 90%, rgba(31, 111, 255, 0.22), transparent 55%),
+    var(--fused-navy);
+  color: white;
+  border-radius: 28px;
+  min-height: 320px;
+  overflow: hidden;
 }
 
-.fused-flow-step {
+.fused-pipeline-step {
   display: grid;
-  grid-template-columns: 52px 1fr;
+  grid-template-columns: 56px 1fr;
   gap: 12px;
   align-items: center;
-  padding: 12px 14px;
-  background: var(--fused-white);
-  border: 1px solid var(--fused-line);
-  border-radius: 16px;
+  position: relative;
+  z-index: 1;
+  padding: 10px 0;
 }
 
-.fused-flow-index {
-  width: 52px;
-  height: 36px;
+.fused-pipeline-step + .fused-pipeline-step::before {
+  content: "";
+  position: absolute;
+  left: 21px;
+  top: -8px;
+  width: 2px;
+  height: 16px;
+  background: linear-gradient(var(--fused-lime), var(--fused-blue));
+}
+
+.fused-pipeline-orb {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
-  border-radius: 11px;
-  background: var(--fused-navy);
-  color: var(--fused-lime);
+  font-size: 11px;
   font-weight: 800;
-  font-size: 12px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(200, 245, 74, 0.45);
+  color: var(--fused-lime);
 }
 
-.fused-flow-step small {
-  color: var(--fused-muted);
+.fused-pipeline-step strong {
+  display: block;
+  font-family: var(--fused-display);
+  letter-spacing: -0.03em;
+  font-size: 22px;
+}
+
+.fused-pipeline-step span {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 13px;
+}
+
+.fused-fuse-stack {
+  display: grid;
+  gap: 10px;
+  max-width: 520px;
 }
 
 .fused-fuse-box {
   display: grid;
-  grid-template-columns: 1fr auto;
   gap: 10px;
   padding: 10px;
   background: var(--fused-white);
   border: 1px solid var(--fused-line);
-  border-radius: 28px;
+  border-radius: 24px;
   box-shadow: var(--fused-shadow);
 }
 
@@ -386,6 +470,23 @@ textarea {
   min-height: 52px;
   padding: 0 16px;
   background: transparent;
+  width: 100%;
+}
+
+.fused-fuse-box .fused-btn {
+  width: 100%;
+}
+
+.fused-feature-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(200, 245, 74, 0.28);
+  color: var(--fused-navy);
+  font-weight: 800;
+  margin-bottom: 12px;
 }
 
 .fused-grid-3,

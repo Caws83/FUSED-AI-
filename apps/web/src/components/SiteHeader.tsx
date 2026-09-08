@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Navigation } from "@fused-ai/ui";
+import { FusedLogo, Navigation } from "@fused-ai/ui";
 import { navFor } from "../lib/nav.ts";
 import { ConnectWallet } from "./ConnectWallet.tsx";
 
@@ -13,8 +13,7 @@ export function SiteHeader({ walletConfigured }: { walletConfigured: boolean }) 
     <header className="fused-nav">
       <div className="fused-wrap fused-nav-inner">
         <a className="fused-logo" href="/">
-          <span className="fused-mark" aria-hidden="true" />
-          FUSED AI
+          <FusedLogo variant="horizontal" tone="dark" />
         </a>
         <Navigation items={navFor(pathname)} open={open} />
         <div className="fused-nav-actions">

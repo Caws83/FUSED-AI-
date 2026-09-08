@@ -1,10 +1,15 @@
-# Secrets
+# Secrets — never commit
 .env
 .env.*
 !.env.example
 !.env*.example
 **/.env
 !**/.env.example
+**/.env.local
+
+# Next.js generated agent stubs
+apps/web/AGENTS.md
+apps/web/CLAUDE.md
 
 # Dependencies
 node_modules/

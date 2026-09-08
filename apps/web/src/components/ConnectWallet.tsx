@@ -4,9 +4,7 @@ import { WalletButton } from "@fused-ai/ui";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 
 export function ConnectWallet({ configured }: { configured: boolean }) {
-  if (!configured) {
-    return <WalletButton configured={false} disabledReason="Wallet not configured" />;
-  }
+  if (!configured) return null;
   return <LiveWalletButton />;
 }
 

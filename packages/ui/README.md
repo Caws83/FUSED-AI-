@@ -1,9 +1,8 @@
 # @fused-ai/ui
 
-Production primitives for the Fused AI launchpad shell:
+Production primitives for the Fused AI launchpad:
 
-Button, Card, Badge, StatusBadge, Navigation, SectionHeader, EmptyState,
-PostCard, LaunchCard, RewardAssetCard, WalletButton.
+FusedLogo, Button, Card, Badge, StatusBadge, Navigation, SectionHeader,
+EmptyState, PostCard, LaunchCard, RewardAssetCard, WalletButton.
 
-Production routes must not pass mock tweets, launches, or balances into these
-components. EmptyState is the correct path when a provider is missing.
+Public routes must not pass developer configuration copy into these components.

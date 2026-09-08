@@ -1,8 +1,8 @@
 # Architecture
 
-Fused AI is a social-first EVM launchpad. Phase 2 imports unmodified OpenLaunch
-core contracts and ships a local frontend shell. It does not deploy, poll X,
-call AI vendors, or invent market data.
+Fused AI is a social-first EVM launchpad. OpenLaunch core is in-tree. The public
+UI is a product shell. Configuration lives in env + `/status`. This phase does
+not deploy, poll X, or call AI vendors.
 
 ## Why this tree differs slightly from the proposal
 
@@ -12,9 +12,9 @@ The proposed layout is preserved. Two adjustments:
    and Quiver stay intact so we can always identify original files. Fused AI code
    lives under `apps/`, `packages/`, `services/`, and `contracts/`. OpenLaunch
    core is **copied** into `contracts/src/core/` (MIT, unmodified).
-2. **`packages/ui` holds production primitives** used by `apps/web`. Empty
-   states are required whenever social, indexer, registry, or wallet config is
-   missing. No mock tweets, launches, or balances in production routes.
+2. **`packages/ui` holds production primitives** used by `apps/web`. Public
+   routes use product empty states. Configuration language belongs on `/status`
+   only. No mock tweets, launches, or balances in production routes.
 
 OpenLaunch's app is a combined Next.js site + API routes + in-process indexer.
 Fused AI splits those concerns now so they can scale independently:
