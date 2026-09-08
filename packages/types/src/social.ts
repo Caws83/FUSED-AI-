@@ -13,6 +13,18 @@ export type TrackedAccount = {
   updatedAt: string;
 };
 
+/** File-registry row. platformUserId may be empty until the provider resolves it. */
+export type TrackedAccountConfig = {
+  platform: SocialPlatform;
+  username: string;
+  category: string;
+  enabled: boolean;
+  priority: number;
+  platformUserId?: string;
+  displayName?: string;
+  id?: string;
+};
+
 export type SocialMedia = {
   type: "photo" | "video" | "gif" | "link";
   url: string;
@@ -23,10 +35,10 @@ export type SocialMedia = {
 };
 
 export type SocialMetrics = {
-  likes: number;
-  replies: number;
-  reposts: number;
-  quotes: number;
+  likes?: number;
+  replies?: number;
+  reposts?: number;
+  quotes?: number;
   views?: number;
   bookmarks?: number;
 };
@@ -36,6 +48,9 @@ export type SocialPost = {
   postId: string;
   authorId: string;
   authorUsername: string;
+  authorDisplayName?: string;
+  avatarUrl?: string;
+  verified?: boolean;
   text: string;
   url: string;
   media: readonly SocialMedia[];
@@ -49,6 +64,7 @@ export type TrendingWeights = {
   velocity: number;
   recency: number;
   totals: number;
+  priority: number;
 };
 
 export type TrendingScore = {

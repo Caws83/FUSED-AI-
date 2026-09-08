@@ -78,6 +78,9 @@ npm run indexer
 It reads `Launched` events from `LAUNCH_FACTORY_ADDRESS` on chain `31337` and
 writes rows to Postgres. No synthetic launches.
 
+Optional: set `SOCIAL_PROVIDER=x` and `X_BEARER_TOKEN` in `.env` (not
+`.env.example`) to fuse real posts. Token logos upload to `.local-data/media`.
+
 ## 6. Start the frontend
 
 ```bash
@@ -137,7 +140,8 @@ npm run db:migrate
 | `npm run db:migrate` | Apply `packages/database/schema.sql` |
 | `npm run contracts:deploy:local` | Uniswap v4 + Fused factory |
 | `npm run indexer` | Event follower |
-| `npm run dev` / `npm run dev:local` | Next.js |
+| `npm run dev` | Next.js on http://localhost:3000 |
+| `npm run dev:local` | Frees stale :3000, then web + indexer via concurrently |
 | `npm run contracts:launch:local` | Scripted real launch |
 | `npm run contracts:e2e:local` | Simulate + sign + locker checks (Anvil #0) |
 | `npm run local:reset` | Drop local addresses |

@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { startIndexer } from "./main.ts";
+import { startIndexer, jsonSafe } from "./main.ts";
+
+test("indexer logs can serialize BigInt block numbers", () => {
+  assert.equal(jsonSafe({ fromBlock: 1n, toBlock: 4n }), '{"fromBlock":"1","toBlock":"4"}');
+});
 
 test("indexer does not start without database, rpc, and contracts", async () => {
   const result = await startIndexer();

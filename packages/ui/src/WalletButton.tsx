@@ -1,11 +1,19 @@
 import { Button } from "./Button.tsx";
 
+export type WalletConnectorChoice = {
+  id: string;
+  name: string;
+  onClick: () => void;
+};
+
 export type WalletButtonProps = {
   configured: boolean;
   connected?: boolean;
   address?: string;
   pending?: boolean;
   wrongNetwork?: boolean;
+  chainLabel?: string;
+  connectors?: WalletConnectorChoice[];
   onConnect?: () => void;
   onDisconnect?: () => void;
   onSwitchNetwork?: () => void;
@@ -21,6 +29,8 @@ export function WalletButton({
   address,
   pending = false,
   wrongNetwork = false,
+  chainLabel,
+  connectors,
   onConnect,
   onDisconnect,
   onSwitchNetwork,
@@ -35,9 +45,26 @@ export function WalletButton({
   }
   if (connected && address) {
     return (
-      <Button type="button" variant="ghost" onClick={onDisconnect} disabled={pending}>
-        {pending ? "Disconnecting…" : shortAddress(address)}
-      </Button>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+        <span className="fused-muted" style={{ fontSize: 13 }}>
+          {shortAddress(address)}
+          {chainLabel ? ` · ${chainLabel}` : ""}
+        </span>
+        <Button type="button" variant="ghost" onClick={onDisconnect} disabled={pending}>
+          {pending ? "Working…" : "Disconnect"}
+        </Button>
+      </span>
+    );
+  }
+  if (connectors && connectors.length > 1) {
+    return (
+      <span style={{ display: "inline-flex", gap: 8 }}>
+        {connectors.map((item) => (
+          <Button key={item.id} type="button" variant="secondary" onClick={item.onClick} disabled={pending}>
+            {pending ? "Connecting…" : item.name}
+          </Button>
+        ))}
+      </span>
     );
   }
   return (

@@ -1,0 +1,9 @@
+[
+  {
+    "platform": "x",
+    "username": "your_account",
+    "category": "crypto",
+    "enabled": true,
+    "priority": 10
+  }
+]

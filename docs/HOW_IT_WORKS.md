@@ -38,9 +38,9 @@ FUSED AI EXPLORE
 1. **Post** — Someone publishes on X (or another configured network). The text is untrusted.
 2. **Social provider** — Fetches the post. Fail closed if credentials are missing. No mock feed.
 3. **Normalized post** — Structured `SocialPost` (author, text, media, metrics, time).
-4. **Fused AI** — An `AIProvider` proposes name, ticker, art, and launch params. The post is passed as JSON data, not concatenated into a system prompt.
-5. **Launch draft** — Schema validation. Invalid or injection-looking output is rejected. AI output is never executed.
-6. **Review** — The user sees the draft and can edit it.
+4. **Fused AI (Phase 5)** — An `AIProvider` will propose name, ticker, and art. Today the user types those fields. The post is never trusted as a launch spec.
+5. **Launch draft (Phase 5)** — Schema validation. Invalid or injection-looking output is rejected. AI output is never executed.
+6. **Review** — The user sees the form (and origin post if fused) and can edit it.
 7. **Sign** — The user’s wallet calls `LaunchFactory.launch`. The server has no user keys.
 8. **Factory** — CREATE2 token, Uniswap v4 pool, LP minted to the locker. No owner, no platform fee, no upgrade.
 9. **Token** — Fixed supply. The only way to obtain it is to buy from the pool.
@@ -79,7 +79,7 @@ requires a signed transaction from the user’s wallet.
 
 ## Current honesty
 
-This checkout can run a **local Anvil launch**: wallet or Anvil #0 signs
-`LaunchFactory.launch`, liquidity locks in `LaunchLocker`, the indexer writes
-the `Launched` event, Explore shows the token. It does **not** fetch posts or
-call an AI vendor. See [TODO.md](../TODO.md) and [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md).
+This checkout can run a **local Anvil launch** and fuse a **real X post** when
+`X_BEARER_TOKEN` is set. Users still type name/ticker. Token logos upload to
+the local media store. It does **not** call an AI vendor. See [TODO.md](../TODO.md),
+[SOCIAL.md](SOCIAL.md), and [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md).

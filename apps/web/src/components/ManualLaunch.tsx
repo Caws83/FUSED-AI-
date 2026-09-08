@@ -10,6 +10,7 @@ import {
   toLaunchParams,
   validateLaunchForm,
 } from "@fused-ai/blockchain/abi";
+import type { SocialPost } from "@fused-ai/types";
 
 type Step = "form" | "review" | "done";
 
@@ -19,12 +20,14 @@ export function ManualLaunch({
   chainId,
   chainName,
   ready,
+  sourcePost = null,
 }: {
   factory: `0x${string}` | null;
   locker: `0x${string}` | null;
   chainId: number | null;
   chainName: string;
   ready: boolean;
+  sourcePost?: SocialPost | null;
 }) {
   const { address, isConnected } = useAccount();
   const walletChainId = useChainId();
@@ -35,6 +38,8 @@ export function ManualLaunch({
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("");
   const [description, setDescription] = useState("");
+  const [imageId, setImageId] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [step, setStep] = useState<Step>("form");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -53,6 +58,21 @@ export function ManualLaunch({
         <p style={{ margin: 0, color: "var(--fused-muted)" }}>Launch is temporarily unavailable.</p>
       </Card>
     );
+  }
+
+  async function onUpload(file: File | undefined) {
+    setError(null);
+    if (!file) return;
+    const body = new FormData();
+    body.append("file", file);
+    const res = await fetch("/api/media/upload", { method: "POST", body });
+    const json = (await res.json()) as { ok?: boolean; id?: string; url?: string; error?: string };
+    if (!json.ok || !json.id || !json.url) {
+      setError(json.error || "Upload is temporarily unavailable.");
+      return;
+    }
+    setImageId(json.id);
+    setImagePreview(json.url);
   }
 
   async function onReview() {
@@ -106,7 +126,15 @@ export function ManualLaunch({
       })[0];
       const launchedToken = launched?.args.token;
       if (launchedToken) setToken(launchedToken);
-      await fetch(`/api/launch/sync?tx=${hash}`, { method: "POST" });
+      await fetch(`/api/launch/sync?tx=${hash}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          imageId,
+          sourcePostId: sourcePost?.postId,
+          description,
+        }),
+      });
       setStep("done");
     } catch (caught) {
       setError(humanError(caught));
@@ -140,6 +168,9 @@ export function ManualLaunch({
         <h2 className="fused-h2" style={{ fontSize: 28 }}>
           Confirm launch
         </h2>
+        {imagePreview ? (
+          <img src={imagePreview} alt="" width={72} height={72} style={{ borderRadius: 16, objectFit: "cover" }} />
+        ) : null}
         <dl className="fused-review">
           <div>
             <dt>Token name</dt>
@@ -179,6 +210,12 @@ export function ManualLaunch({
             <dt>LP fee</dt>
             <dd>1%</dd>
           </div>
+          {sourcePost ? (
+            <div>
+              <dt>Origin post</dt>
+              <dd>@{sourcePost.authorUsername}</dd>
+            </div>
+          ) : null}
           <div>
             <dt>Action</dt>
             <dd>LaunchFactory.launch</dd>
@@ -199,6 +236,7 @@ export function ManualLaunch({
 
   return (
     <Card>
+      {sourcePost ? <SourcePost post={sourcePost} /> : null}
       <p style={{ marginTop: 0, color: "var(--fused-muted)" }}>
         Set the name and ticker. You review everything before your wallet signs.
       </p>
@@ -221,6 +259,31 @@ export function ManualLaunch({
             rows={3}
           />
         </label>
+        <label>
+          Token logo
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            className="fused-input"
+            onChange={(e) => void onUpload(e.target.files?.[0])}
+          />
+        </label>
+        {imagePreview ? (
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <img src={imagePreview} alt="" width={64} height={64} style={{ borderRadius: 16, objectFit: "cover" }} />
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setImageId(null);
+                setImagePreview(null);
+              }}
+            >
+              Remove
+            </Button>
+          </div>
+        ) : null}
+        <p style={{ margin: 0, color: "var(--fused-muted)", fontSize: 13 }}>AI artwork — coming soon</p>
         {wrongNetwork ? <p className="fused-form-error">Switch to {chainName} to launch.</p> : null}
         {error ? <p className="fused-form-error">{error}</p> : null}
         <Button type="button" variant="lime" onClick={() => void onReview()}>
@@ -228,6 +291,22 @@ export function ManualLaunch({
         </Button>
       </div>
     </Card>
+  );
+}
+
+function SourcePost({ post }: { post: SocialPost }) {
+  return (
+    <div style={{ marginBottom: 18, paddingBottom: 16, borderBottom: "1px solid var(--fused-line, #1e293b)" }}>
+      <p className="fused-kicker">Origin</p>
+      <strong>
+        {post.authorDisplayName || post.authorUsername}{" "}
+        <span style={{ color: "var(--fused-muted)", fontWeight: 500 }}>@{post.authorUsername}</span>
+      </strong>
+      <p style={{ whiteSpace: "pre-wrap" }}>{post.text}</p>
+      <a href={post.url} target="_blank" rel="noreferrer">
+        View original post
+      </a>
+    </div>
   );
 }
 

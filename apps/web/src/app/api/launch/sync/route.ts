@@ -3,6 +3,7 @@ import { createPublicClient, http, parseEventLogs, type Hex } from "viem";
 import { loadEnv, loadRepoEnv } from "@fused-ai/config";
 import { createDatabaseClient } from "@fused-ai/database";
 import { LAUNCH_FACTORY_ABI, LAUNCH_TOKEN_ABI } from "@fused-ai/blockchain";
+import { assertPublicMediaUrl, createMediaStore } from "@fused-ai/media";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,16 @@ export async function POST(request: Request) {
   loadRepoEnv();
   const env = loadEnv();
   const url = new URL(request.url);
-  const tx = url.searchParams.get("tx");
+  let extra: { imageId?: string; sourcePostId?: string; description?: string } = {};
+  const contentType = request.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    try {
+      extra = (await request.json()) as typeof extra;
+    } catch {
+      extra = {};
+    }
+  }
+  const tx = url.searchParams.get("tx") ?? (extra as { tx?: string }).tx;
   if (!tx || !tx.startsWith("0x") || !env.rpcUrl || !env.chainId || !env.launchFactory) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
@@ -59,6 +69,40 @@ export async function POST(request: Request) {
     factory: env.launchFactory as Hex,
     locker: (env.launchLocker as Hex | null) ?? null,
     dexVersion: "v4",
+  });
+
+  let imageUrl: string | null = null;
+  if (extra.imageId) {
+    const store = createMediaStore(env);
+    const url = store.getPublicUrl(extra.imageId);
+    if (url && assertPublicMediaUrl(url, env.chainId).ok) imageUrl = url;
+  }
+  let source = {
+    sourcePlatform: null as string | null,
+    sourcePostId: null as string | null,
+    sourceAuthor: null as string | null,
+    sourcePostUrl: null as string | null,
+    sourceExcerpt: null as string | null,
+  };
+  if (extra.sourcePostId) {
+    const post = await db.getSocialPost("x", extra.sourcePostId);
+    if (post.ok && post.value) {
+      source = {
+        sourcePlatform: post.value.platform,
+        sourcePostId: post.value.postId,
+        sourceAuthor: post.value.authorUsername,
+        sourcePostUrl: post.value.url,
+        sourceExcerpt: post.value.text.slice(0, 240),
+      };
+    }
+  }
+  await db.upsertTokenMetadata({
+    chainId: env.chainId,
+    token: args.token,
+    description: extra.description ?? args.metadataURI,
+    imageId: extra.imageId ?? null,
+    imageUrl,
+    ...source,
   });
   await db.close();
   return NextResponse.json({ ok: saved.ok, token: args.token });

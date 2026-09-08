@@ -15,6 +15,7 @@
     "@fused-ai/blockchain": "0.1.0",
     "@fused-ai/config": "0.1.0",
     "@fused-ai/database": "0.1.0",
+    "@fused-ai/media": "0.1.0",
     "@fused-ai/social": "0.1.0",
     "@fused-ai/types": "0.1.0",
     "@fused-ai/ui": "0.1.0",

@@ -46,4 +46,11 @@ export type IndexedLaunch = {
   factory: HexAddress | null;
   locker: HexAddress | null;
   dexVersion: string;
+  imageUrl: string | null;
+  appDescription: string | null;
+  sourcePlatform: string | null;
+  sourcePostId: string | null;
+  sourcePostUrl: string | null;
+  sourceAuthor: string | null;
+  sourceExcerpt: string | null;
 };

@@ -86,8 +86,10 @@ Aliases (either name works):
 | `AI_MAX_OUTPUT_TOKENS` | ai-launch | no | no | 1200 | Cap |
 | `AI_TIMEOUT_MS` | ai-launch | no | no | 30000 | HTTP timeout |
 | `TOKENIZED_ASSET_REGISTRY_PATH` | blockchain, web | no | before reward assets | empty | Allowlist JSON |
-| `IMAGE_STORE` | metadata | no | no | `local` | `local` or `s3` |
-| `AWS_*` / `BUCKET_NAME` / `IMAGE_PUBLIC_BASE` | images | **yes** (keys) | if S3 | empty | Object storage |
+| `IMAGE_STORE` / `MEDIA_STORE` | media | no | local launches | `local` | `local` or `s3`/`r2` |
+| `MEDIA_LOCAL_PATH` | media | no | local launches | `.local-data/media` | Gitignored filesystem store |
+| `AWS_*` / `BUCKET_NAME` / `IMAGE_PUBLIC_BASE` | images | **yes** (keys) | if S3 | empty | Object storage (inactive without creds) |
+| `AI_IMAGE_PROVIDER` | media | no | Phase 5 | empty | No fake generator |
 | `ADMIN_WALLETS` | ops later | no | no | empty | Not used for launch authority |
 | `PRESENCE_SALT` | ops later | **yes** | no | empty | Unused in Fused AI yet |
 
@@ -97,8 +99,8 @@ Aliases (either name works):
 |-------|------|
 | 2.5 | Template only. Local UI runs empty. |
 | 3 (done) | Anvil `CHAIN_ID`/`RPC_URL`/`NEXT_PUBLIC_*`, Fused factory/locker after `npm run contracts:deploy:local`, local Postgres `DATABASE_URL` |
-| 4 | `SOCIAL_PROVIDER`, `X_BEARER_TOKEN`, `TRACKED_ACCOUNTS_PATH` |
-| 5 | `AI_PROVIDER`, `AI_API_KEY`, `AI_MODEL` |
+| 4 (done) | `SOCIAL_PROVIDER`, `X_BEARER_TOKEN`, `TRACKED_ACCOUNTS_PATH`, `MEDIA_*` |
+| 5 | `AI_PROVIDER`, `AI_API_KEY`, `AI_MODEL`, `AI_IMAGE_PROVIDER` |
 | 6 | `TOKENIZED_ASSET_REGISTRY_PATH` with verified chain+address rows |
 | 8+ | Canonical Uniswap addresses for the chosen testnet/mainnet |
 

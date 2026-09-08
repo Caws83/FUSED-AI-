@@ -35,8 +35,20 @@ export type FusedEnv = {
     apiKey: string | null;
     apiSecret: string | null;
     trackedAccountsPath: string | null;
+    lastSync: string | null;
     weights: TrendingWeights;
   };
+  media: {
+    store: string;
+    localPath: string | null;
+    publicBase: string | null;
+    awsAccessKeyId: string | null;
+    awsSecretAccessKey: string | null;
+    awsEndpoint: string | null;
+    awsRegion: string | null;
+    bucket: string | null;
+  };
+  aiImageProvider: string | null;
   ai: {
     provider: string | null;
     apiKey: string | null;
@@ -172,13 +184,26 @@ export function loadEnv(env: NodeJS.Dict<string> = process.env): FusedEnv {
       bearerToken: first(env, "X_BEARER_TOKEN", "X_APP_ONLY_TOKEN"),
       apiKey: read("X_API_KEY", env),
       apiSecret: read("X_API_SECRET", env),
-      trackedAccountsPath: read("TRACKED_ACCOUNTS_PATH", env),
+      trackedAccountsPath: read("TRACKED_ACCOUNTS_PATH", env) || "config/tracked-accounts.json",
+      lastSync: null,
       weights: {
         velocity: readWeight("TRENDING_VELOCITY_WEIGHT", 0.45, env),
         recency: readWeight("TRENDING_RECENCY_WEIGHT", 0.25, env),
         totals: readWeight("TRENDING_TOTALS_WEIGHT", 0.3, env),
+        priority: readWeight("TRENDING_PRIORITY_WEIGHT", 0.1, env),
       },
     },
+    media: {
+      store: first(env, "MEDIA_STORE", "IMAGE_STORE") ?? "local",
+      localPath: read("MEDIA_LOCAL_PATH", env),
+      publicBase: first(env, "IMAGE_PUBLIC_BASE", "MEDIA_PUBLIC_BASE"),
+      awsAccessKeyId: read("AWS_ACCESS_KEY_ID", env),
+      awsSecretAccessKey: read("AWS_SECRET_ACCESS_KEY", env),
+      awsEndpoint: read("AWS_ENDPOINT_URL_S3", env),
+      awsRegion: read("AWS_REGION", env),
+      bucket: read("BUCKET_NAME", env),
+    },
+    aiImageProvider: read("AI_IMAGE_PROVIDER", env),
     ai: {
       provider: read("AI_PROVIDER", env),
       apiKey: read("AI_API_KEY", env),
@@ -188,7 +213,7 @@ export function loadEnv(env: NodeJS.Dict<string> = process.env): FusedEnv {
       timeoutMs: readInt("AI_TIMEOUT_MS", env) ?? 30_000,
     },
     tokenizedAssetRegistryPath: read("TOKENIZED_ASSET_REGISTRY_PATH", env),
-    imageStore: read("IMAGE_STORE", env) ?? "local",
+    imageStore: first(env, "MEDIA_STORE", "IMAGE_STORE") ?? "local",
     indexer: {
       startBlock: startBlock,
       confirmations: readInt("INDEXER_CONFIRMATIONS", env) ?? 2,
@@ -219,8 +244,42 @@ export function socialAvailability(cfg: FusedEnv): Availability {
   const missing: string[] = [];
   if (!cfg.social.provider) missing.push("SOCIAL_PROVIDER");
   if (!cfg.social.bearerToken) missing.push("X_BEARER_TOKEN");
-  if (!cfg.social.trackedAccountsPath) missing.push("TRACKED_ACCOUNTS_PATH");
   if (missing.length) return notConfigured(missing);
+  return { status: AVAILABILITY_STATUS.OK };
+}
+
+export function trackedAccountsAvailability(cfg: FusedEnv): Availability {
+  if (!cfg.social.trackedAccountsPath) return notConfigured(["TRACKED_ACCOUNTS_PATH"]);
+  return { status: AVAILABILITY_STATUS.OK };
+}
+
+export function mediaAvailability(cfg: FusedEnv): Availability {
+  const store = (cfg.media.store || "local").toLowerCase();
+  if (store === "s3" || store === "r2") {
+    const missing: string[] = [];
+    if (!cfg.media.awsAccessKeyId) missing.push("AWS_ACCESS_KEY_ID");
+    if (!cfg.media.awsSecretAccessKey) missing.push("AWS_SECRET_ACCESS_KEY");
+    if (!cfg.media.bucket) missing.push("BUCKET_NAME");
+    if (!cfg.media.publicBase) missing.push("IMAGE_PUBLIC_BASE");
+    if (missing.length) return notConfigured(missing, "Object storage is not configured.");
+    return { status: AVAILABILITY_STATUS.OK };
+  }
+  return { status: AVAILABILITY_STATUS.OK };
+}
+
+export function walletConnectAvailability(cfg: FusedEnv): Availability {
+  if (!cfg.public.walletConnectProjectId) return notConfigured(["NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID"]);
+  return { status: AVAILABILITY_STATUS.OK };
+}
+
+export function aiImageAvailability(cfg: FusedEnv): Availability {
+  if (!cfg.aiImageProvider) return notConfigured(["AI_IMAGE_PROVIDER"], "AI image generation is not available.");
+  return notConfigured(["AI_IMAGE_PROVIDER"], "AI image generation is not implemented.");
+}
+
+export function localChainAvailability(cfg: FusedEnv): Availability {
+  if (cfg.chainId === 31337 && cfg.rpcUrl) return { status: AVAILABILITY_STATUS.OK };
+  if (!cfg.chainId || !cfg.rpcUrl) return notConfigured(["CHAIN_ID", "RPC_URL"], "Local chain is not configured.");
   return { status: AVAILABILITY_STATUS.OK };
 }
 
@@ -278,7 +337,12 @@ export function systemStatus(cfg: FusedEnv = loadEnv()) {
     database: databaseAvailability(cfg),
     rpc: rpcAvailability(cfg),
     social: socialAvailability(cfg),
+    trackedAccounts: trackedAccountsAvailability(cfg),
+    media: mediaAvailability(cfg),
+    walletConnect: walletConnectAvailability(cfg),
+    localChain: localChainAvailability(cfg),
     ai: aiAvailability(cfg),
+    aiImage: aiImageAvailability(cfg),
     launchContracts: launchContractsAvailability(cfg),
     indexer: indexerAvailability(cfg),
     tokenizedAssetRegistry: tokenizedAssetRegistryAvailability(cfg),

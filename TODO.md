@@ -43,12 +43,15 @@ Checkboxes reflect **this checkout**, not wishes. Do not mark future work comple
 
 ## PHASE 4 — SOCIAL
 
-- [ ] Real X provider
-- [ ] Tracked accounts
-- [ ] Trending scoring
-- [ ] Post ingestion
-- [ ] Post validation
-- [ ] Fuse button on live posts
+- [x] Real X provider (live credential smoke pending)
+- [x] Tracked accounts
+- [x] Trending scoring
+- [x] Post ingestion
+- [x] Post validation
+- [x] Fuse button on live posts
+- [x] Wallet polish + conditional WalletConnect
+- [x] Token media upload + local store
+- [x] Token metadata + source-post association
 
 ## PHASE 5 — AI
 
@@ -96,5 +99,5 @@ Checkboxes reflect **this checkout**, not wishes. Do not mark future work comple
 
 ## Explicitly not started
 
-X API polling, AI vendor HTTP, V2/V3 contracts, Quiver source, mainnet/testnet
-deploy of Fused AI, GitHub push.
+Live X credentials (provider implemented; smoke pending), AI vendor HTTP, V2/V3
+contracts, Quiver source, mainnet/testnet deploy of Fused AI.

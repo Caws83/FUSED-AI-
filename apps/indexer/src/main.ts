@@ -2,6 +2,10 @@ import { loadEnv, loadRepoEnv, launchContractsAvailability, rpcAvailability } fr
 import { createDatabaseClient } from "@fused-ai/database";
 import { pollOnce } from "./sync.ts";
 
+export function jsonSafe(value: unknown): string {
+  return JSON.stringify(value, (_, v) => (typeof v === "bigint" ? v.toString() : v));
+}
+
 export async function startIndexer() {
   const env = loadEnv();
   const db = createDatabaseClient(env);
@@ -15,10 +19,10 @@ export async function startIndexer() {
   if (!once.started) return { started: false as const, reason: once.reason };
 
   if (env.indexer.syncLoop) {
-    console.log(JSON.stringify({ loop: true, intervalMs: env.indexer.intervalMs, ...once }));
+    console.log(jsonSafe({ loop: true, intervalMs: env.indexer.intervalMs, ...once }));
     const tick = async () => {
       const result = await pollOnce(env, db);
-      console.log(JSON.stringify(result));
+      console.log(jsonSafe(result));
     };
     setInterval(() => {
       void tick();
@@ -34,7 +38,7 @@ const isMain = process.argv[1] && /main\.ts$/.test(process.argv[1].replaceAll("\
 if (isMain) {
   loadRepoEnv();
   void startIndexer().then((result) => {
-    console.log(JSON.stringify(result, (_, v) => (typeof v === "bigint" ? v.toString() : v), 2));
+    console.log(jsonSafe(result));
     if (!result.started) process.exit(1);
     if (!("loop" in result && result.loop)) process.exit(0);
   });

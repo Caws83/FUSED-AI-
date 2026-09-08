@@ -56,6 +56,19 @@ test("invalid values are listed without inventing working config", () => {
   assert.equal(cfg.launchFactory, "not-an-address");
 });
 
+test("WalletConnect and AI image stay unavailable without ids", () => {
+  const status = systemStatus(loadEnv({}));
+  assert.equal(status.walletConnect.status, "NOT_CONFIGURED");
+  assert.equal(status.aiImage.status, "NOT_CONFIGURED");
+  assert.equal(status.media.status, "OK");
+});
+
+test("tracked-account registry defaults to the repo JSON path", () => {
+  const cfg = loadEnv({});
+  assert.equal(cfg.social.trackedAccountsPath, "config/tracked-accounts.json");
+  assert.equal(systemStatus(cfg).trackedAccounts.status, "OK");
+});
+
 test("indexer is OK when database, rpc, and factory are set", () => {
   const status = systemStatus(
     loadEnv({

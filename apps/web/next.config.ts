@@ -26,6 +26,7 @@ const nextConfig: NextConfig = {
     "@fused-ai/shared",
     "@fused-ai/validation",
     "@fused-ai/database",
+    "@fused-ai/media",
     "@fused-ai/ui",
   ],
 };

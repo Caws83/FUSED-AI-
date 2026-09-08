@@ -16,6 +16,7 @@ export type {
   SocialPlatform,
   SocialPost,
   TrackedAccount,
+  TrackedAccountConfig,
   TrendingFeed,
   TrendingScore,
   TrendingWeights,

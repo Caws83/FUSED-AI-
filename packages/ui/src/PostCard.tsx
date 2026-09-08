@@ -11,6 +11,7 @@ export type PostCardProps = {
   mediaUrl?: string;
   fuseDisabled?: boolean;
   fuseLabel?: string;
+  fuseHref?: string;
   onFuse?: () => void;
 };
 
@@ -24,7 +25,8 @@ export function PostCard({
   verified = false,
   mediaUrl,
   fuseDisabled = true,
-  fuseLabel = "Fuse",
+  fuseLabel = "FUSE IT",
+  fuseHref,
   onFuse,
 }: PostCardProps) {
   return (
@@ -48,9 +50,15 @@ export function PostCard({
       {mediaUrl ? <img src={mediaUrl} alt="" style={{ width: "100%", borderRadius: 16 }} /> : null}
       <div className="fused-post-meta">
         <span>{engagement}</span>
-        <Button type="button" variant="lime" disabled={fuseDisabled} onClick={onFuse}>
-          {fuseLabel}
-        </Button>
+        {fuseHref && !fuseDisabled ? (
+          <a href={fuseHref} className="fused-btn fused-btn-lime">
+            {fuseLabel}
+          </a>
+        ) : (
+          <Button type="button" variant="lime" disabled={fuseDisabled} onClick={onFuse}>
+            {fuseLabel}
+          </Button>
+        )}
       </div>
     </article>
   );

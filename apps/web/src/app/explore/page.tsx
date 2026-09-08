@@ -16,6 +16,7 @@ export default async function ExplorePage() {
             {launches.map((launch) => (
               <a key={launch.token} href={`/token/${launch.token}`} style={{ color: "inherit" }}>
                 <LaunchCard
+                  imageUrl={launch.imageUrl || "/brand/fused-token.svg"}
                   name={launch.name || "Token"}
                   symbol={launch.symbol || "—"}
                   creator={`${launch.launcher.slice(0, 6)}…${launch.launcher.slice(-4)}`}

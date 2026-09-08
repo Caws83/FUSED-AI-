@@ -51,6 +51,6 @@ test("scorePosts ranks from real input only", () => {
       fetchedAt: "2026-09-08T12:00:00.000Z",
     },
   ];
-  const ranked = scorePosts(posts, now, { velocity: 0.45, recency: 0.25, totals: 0.3 });
+  const ranked = scorePosts(posts, now, { velocity: 0.45, recency: 0.25, totals: 0.3, priority: 0.1 });
   assert.equal(ranked[0]?.postId, "2");
 });

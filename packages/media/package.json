@@ -1,0 +1,17 @@
+{
+  "name": "@fused-ai/media",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "node --experimental-strip-types --no-warnings --test \"test/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@fused-ai/config": "0.1.0",
+    "@fused-ai/shared": "0.1.0",
+    "@fused-ai/types": "0.1.0"
+  }
+}

@@ -5,7 +5,7 @@ import postgres from "postgres";
 import { databaseUnavailable, type Availability } from "@fused-ai/types";
 import { err, fail, ok, type Result } from "@fused-ai/shared";
 import { databaseAvailability, type FusedEnv } from "@fused-ai/config";
-import type { HexAddress, IndexedLaunch } from "@fused-ai/types";
+import type { HexAddress, IndexedLaunch, SocialPost, TrackedAccount } from "@fused-ai/types";
 
 export type LaunchInsert = {
   chainId: number;
@@ -28,6 +28,19 @@ export type LaunchInsert = {
   dexVersion?: string;
 };
 
+export type TokenMetadataInput = {
+  chainId: number;
+  token: HexAddress;
+  description?: string;
+  imageId?: string | null;
+  imageUrl?: string | null;
+  sourcePlatform?: string | null;
+  sourcePostId?: string | null;
+  sourceAuthor?: string | null;
+  sourcePostUrl?: string | null;
+  sourceExcerpt?: string | null;
+};
+
 export type DatabaseClient = {
   availability(): Availability;
   ping(): Promise<Result<true>>;
@@ -35,6 +48,12 @@ export type DatabaseClient = {
   upsertLaunch(row: LaunchInsert): Promise<Result<true>>;
   listLaunches(chainId: number): Promise<Result<IndexedLaunch[]>>;
   getLaunch(chainId: number, token: string): Promise<Result<IndexedLaunch | null>>;
+  upsertTokenMetadata(row: TokenMetadataInput): Promise<Result<true>>;
+  upsertSocialPost(post: SocialPost): Promise<Result<true>>;
+  getSocialPost(platform: string, postId: string): Promise<Result<SocialPost | null>>;
+  upsertTrackedAccount(account: TrackedAccount): Promise<Result<true>>;
+  markSocialSync(id: string, postCount: number): Promise<Result<true>>;
+  lastSocialSync(): Promise<Result<{ lastSyncAt: string | null; postCount: number }>>;
   getCursor(chainId: number): Promise<Result<bigint | null>>;
   setCursor(chainId: number, blockNumber: bigint): Promise<Result<true>>;
   close(): Promise<void>;
@@ -65,6 +84,13 @@ function mapLaunch(row: Record<string, unknown>): IndexedLaunch {
     factory: row.factory ? (String(row.factory) as HexAddress) : null,
     locker: row.locker ? (String(row.locker) as HexAddress) : null,
     dexVersion: String(row.dex_version ?? "v4"),
+    imageUrl: row.image_url ? String(row.image_url) : null,
+    appDescription: row.app_description != null ? String(row.app_description) : null,
+    sourcePlatform: row.source_platform ? String(row.source_platform) : null,
+    sourcePostId: row.source_post_id ? String(row.source_post_id) : null,
+    sourcePostUrl: row.source_post_url ? String(row.source_post_url) : null,
+    sourceAuthor: row.source_author ? String(row.source_author) : null,
+    sourceExcerpt: row.source_excerpt ? String(row.source_excerpt) : null,
   };
 }
 
@@ -112,6 +138,10 @@ export function createDatabaseClient(env: FusedEnv): DatabaseClient {
           ALTER TABLE fused_launches ADD COLUMN IF NOT EXISTS factory text;
           ALTER TABLE fused_launches ADD COLUMN IF NOT EXISTS locker text;
           ALTER TABLE fused_launches ADD COLUMN IF NOT EXISTS dex_version text NOT NULL DEFAULT 'v4';
+          ALTER TABLE fused_social_posts ADD COLUMN IF NOT EXISTS author_display_name text;
+          ALTER TABLE fused_social_posts ADD COLUMN IF NOT EXISTS avatar_url text;
+          ALTER TABLE fused_social_posts ADD COLUMN IF NOT EXISTS verified boolean;
+          ALTER TABLE fused_social_posts ADD COLUMN IF NOT EXISTS media jsonb NOT NULL DEFAULT '[]'::jsonb;
         `);
         return ok(true);
       } catch (error) {
@@ -167,7 +197,12 @@ export function createDatabaseClient(env: FusedEnv): DatabaseClient {
       if (!client) return fail(a);
       try {
         const rows = await client`
-          SELECT * FROM fused_launches WHERE chain_id = ${chainId} ORDER BY block_number DESC
+          SELECT l.*, m.image_url, m.description AS app_description, m.source_platform,
+                 m.source_post_id, m.source_post_url, m.source_author, m.source_excerpt
+          FROM fused_launches l
+          LEFT JOIN fused_token_metadata m ON m.chain_id = l.chain_id AND m.token = l.token
+          WHERE l.chain_id = ${chainId}
+          ORDER BY l.block_number DESC
         `;
         return ok(rows.map((row) => mapLaunch(row as Record<string, unknown>)));
       } catch (error) {
@@ -181,14 +216,172 @@ export function createDatabaseClient(env: FusedEnv): DatabaseClient {
       if (!client) return fail(a);
       try {
         const rows = await client`
-          SELECT * FROM fused_launches
-          WHERE chain_id = ${chainId} AND token = ${token.toLowerCase()}
+          SELECT l.*, m.image_url, m.description AS app_description, m.source_platform,
+                 m.source_post_id, m.source_post_url, m.source_author, m.source_excerpt
+          FROM fused_launches l
+          LEFT JOIN fused_token_metadata m ON m.chain_id = l.chain_id AND m.token = l.token
+          WHERE l.chain_id = ${chainId} AND l.token = ${token.toLowerCase()}
           LIMIT 1
         `;
         const row = rows[0];
         return ok(row ? mapLaunch(row as Record<string, unknown>) : null);
       } catch (error) {
         return err(databaseUnavailable(error instanceof Error ? error.message : "get failed"));
+      }
+    },
+    upsertTokenMetadata: async (row) => {
+      const a = availability();
+      if (a.status !== "OK") return fail(a);
+      const client = conn();
+      if (!client) return fail(a);
+      try {
+        await client`
+          INSERT INTO fused_token_metadata (
+            chain_id, token, description, image_id, image_url, source_platform,
+            source_post_id, source_author, source_post_url, source_excerpt
+          ) VALUES (
+            ${row.chainId}, ${row.token.toLowerCase()}, ${row.description ?? ""},
+            ${row.imageId ?? null}, ${row.imageUrl ?? null}, ${row.sourcePlatform ?? null},
+            ${row.sourcePostId ?? null}, ${row.sourceAuthor ?? null}, ${row.sourcePostUrl ?? null},
+            ${row.sourceExcerpt ?? null}
+          )
+          ON CONFLICT (chain_id, token) DO UPDATE SET
+            description = EXCLUDED.description,
+            image_id = COALESCE(EXCLUDED.image_id, fused_token_metadata.image_id),
+            image_url = COALESCE(EXCLUDED.image_url, fused_token_metadata.image_url),
+            source_platform = COALESCE(EXCLUDED.source_platform, fused_token_metadata.source_platform),
+            source_post_id = COALESCE(EXCLUDED.source_post_id, fused_token_metadata.source_post_id),
+            source_author = COALESCE(EXCLUDED.source_author, fused_token_metadata.source_author),
+            source_post_url = COALESCE(EXCLUDED.source_post_url, fused_token_metadata.source_post_url),
+            source_excerpt = COALESCE(EXCLUDED.source_excerpt, fused_token_metadata.source_excerpt)
+        `;
+        return ok(true);
+      } catch (error) {
+        return err(databaseUnavailable(error instanceof Error ? error.message : "metadata upsert failed"));
+      }
+    },
+    upsertSocialPost: async (post) => {
+      const a = availability();
+      if (a.status !== "OK") return fail(a);
+      const client = conn();
+      if (!client) return fail(a);
+      try {
+        await client`
+          INSERT INTO fused_social_posts (
+            platform, post_id, author_id, author_username, author_display_name, avatar_url, verified,
+            text, url, media, metrics, published_at, fetched_at
+          ) VALUES (
+            ${post.platform}, ${post.postId}, ${post.authorId}, ${post.authorUsername},
+            ${post.authorDisplayName ?? null}, ${post.avatarUrl ?? null}, ${post.verified ?? null},
+            ${post.text}, ${post.url}, ${JSON.stringify(post.media)}, ${JSON.stringify(post.metrics)},
+            ${post.publishedAt}, ${post.fetchedAt}
+          )
+          ON CONFLICT (platform, post_id) DO UPDATE SET
+            author_id = EXCLUDED.author_id,
+            author_username = EXCLUDED.author_username,
+            author_display_name = EXCLUDED.author_display_name,
+            avatar_url = EXCLUDED.avatar_url,
+            verified = EXCLUDED.verified,
+            text = EXCLUDED.text,
+            url = EXCLUDED.url,
+            media = EXCLUDED.media,
+            metrics = EXCLUDED.metrics,
+            fetched_at = EXCLUDED.fetched_at
+        `;
+        return ok(true);
+      } catch (error) {
+        return err(databaseUnavailable(error instanceof Error ? error.message : "post upsert failed"));
+      }
+    },
+    getSocialPost: async (platform, postId) => {
+      const a = availability();
+      if (a.status !== "OK") return fail(a);
+      const client = conn();
+      if (!client) return fail(a);
+      try {
+        const rows = await client`
+          SELECT * FROM fused_social_posts WHERE platform = ${platform} AND post_id = ${postId} LIMIT 1
+        `;
+        const row = rows[0] as Record<string, unknown> | undefined;
+        if (!row) return ok(null);
+        return ok({
+          platform: String(row.platform) as SocialPost["platform"],
+          postId: String(row.post_id),
+          authorId: String(row.author_id),
+          authorUsername: String(row.author_username),
+          authorDisplayName: row.author_display_name ? String(row.author_display_name) : undefined,
+          avatarUrl: row.avatar_url ? String(row.avatar_url) : undefined,
+          verified: typeof row.verified === "boolean" ? row.verified : undefined,
+          text: String(row.text),
+          url: String(row.url),
+          media: Array.isArray(row.media) ? (row.media as SocialPost["media"]) : [],
+          metrics: (row.metrics ?? {}) as SocialPost["metrics"],
+          publishedAt: new Date(String(row.published_at)).toISOString(),
+          fetchedAt: new Date(String(row.fetched_at)).toISOString(),
+        });
+      } catch (error) {
+        return err(databaseUnavailable(error instanceof Error ? error.message : "post read failed"));
+      }
+    },
+    upsertTrackedAccount: async (account) => {
+      const a = availability();
+      if (a.status !== "OK") return fail(a);
+      if (!account.platformUserId) return ok(true);
+      const client = conn();
+      if (!client) return fail(a);
+      try {
+        await client`
+          INSERT INTO fused_tracked_accounts (
+            id, platform, platform_user_id, username, display_name, enabled, category, priority, created_at, updated_at
+          ) VALUES (
+            ${account.id}, ${account.platform}, ${account.platformUserId}, ${account.username},
+            ${account.displayName}, ${account.enabled}, ${account.category}, ${account.priority},
+            ${account.createdAt}, ${account.updatedAt}
+          )
+          ON CONFLICT (id) DO UPDATE SET
+            platform_user_id = EXCLUDED.platform_user_id,
+            username = EXCLUDED.username,
+            display_name = EXCLUDED.display_name,
+            enabled = EXCLUDED.enabled,
+            category = EXCLUDED.category,
+            priority = EXCLUDED.priority,
+            updated_at = EXCLUDED.updated_at
+        `;
+        return ok(true);
+      } catch (error) {
+        return err(databaseUnavailable(error instanceof Error ? error.message : "account upsert failed"));
+      }
+    },
+    markSocialSync: async (id, postCount) => {
+      const a = availability();
+      if (a.status !== "OK") return fail(a);
+      const client = conn();
+      if (!client) return fail(a);
+      try {
+        await client`
+          INSERT INTO fused_social_sync (id, last_sync_at, post_count)
+          VALUES (${id}, now(), ${postCount})
+          ON CONFLICT (id) DO UPDATE SET last_sync_at = now(), post_count = EXCLUDED.post_count
+        `;
+        return ok(true);
+      } catch (error) {
+        return err(databaseUnavailable(error instanceof Error ? error.message : "sync write failed"));
+      }
+    },
+    lastSocialSync: async () => {
+      const a = availability();
+      if (a.status !== "OK") return fail(a);
+      const client = conn();
+      if (!client) return fail(a);
+      try {
+        const rows = await client`SELECT last_sync_at, post_count FROM fused_social_sync WHERE id = 'x' LIMIT 1`;
+        const row = rows[0];
+        return ok({
+          lastSyncAt: row?.last_sync_at ? new Date(String(row.last_sync_at)).toISOString() : null,
+          postCount: row?.post_count == null ? 0 : Number(row.post_count),
+        });
+      } catch (error) {
+        return err(databaseUnavailable(error instanceof Error ? error.message : "sync read failed"));
       }
     },
     getCursor: async (chainId) => {

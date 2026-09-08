@@ -3,9 +3,10 @@
 import { type ReactNode, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider, createConfig, http } from "wagmi";
-import { injected } from "wagmi/connectors";
+import { injected, walletConnect } from "wagmi/connectors";
 import { anvil } from "viem/chains";
 import { defineChain } from "viem";
+import { walletConnectorKinds } from "../lib/wallet.ts";
 
 export type WalletRuntimeConfig = {
   chainId: number;
@@ -37,9 +38,16 @@ export function Providers({
             nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
             rpcUrls: { default: { http: [wallet.rpcUrl] } },
           });
+    const kinds = walletConnectorKinds(wallet.walletConnectProjectId);
+    const connectors = [
+      injected(),
+      ...(kinds.includes("walletConnect") && wallet.walletConnectProjectId
+        ? [walletConnect({ projectId: wallet.walletConnectProjectId, showQrModal: true })]
+        : []),
+    ];
     return createConfig({
       chains: [chain],
-      connectors: [injected()],
+      connectors,
       transports: { [chain.id]: http(wallet.rpcUrl) },
       ssr: true,
     });

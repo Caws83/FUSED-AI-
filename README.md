@@ -8,11 +8,11 @@ transaction.
 
 ## Current state
 
-Phase 3: local Anvil (31337) launch pipeline works — Uniswap v4 PoolManager /
-PositionManager / Permit2, Fused factory/locker, wallet or Anvil #0 `launch()`,
-indexer, Explore, token detail.
+Phase 4: local launch pipeline plus X provider, Fuse → manual launch, token
+logo upload, polished wallet (injected; WalletConnect only with a project id).
 
-Not yet: X API, AI HTTP, V2/V3, testnet.
+Not yet: AI text/image generation, V2/V3, testnet. Live X feed needs
+`X_BEARER_TOKEN`.
 
 V4 is **implemented**. It is **available** only when Fused factory/locker
 addresses are set (local `.env.local` after deploy). V2/V3 are planned.
@@ -91,6 +91,7 @@ Exact Anvil + deploy + wallet + launch steps: [docs/LOCAL_DEVELOPMENT.md](docs/L
 | `npm run contracts:deploy:local` | Uniswap v4 + Fused factory/locker |
 | `npm run indexer` | Follow `Launched` events |
 | `npm run dev` | Next.js at http://localhost:3000 |
+| `npm run dev:local` | Stop stale :3000, then web + indexer |
 | `npm run contracts:launch:local` | Real launch via Anvil account #0 |
 | `npm run local:reset` | Clear generated local addresses |
 | `npm run status` | CLI availability dump |
@@ -111,7 +112,7 @@ docs/               How it works, env, security, contracts, audit
 
 Master checklist: [TODO.md](TODO.md).
 
-Next: **Phase 4 — real X provider** (still no AI HTTP, no V2/V3).
+Next: **Phase 5 — AI draft + AI artwork** (still no V2/V3, no testnet).
 
 ## Security principles
 

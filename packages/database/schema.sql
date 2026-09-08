@@ -28,12 +28,37 @@ CREATE TABLE IF NOT EXISTS fused_social_posts (
   post_id            text NOT NULL,
   author_id          text NOT NULL,
   author_username    text NOT NULL,
+  author_display_name text,
+  avatar_url         text,
+  verified           boolean,
   text               text NOT NULL,
   url                text NOT NULL,
+  media              jsonb NOT NULL DEFAULT '[]'::jsonb,
   metrics            jsonb NOT NULL,
   published_at       timestamptz NOT NULL,
   fetched_at         timestamptz NOT NULL,
   PRIMARY KEY (platform, post_id)
+);
+
+CREATE TABLE IF NOT EXISTS fused_social_sync (
+  id                 text PRIMARY KEY,
+  last_sync_at       timestamptz,
+  post_count         integer NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS fused_token_metadata (
+  chain_id           integer NOT NULL,
+  token              text NOT NULL,
+  description        text NOT NULL DEFAULT '',
+  image_id           text,
+  image_url          text,
+  source_platform    text,
+  source_post_id     text,
+  source_author      text,
+  source_post_url    text,
+  source_excerpt     text,
+  created_at         timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (chain_id, token)
 );
 
 CREATE TABLE IF NOT EXISTS fused_launch_drafts (

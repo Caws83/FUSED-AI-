@@ -24,7 +24,7 @@ const FEATURES = [
 const REWARD_CATEGORIES = ["Creator Rewards", "Holder Rewards", "Referral Rewards", "Community Rewards"] as const;
 
 export default async function HomePage() {
-  const { registry } = await loadRuntime();
+  const { registry, status } = await loadRuntime();
   const assets = registry.ok ? registry.value.filter((asset) => asset.enabled) : [];
   const launches = await loadIndexedLaunches();
 
@@ -40,7 +40,7 @@ export default async function HomePage() {
               from a post.
             </h1>
             <p className="fused-support">One post. One click. One token.</p>
-            <QuickFuse ready={false} />
+            <QuickFuse ready={status.social.status === "OK"} />
             <div className="fused-cta-row">
               <a href="/launch" className="fused-btn fused-btn-ghost">
                 Create manually
@@ -124,6 +124,7 @@ export default async function HomePage() {
               {launches.map((launch) => (
                 <a key={launch.token} href={`/token/${launch.token}`} style={{ color: "inherit" }}>
                   <LaunchCard
+                    imageUrl={launch.imageUrl || "/brand/fused-token.svg"}
                     name={launch.name || "Token"}
                     symbol={launch.symbol || "—"}
                     creator={`${launch.launcher.slice(0, 6)}…${launch.launcher.slice(-4)}`}

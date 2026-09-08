@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@fused-ai/config": "0.1.0",
+    "@fused-ai/database": "0.1.0",
     "@fused-ai/social": "0.1.0"
   }
 }
