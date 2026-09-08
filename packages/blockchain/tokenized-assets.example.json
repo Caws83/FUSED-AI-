@@ -1,0 +1,4 @@
+{
+  "comment": "Empty allowlist. Add verified {chainId, contractAddress, issuer, ...} entries only. Never identify assets by ticker.",
+  "assets": []
+}

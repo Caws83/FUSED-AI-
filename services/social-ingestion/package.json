@@ -1,0 +1,15 @@
+{
+  "name": "@fused-ai/social-ingestion",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --experimental-strip-types --no-warnings src/main.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "node --experimental-strip-types --no-warnings --test \"src/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@fused-ai/config": "0.1.0",
+    "@fused-ai/social": "0.1.0"
+  }
+}

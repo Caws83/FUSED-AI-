@@ -1,0 +1,26 @@
+{
+  "name": "fused-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Fused AI — social-first EVM token launchpad. Launch a token with just 1 click from a tweet.",
+  "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:packages": "npm run test --workspace=@fused-ai/types --workspace=@fused-ai/shared --workspace=@fused-ai/validation --workspace=@fused-ai/config --workspace=@fused-ai/social --workspace=@fused-ai/ai --workspace=@fused-ai/blockchain --workspace=@fused-ai/database",
+    "build:web": "npm run build --workspace=@fused-ai/web",
+    "status": "node --experimental-strip-types --no-warnings apps/api/src/cli.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

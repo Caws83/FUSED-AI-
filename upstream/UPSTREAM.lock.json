@@ -1,0 +1,10 @@
+{
+  "openlaunch": {
+    "remote": "https://github.com/Gitlawb/openlaunch.git",
+    "commit": "d9e215e11081dc3e33d11ea0fd46348c2f2c78bd"
+  },
+  "quiver-contracts": {
+    "remote": "https://github.com/quiverfun/quiver-contracts.git",
+    "commit": "973c31c49bc73ef3cd3ea3f560b1f75efc811ff3"
+  }
+}

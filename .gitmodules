@@ -1,0 +1,6 @@
+[submodule "upstream/openlaunch"]
+	path = upstream/openlaunch
+	url = https://github.com/Gitlawb/openlaunch.git
+[submodule "upstream/quiver-contracts"]
+	path = upstream/quiver-contracts
+	url = https://github.com/quiverfun/quiver-contracts.git

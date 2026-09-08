@@ -1,0 +1,61 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  packages:
+    name: packages · typecheck + unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck --workspaces --if-present
+      - run: npm test --workspaces --if-present
+
+  web:
+    name: web · production build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build --workspace=@fused-ai/web
+
+  contracts:
+    name: contracts · fused interfaces + OpenLaunch unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Link forge-std from OpenLaunch (do not fork the lib)
+        working-directory: contracts
+        run: |
+          mkdir -p lib
+          ln -sfn ../../upstream/openlaunch/contracts/lib/forge-std lib/forge-std
+      - name: Fused AI interface tests
+        working-directory: contracts
+        run: forge test --match-path test/unit/DexAvailability.t.sol -vv
+      - name: OpenLaunch unit tests (unmodified)
+        working-directory: upstream/openlaunch/contracts
+        run: forge test --match-path test/LaunchFactory.t.sol -vv
+      # live-fork suites need RPC and run locally before a release; do not skip them to go green

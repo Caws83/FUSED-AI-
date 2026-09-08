@@ -1,0 +1,45 @@
+Fused AI
+========
+
+This product includes software developed by the Fused AI contributors.
+
+Upstream / third-party notices
+------------------------------
+
+### OpenLaunch (primary architectural base)
+
+Repository: https://github.com/Gitlawb/openlaunch.git
+Commit inspected: d9e215e11081dc3e33d11ea0fd46348c2f2c78bd
+License: MIT
+Copyright (c) 2026 openlaunch contributors
+
+The full MIT text is preserved at:
+- upstream/openlaunch/LICENSE
+- docs/licenses/OPENLAUNCH-LICENSE
+
+Vendored frontend component notices from OpenLaunch:
+- docs/licenses/OPENLAUNCH-VENDOR-LICENSES.md
+- upstream/openlaunch/app/src/components/vendor/LICENSES.md
+
+OpenLaunch Foundry/Uniswap submodules retain their own licenses under
+`upstream/openlaunch/contracts/lib/`.
+
+### Quiver contracts (secondary reference only)
+
+Repository: https://github.com/quiverfun/quiver-contracts.git
+Commit inspected: 973c31c49bc73ef3cd3ea3f560b1f75efc811ff3
+
+First-party Solidity files declare `SPDX-License-Identifier: MIT`.
+The upstream checkout has NO top-level LICENSE file. README claims
+provenance from Clanker v4 (MIT). Fused AI does NOT copy Quiver source
+into production contracts until license provenance is confirmed in writing
+and recorded here.
+
+Referenced Clanker lineage: https://github.com/clanker-devco/v4-contracts
+(SPDX MIT on sampled source files; confirm LICENSE file before copying).
+
+### Uniswap / Foundry / OpenZeppelin / Permit2 / Solmate
+
+These appear only as nested dependencies of the upstream checkouts.
+They are not relicensed by Fused AI. Do not copy them into
+`contracts/src` without preserving their original license files.

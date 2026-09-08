@@ -1,0 +1,31 @@
+{
+  "name": "@fused-ai/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "node --experimental-strip-types --no-warnings --test \"test/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@fused-ai/ai": "0.1.0",
+    "@fused-ai/blockchain": "0.1.0",
+    "@fused-ai/config": "0.1.0",
+    "@fused-ai/social": "0.1.0",
+    "@fused-ai/types": "0.1.0",
+    "next": "^16.2.9",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "^16.2.9",
+    "typescript": "^5"
+  }
+}
