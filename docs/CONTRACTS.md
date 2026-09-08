@@ -1,12 +1,16 @@
 # Contracts
 
-Phase 1 does **not** change upstream contract behavior and does **not** deploy.
+Phase 2 copies unmodified OpenLaunch core into `contracts/src/core/`. It does
+**not** deploy and does **not** point env vars at OpenLaunch live addresses.
 
-## Baseline: OpenLaunch (reuse candidate)
+## Baseline: OpenLaunch (now in-tree)
 
 Three contracts, solc 0.8.26, Cancun, `via_ir`, optimizer 200.
 
-### LaunchFactory
+Copied from `upstream/openlaunch/contracts/src/` at commit
+`d9e215e11081dc3e33d11ea0fd46348c2f2c78bd`.
+
+### LaunchFactory (`src/core/LaunchFactory.sol`)
 
 - `launch(LaunchParams)` deploys `LaunchToken` via CREATE2 (salt scoped to `msg.sender`)
 - Initializes Uniswap v4 pool with **no hook**
@@ -16,7 +20,7 @@ Three contracts, solc 0.8.26, Cancun, `via_ir`, optimizer 200.
 - **No owner, no platform fee, no upgrade, no pause**
 - Dust that cannot fit the position is burned to `0x…dEaD`
 
-### LaunchLocker
+### LaunchLocker (`src/core/LaunchLocker.sol`)
 
 - Factory-only `register()`
 - `collect()` uses `DECREASE_LIQUIDITY` with **zero** liquidity (fees only)
@@ -24,28 +28,32 @@ Three contracts, solc 0.8.26, Cancun, `via_ir`, optimizer 200.
 - Recipients immutable; `DEAD` recipient burns that share
 - Reentrancy guards on collect/claim
 
-### LaunchToken
+### LaunchToken (`src/core/LaunchToken.sol`)
 
 - Full supply minted to factory, immediately locked as LP
 - EIP-2612 permit
 - Immutable `metadataURI`
 
-### Tests to preserve
+### Tests copied
 
-| File | Role |
-|------|------|
-| `LaunchFactory.t.sol` | Unit + fuzz |
-| `LaunchFactory.fork.t.sol` | Live Base |
-| `LaunchFactory.gitlawb*.fork.t.sol` | GITLAWB quotes |
-| `LaunchFactory.stock.fork.t.sol` | AAPL-quoted Robinhood launch |
-| `LaunchLocker.rug.fork.t.sol` | Adversarial: cannot steal LP on Base |
-| `LaunchLocker.rug.robinhood.fork.t.sol` | Same on 4663 |
+| Fused AI path | Role |
+|---------------|------|
+| `test/unit/LaunchFactory.t.sol` | Unit + fuzz (must pass locally) |
+| `test/fork/LaunchFactory.fork.t.sol` | Live Base Uniswap (gated by `FORK_TESTS`) |
+| `test/fork/LaunchFactory.gitlawb*.fork.t.sol` | GITLAWB quotes on live factories |
+| `test/fork/LaunchFactory.stock.fork.t.sol` | AAPL-quoted Robinhood launch |
+| `test/security/LaunchLocker.rug.fork.t.sol` | Adversarial: cannot steal LP on Base |
+| `test/security/LaunchLocker.rug.robinhood.fork.t.sol` | Same on 4663 |
+
+Fork tests skip unless `FORK_TESTS=true`. They need a working RPC
+(`BASE_RPC_URL` / `ROBINHOOD_RPC_URL` or the public defaults in the files).
+Do not stub RPC. See `contracts/test/FORK_TESTS.md`.
 
 ## Quiver (reference only)
 
 Do not copy into `contracts/src` until license confirmation.
 
-Relevant ideas for a later design review (not Phase 1 implementation):
+Relevant ideas for a later design review (not Phase 2 implementation):
 
 - Hook-based protocol skim vs OpenLaunch's zero platform fee
 - `QuiverFeeLocker` claim model vs OpenLaunch push/credit
@@ -53,7 +61,7 @@ Relevant ideas for a later design review (not Phase 1 implementation):
 - `deprecated` guarded activation
 - v3 locker path as a future `V3Adapter` **after** contracts exist and pass tests
 
-Trust model conflict: Quiver is owner/admin gated. Fused AI Phase 1 decision is to
+Trust model conflict: Quiver is owner/admin gated. Fused AI decision is to
 **keep OpenLaunch's ownerless factory/locker** as the default security property.
 Any protocol fee or admin switch is an explicit later product decision, not a silent merge.
 
@@ -61,20 +69,28 @@ Any protocol fee or admin switch is an explicit later product decision, not a si
 
 | Path | Status |
 |------|--------|
+| `src/core/LaunchFactory.sol` | Unmodified OpenLaunch |
+| `src/core/LaunchLocker.sol` | Unmodified OpenLaunch |
+| `src/core/LaunchToken.sol` | Unmodified OpenLaunch |
 | `src/dex/interfaces/IDexAdapter.sol` | Interface |
-| `src/dex/v2/V2Adapter.sol` | `available() == false` |
-| `src/dex/v3/V3Adapter.sol` | `available() == false` |
-| `src/dex/v4/V4Adapter.sol` | `available() == false` until Fused AI deploys |
+| `src/dex/v2/V2Adapter.sol` | `implemented() == false`, `available() == false` |
+| `src/dex/v3/V3Adapter.sol` | `implemented() == false`, `available() == false` |
+| `src/dex/v4/V4Adapter.sol` | `implemented() == true`, `available() == false` until Fused AI deploys |
 | `src/interfaces/ITokenizedAssetRegistry.sol` | Interface |
 | `src/interfaces/IRewardSink.sol` | Interface only |
 | `src/registry/TokenizedAssetRegistry.sol` | Empty allowlist |
-| `src/core/` | Reserved for a future OpenLaunch port |
 
 UI rule: never label Uniswap V2/V3/V4 as live unless the corresponding adapter
 returns `available()` and tests pass against the deployed bytecode.
+
+The TypeScript V4 adapter (`packages/blockchain`) reports `implemented: true`
+and `available: false` until `LAUNCH_FACTORY_ADDRESS` and `LAUNCH_LOCKER_ADDRESS`
+are set. V2/V3 stay unimplemented.
 
 ## Uniswap addresses
 
 Canonical Uniswap deployments may be documented per chain when we pick a chain.
 They are **not** Fused AI contracts. Factory/locker addresses start empty in
 `.env.example` on purpose.
+
+OpenLaunch live addresses remain upstream references only.

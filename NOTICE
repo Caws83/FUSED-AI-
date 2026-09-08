@@ -17,6 +17,26 @@ The full MIT text is preserved at:
 - upstream/openlaunch/LICENSE
 - docs/licenses/OPENLAUNCH-LICENSE
 
+Phase 2 copied the following production files byte-for-byte (same commit)
+into the Fused AI contract tree. SPDX MIT headers are unchanged:
+
+| Fused AI path | OpenLaunch path |
+|---------------|-----------------|
+| `contracts/src/core/LaunchFactory.sol` | `upstream/openlaunch/contracts/src/LaunchFactory.sol` |
+| `contracts/src/core/LaunchLocker.sol` | `upstream/openlaunch/contracts/src/LaunchLocker.sol` |
+| `contracts/src/core/LaunchToken.sol` | `upstream/openlaunch/contracts/src/LaunchToken.sol` |
+| `contracts/test/unit/LaunchFactory.t.sol` | `upstream/openlaunch/contracts/test/LaunchFactory.t.sol` |
+| `contracts/test/fork/LaunchFactory.fork.t.sol` | `upstream/openlaunch/contracts/test/LaunchFactory.fork.t.sol` |
+| `contracts/test/fork/LaunchFactory.gitlawb.fork.t.sol` | `upstream/openlaunch/contracts/test/LaunchFactory.gitlawb.fork.t.sol` |
+| `contracts/test/fork/LaunchFactory.gitlawbRobinhood.fork.t.sol` | `upstream/openlaunch/contracts/test/LaunchFactory.gitlawbRobinhood.fork.t.sol` |
+| `contracts/test/fork/LaunchFactory.stock.fork.t.sol` | `upstream/openlaunch/contracts/test/LaunchFactory.stock.fork.t.sol` |
+| `contracts/test/security/LaunchLocker.rug.fork.t.sol` | `upstream/openlaunch/contracts/test/LaunchLocker.rug.fork.t.sol` |
+| `contracts/test/security/LaunchLocker.rug.robinhood.fork.t.sol` | `upstream/openlaunch/contracts/test/LaunchLocker.rug.robinhood.fork.t.sol` |
+
+Uniswap v4-core/periphery, Permit2, OpenZeppelin, Solmate, and forge-std are
+**not** copied into `contracts/src`. Foundry remappings load them from
+`upstream/openlaunch/contracts/lib/` and those nested LICENSE files still apply.
+
 Vendored frontend component notices from OpenLaunch:
 - docs/licenses/OPENLAUNCH-VENDOR-LICENSES.md
 - upstream/openlaunch/app/src/components/vendor/LICENSES.md

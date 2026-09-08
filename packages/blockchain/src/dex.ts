@@ -28,11 +28,11 @@ class UnimplementedAdapter implements DexAdapter {
 }
 
 /**
- * V4 is implemented in unmodified OpenLaunch at upstream/openlaunch/contracts.
- * Fused AI production config does not point at those addresses, so this adapter
- * reports CONTRACTS_NOT_DEPLOYED until a Fused AI deployment exists.
+ * V4 is implemented by unmodified OpenLaunch core contracts in contracts/src/core.
+ * Production UI must not treat it as live until Fused AI factory/locker addresses
+ * are set in env. Do not default to OpenLaunch's deployed addresses.
  */
-class OpenLaunchV4ReferenceAdapter implements DexAdapter {
+class OpenLaunchV4Adapter implements DexAdapter {
   readonly version = "v4" as const;
   private readonly env: FusedEnv;
   constructor(env: FusedEnv) {
@@ -47,7 +47,7 @@ class OpenLaunchV4ReferenceAdapter implements DexAdapter {
       reason:
         a.status === AVAILABILITY_STATUS.OK
           ? null
-          : "V4 launch path exists as unmodified OpenLaunch reference code. Fused AI factory/locker addresses are unset.",
+          : "V4 core (LaunchFactory / LaunchLocker / LaunchToken) is in this checkout. Fused AI factory/locker addresses are unset, so the adapter is not available.",
     };
   }
   availability(): Availability {
@@ -56,7 +56,7 @@ class OpenLaunchV4ReferenceAdapter implements DexAdapter {
 }
 
 export function listDexAdapters(env: FusedEnv): readonly DexAdapter[] {
-  return [new UnimplementedAdapter("v2"), new UnimplementedAdapter("v3"), new OpenLaunchV4ReferenceAdapter(env)];
+  return [new UnimplementedAdapter("v2"), new UnimplementedAdapter("v3"), new OpenLaunchV4Adapter(env)];
 }
 
 export function operationalDexVersions(env: FusedEnv): DexVersion[] {

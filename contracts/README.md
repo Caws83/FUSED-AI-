@@ -1,24 +1,38 @@
-# Fused AI contracts (Phase 1)
+# Fused AI contracts (Phase 2)
 
-This tree holds Fused AI interfaces and honest availability adapters.
+OpenLaunch production core is copied **unmodified** into `src/core/`:
 
-Production launch contracts are **not copied here yet**. The unmodified OpenLaunch
-implementation remains at:
+| Fused AI path | OpenLaunch path |
+|---------------|-----------------|
+| `src/core/LaunchFactory.sol` | `upstream/openlaunch/contracts/src/LaunchFactory.sol` |
+| `src/core/LaunchLocker.sol` | `upstream/openlaunch/contracts/src/LaunchLocker.sol` |
+| `src/core/LaunchToken.sol` | `upstream/openlaunch/contracts/src/LaunchToken.sol` |
 
-`upstream/openlaunch/contracts/src/{LaunchFactory,LaunchLocker,LaunchToken}.sol`
+Hashes must match the inspected OpenLaunch commit. Do not add an owner, upgrade
+proxy, Quiver admin, or platform fee skim.
 
-Do not point Fused AI env vars at OpenLaunch live addresses.
+Tests (intent preserved; import paths remapped via `remappings.txt`):
 
-Quiver source is a reference only (`upstream/quiver-contracts`). Do not copy it
-into `src/` until license provenance is confirmed (see `docs/UPSTREAM_AUDIT.md`).
+| Fused AI path | OpenLaunch path |
+|---------------|-----------------|
+| `test/unit/LaunchFactory.t.sol` | `contracts/test/LaunchFactory.t.sol` |
+| `test/fork/LaunchFactory.fork.t.sol` | `contracts/test/LaunchFactory.fork.t.sol` |
+| `test/fork/LaunchFactory.gitlawb.fork.t.sol` | `contracts/test/LaunchFactory.gitlawb.fork.t.sol` |
+| `test/fork/LaunchFactory.gitlawbRobinhood.fork.t.sol` | `contracts/test/LaunchFactory.gitlawbRobinhood.fork.t.sol` |
+| `test/fork/LaunchFactory.stock.fork.t.sol` | `contracts/test/LaunchFactory.stock.fork.t.sol` |
+| `test/security/LaunchLocker.rug.fork.t.sol` | `contracts/test/LaunchLocker.rug.fork.t.sol` |
+| `test/security/LaunchLocker.rug.robinhood.fork.t.sol` | `contracts/test/LaunchLocker.rug.robinhood.fork.t.sol` |
 
 ```
-forge test --match-path test/unit/DexAvailability.t.sol
+forge build
+forge test --match-path "test/unit/*.t.sol"
 ```
 
-OpenLaunch unit tests (do not skip):
+Fork / rug suites skip unless `FORK_TESTS=true`. See `test/FORK_TESTS.md`.
 
-```
-cd ../upstream/openlaunch/contracts
-forge test --match-path test/LaunchFactory.t.sol
-```
+Uniswap v4 / Permit2 / OZ / Solmate / forge-std stay in
+`upstream/openlaunch/contracts/lib` and are referenced by remappings. They are
+not copied into `src/`.
+
+V4 adapter: `implemented() == true`, `available() == false` until a Fused AI
+deployment sets factory/locker addresses. V2/V3 remain unimplemented.

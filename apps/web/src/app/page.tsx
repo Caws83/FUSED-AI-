@@ -1,64 +1,138 @@
-import { loadEnv, systemStatus } from "@fused-ai/config";
-import { listDexAdapters } from "@fused-ai/blockchain";
+import { Badge, Card, EmptyState, SectionHeader } from "@fused-ai/ui";
+import { QuickFuse } from "../components/QuickFuse.tsx";
+import { LaunchModes } from "../components/LaunchModes.tsx";
+import { loadRuntime } from "../lib/runtime.ts";
 
 export const dynamic = "force-dynamic";
 
-function Row({ label, status, reason }: { label: string; status: string; reason?: string }) {
-  const ok = status === "OK";
-  return (
-    <tr>
-      <td style={{ padding: "8px 12px", borderBottom: "1px solid #1e2a36" }}>{label}</td>
-      <td style={{ padding: "8px 12px", borderBottom: "1px solid #1e2a36", color: ok ? "#4ade80" : "#fbbf24" }}>
-        {status}
-      </td>
-      <td style={{ padding: "8px 12px", borderBottom: "1px solid #1e2a36", color: "#93a4b5", fontSize: 14 }}>
-        {reason ?? (ok ? "configured" : "")}
-      </td>
-    </tr>
-  );
-}
+const FLOW = [
+  { id: "POST", caption: "Paste a public post" },
+  { id: "AI", caption: "Draft name, ticker, art" },
+  { id: "REVIEW", caption: "You check the details" },
+  { id: "SIGN", caption: "Wallet signs the launch" },
+  { id: "LAUNCH", caption: "Token + locked LP" },
+] as const;
 
-export default function HomePage() {
-  const env = loadEnv();
-  const status = systemStatus(env);
-  const dex = listDexAdapters(env);
+export default async function HomePage() {
+  const { status, dex, social, registry } = await loadRuntime();
+  const assets = registry.ok ? registry.value : [];
+  const registryConfigured = status.tokenizedAssetRegistry.status === "OK";
 
   return (
-    <main style={{ maxWidth: 880, margin: "0 auto", padding: "48px 20px" }}>
-      <p style={{ letterSpacing: "0.16em", fontSize: 12, color: "#7dd3fc" }}>FUSED AI · PHASE 1</p>
-      <h1 style={{ fontSize: 36, margin: "8px 0 0" }}>Launch a token with just 1 click from a tweet.</h1>
-      <p style={{ color: "#93a4b5", lineHeight: 1.5 }}>
-        This surface reports real subsystem availability. It does not list tokens, prices, trending posts, or
-        AI drafts. Those appear only when the corresponding provider is configured and implemented.
-      </p>
-      <h2 style={{ marginTop: 36 }}>Subsystem status</h2>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <tbody>
-          <Row label="Database" status={status.database.status} reason={"reason" in status.database ? status.database.reason : undefined} />
-          <Row label="RPC" status={status.rpc.status} reason={"reason" in status.rpc ? status.rpc.reason : undefined} />
-          <Row label="Social ingestion" status={status.social.status} reason={"reason" in status.social ? status.social.reason : undefined} />
-          <Row label="AI generation" status={status.ai.status} reason={"reason" in status.ai ? status.ai.reason : undefined} />
-          <Row
-            label="Launch contracts"
-            status={status.launchContracts.status}
-            reason={"reason" in status.launchContracts ? status.launchContracts.reason : undefined}
+    <main>
+      <section className="fused-hero">
+        <div className="fused-wrap fused-hero-grid">
+          <div>
+            <p className="fused-kicker">FUSED AI</p>
+            <h1>Launch a token from a post.</h1>
+            <p className="fused-support">
+              <span>One post.</span>
+              <span>One click.</span>
+              <span>One token.</span>
+            </p>
+            <div className="fused-cta-row">
+              <a href="#quick-fuse" className="fused-btn fused-btn-lime fused-btn-lg">
+                Fuse a Post
+              </a>
+              <a href="/launch" className="fused-btn fused-btn-ghost fused-btn-lg">
+                Create Manually
+              </a>
+            </div>
+          </div>
+          <Card>
+            <p className="fused-kicker">Launch flow</p>
+            <div className="fused-flow">
+              {FLOW.map((step, index) => (
+                <div className="fused-flow-step" key={step.id}>
+                  <div className="fused-flow-index">
+                    {index + 1 < FLOW.length ? `${step.id}` : step.id}
+                  </div>
+                  <div>
+                    <strong>{step.id}</strong>
+                    <div>
+                      <small>{step.caption}</small>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </section>
+
+      <section className="fused-section" id="quick-fuse">
+        <div className="fused-wrap">
+          <SectionHeader kicker="Quick Fuse" title="Paste an X post URL" />
+          <QuickFuse socialStatus={social.status} />
+        </div>
+      </section>
+
+      <section className="fused-section">
+        <div className="fused-wrap">
+          <SectionHeader kicker="Trending" title="Live posts, when a provider exists" />
+          <EmptyState
+            title="Trending feed unavailable"
+            body="Connect a social provider to load live posts."
           />
-          {dex.map((adapter) => {
-            const info = adapter.info();
-            return (
-              <Row
-                key={info.version}
-                label={`DEX Uniswap ${info.version.toUpperCase()}`}
-                status={info.available ? "OK" : info.implemented ? "CONTRACTS_NOT_DEPLOYED" : "ADAPTER_NOT_IMPLEMENTED"}
-                reason={info.reason ?? undefined}
-              />
-            );
-          })}
-        </tbody>
-      </table>
-      <p style={{ marginTop: 32, color: "#64748b", fontSize: 14 }}>
-        Private keys never live in this process. Users sign launches in their wallet. See docs/ARCHITECTURE.md.
-      </p>
+        </div>
+      </section>
+
+      <section className="fused-section">
+        <div className="fused-wrap">
+          <SectionHeader kicker="Launch options" title="DEX adapters from the registry" />
+          <LaunchModes adapters={dex} />
+        </div>
+      </section>
+
+      <section className="fused-section">
+        <div className="fused-wrap">
+          <SectionHeader kicker="Tokenized Stock Rewards" title="Verified assets only" />
+          <p style={{ marginTop: -8, color: "var(--fused-muted)", maxWidth: 640 }}>
+            Creators will be able to configure supported reward assets from a verified tokenized-asset
+            registry.
+          </p>
+          <div className="fused-grid-4" style={{ margin: "18px 0" }}>
+            {["Creator Rewards", "Holder Rewards", "Referral Rewards", "Community Rewards"].map((label) => (
+              <Card key={label}>
+                <Badge tone="blue">{label}</Badge>
+                <p style={{ margin: "12px 0 0", color: "var(--fused-muted)", fontSize: 14 }}>
+                  Route later, once allowlisted contracts exist.
+                </p>
+              </Card>
+            ))}
+          </div>
+          {!registryConfigured || assets.length === 0 ? (
+            <EmptyState
+              title="No verified tokenized assets configured."
+              body="The registry is empty or not configured. Tickers are never inferred."
+            />
+          ) : (
+            <div className="fused-grid-3">
+              {assets.map((asset) => (
+                <Card key={`${asset.chainId}:${asset.contractAddress}`}>
+                  <strong>
+                    {asset.name} <span style={{ color: "var(--fused-muted)" }}>{asset.symbol}</span>
+                  </strong>
+                  <div style={{ color: "var(--fused-muted)", fontSize: 13 }}>
+                    {asset.issuer} · chain {asset.chainId}
+                  </div>
+                  <code style={{ fontSize: 12 }}>{asset.contractAddress}</code>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="fused-section">
+        <div className="fused-wrap">
+          <SectionHeader kicker="Explore" title="Launch board" />
+          <EmptyState
+            title="Launch indexer not configured."
+            body="When the indexer and database are live, launches will appear here from chain events."
+          />
+        </div>
+      </section>
     </main>
   );
 }

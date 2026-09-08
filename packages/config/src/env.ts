@@ -39,6 +39,7 @@ export type FusedEnv = {
   };
   tokenizedAssetRegistryPath: string | null;
   imageStore: string;
+  walletConnectProjectId: string | null;
 };
 
 function read(name: string, env: NodeJS.Dict<string> = process.env): string | null {
@@ -97,6 +98,7 @@ export function loadEnv(env: NodeJS.Dict<string> = process.env): FusedEnv {
     },
     tokenizedAssetRegistryPath: read("TOKENIZED_ASSET_REGISTRY_PATH", env),
     imageStore: read("IMAGE_STORE", env) ?? "local",
+    walletConnectProjectId: read("NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID", env) ?? read("WALLETCONNECT_PROJECT_ID", env),
   };
 }
 
@@ -142,6 +144,38 @@ export function launchContractsAvailability(cfg: FusedEnv): Availability {
   return { status: AVAILABILITY_STATUS.OK };
 }
 
+export function indexerAvailability(cfg: FusedEnv): Availability {
+  const missing: string[] = [];
+  if (!cfg.databaseUrl) missing.push("DATABASE_URL");
+  if (!cfg.rpcUrl) missing.push("RPC_URL");
+  if (!cfg.chainId) missing.push("CHAIN_ID");
+  if (!cfg.launchFactory) missing.push("LAUNCH_FACTORY_ADDRESS");
+  if (missing.length) {
+    return notConfigured(missing, "Launch indexer is not configured.");
+  }
+  return {
+    status: AVAILABILITY_STATUS.PROVIDER_UNAVAILABLE,
+    reason: "Indexer event loop is not implemented. Refusing to list synthetic launches.",
+  };
+}
+
+export function tokenizedAssetRegistryAvailability(cfg: FusedEnv): Availability {
+  if (!cfg.tokenizedAssetRegistryPath) {
+    return notConfigured(["TOKENIZED_ASSET_REGISTRY_PATH"], "No verified tokenized-asset registry path is set.");
+  }
+  return { status: AVAILABILITY_STATUS.OK };
+}
+
+export function walletAvailability(cfg: FusedEnv): Availability {
+  const missing: string[] = [];
+  if (!cfg.chainId) missing.push("CHAIN_ID");
+  if (!cfg.rpcUrl) missing.push("RPC_URL");
+  if (missing.length) {
+    return notConfigured(missing, "Wallet stack is not configured. Connect Wallet stays disabled.");
+  }
+  return { status: AVAILABILITY_STATUS.OK };
+}
+
 export function systemStatus(cfg: FusedEnv = loadEnv()) {
   return {
     database: databaseAvailability(cfg),
@@ -149,5 +183,8 @@ export function systemStatus(cfg: FusedEnv = loadEnv()) {
     social: socialAvailability(cfg),
     ai: aiAvailability(cfg),
     launchContracts: launchContractsAvailability(cfg),
+    indexer: indexerAvailability(cfg),
+    tokenizedAssetRegistry: tokenizedAssetRegistryAvailability(cfg),
+    wallet: walletAvailability(cfg),
   };
 }

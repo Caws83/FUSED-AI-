@@ -1,7 +1,8 @@
 # Architecture
 
-Fused AI is a social-first EVM launchpad. Phase 1 establishes boundaries and
-unmodified upstream references. It does not implement launch mechanics.
+Fused AI is a social-first EVM launchpad. Phase 2 imports unmodified OpenLaunch
+core contracts and ships a local frontend shell. It does not deploy, poll X,
+call AI vendors, or invent market data.
 
 ## Why this tree differs slightly from the proposal
 
@@ -9,22 +10,23 @@ The proposed layout is preserved. Two adjustments:
 
 1. **`upstream/` is a snapshot/submodule boundary, not merged source.** OpenLaunch
    and Quiver stay intact so we can always identify original files. Fused AI code
-   lives under `apps/`, `packages/`, `services/`, and `contracts/`.
-2. **`packages/ui` is empty on purpose.** Shipping launchpad chrome before
-   contracts, social, and AI are real would look finished and be fake. `apps/web`
-   is an availability console, not a token board.
+   lives under `apps/`, `packages/`, `services/`, and `contracts/`. OpenLaunch
+   core is **copied** into `contracts/src/core/` (MIT, unmodified).
+2. **`packages/ui` holds production primitives** used by `apps/web`. Empty
+   states are required whenever social, indexer, registry, or wallet config is
+   missing. No mock tweets, launches, or balances in production routes.
 
 OpenLaunch's app is a combined Next.js site + API routes + in-process indexer.
 Fused AI splits those concerns now so they can scale independently:
 
 | Process | Path | Owns |
 |---------|------|------|
-| Web | `apps/web` | Status UI, later the POST → REVIEW → SIGN flow |
+| Web | `apps/web` | Launchpad UI; POST → REVIEW → SIGN is explained, not executed |
 | API | `apps/api` | JSON availability + future launch/social/AI HTTP |
 | Indexer | `apps/indexer` | Chain event follow (refuses to start without RPC + DB + factory) |
 | Social ingestion | `services/social-ingestion` | Tracked accounts → normalized posts |
 | AI launch | `services/ai-launch` | Draft generation behind `AIProvider` |
-| Contracts | `contracts/` | Fused AI interfaces; OpenLaunch src stays upstream |
+| Contracts | `contracts/` | OpenLaunch core in `src/core/` plus Fused AI adapters |
 
 ## Data flow (target)
 
@@ -76,10 +78,10 @@ substitute mocks.
 
 ## DEX
 
-`DexAdapter` exists for v2, v3, and v4. Only an adapter whose contracts exist
-*and* whose Fused AI addresses are configured may report `available`. Today none
-do. OpenLaunch's v4 factory is the implementation we intend to adopt later; it
-is not advertised as a Fused AI deployment.
+`DexAdapter` exists for v2, v3, and v4. V4 core is implemented in
+`contracts/src/core` (`implemented = true`). It still reports `available = false`
+until Fused AI factory/locker addresses exist in env. V2 and V3 remain
+unimplemented. Do not advertise them as live.
 
 ## Signing boundary
 
@@ -102,4 +104,4 @@ is not advertised as a Fused AI deployment.
 | `@fused-ai/ai` | AIProvider + prompt isolation + schema validation |
 | `@fused-ai/blockchain` | Dex adapters + asset registry loader |
 | `@fused-ai/database` | Schema + fail-closed client |
-| `@fused-ai/ui` | Reserved |
+| `@fused-ai/ui` | Production primitives (Button, cards, empty states, wallet chip) |

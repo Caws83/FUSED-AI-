@@ -14,4 +14,7 @@ test("empty env reports NOT_CONFIGURED rather than inventing values", () => {
 test("systemStatus never marks launch contracts OK without addresses", () => {
   const status = systemStatus(loadEnv({}));
   assert.equal(status.launchContracts.status, "CONTRACTS_NOT_DEPLOYED");
+  assert.equal(status.indexer.status, "NOT_CONFIGURED");
+  assert.equal(status.wallet.status, "NOT_CONFIGURED");
+  assert.equal(status.tokenizedAssetRegistry.status, "NOT_CONFIGURED");
 });

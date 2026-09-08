@@ -58,6 +58,25 @@ Live OpenLaunch addresses (upstream reference **only**, not Fused AI production)
 - License texts copied to `docs/licenses/`
 - Architectural patterns (availability, stock identity, no-owner factory) documented, not copied into `contracts/src`
 
+### Files reused in Phase 2
+
+Production Solidity and tests copied byte-for-byte from OpenLaunch commit `d9e215e11081dc3e33d11ea0fd46348c2f2c78bd`:
+
+| Fused AI path | OpenLaunch upstream path |
+|---------------|--------------------------|
+| `contracts/src/core/LaunchFactory.sol` | `upstream/openlaunch/contracts/src/LaunchFactory.sol` |
+| `contracts/src/core/LaunchLocker.sol` | `upstream/openlaunch/contracts/src/LaunchLocker.sol` |
+| `contracts/src/core/LaunchToken.sol` | `upstream/openlaunch/contracts/src/LaunchToken.sol` |
+| `contracts/test/unit/LaunchFactory.t.sol` | `upstream/openlaunch/contracts/test/LaunchFactory.t.sol` |
+| `contracts/test/fork/LaunchFactory.fork.t.sol` | `upstream/openlaunch/contracts/test/LaunchFactory.fork.t.sol` |
+| `contracts/test/fork/LaunchFactory.gitlawb.fork.t.sol` | `upstream/openlaunch/contracts/test/LaunchFactory.gitlawb.fork.t.sol` |
+| `contracts/test/fork/LaunchFactory.gitlawbRobinhood.fork.t.sol` | `upstream/openlaunch/contracts/test/LaunchFactory.gitlawbRobinhood.fork.t.sol` |
+| `contracts/test/fork/LaunchFactory.stock.fork.t.sol` | `upstream/openlaunch/contracts/test/LaunchFactory.stock.fork.t.sol` |
+| `contracts/test/security/LaunchLocker.rug.fork.t.sol` | `upstream/openlaunch/contracts/test/LaunchLocker.rug.fork.t.sol` |
+| `contracts/test/security/LaunchLocker.rug.robinhood.fork.t.sol` | `upstream/openlaunch/contracts/test/LaunchLocker.rug.robinhood.fork.t.sol` |
+
+Contract source files were not edited. Tests keep original `src/LaunchFactory.sol` import strings; Foundry remaps those paths to `src/core/`. Uniswap / OZ / Permit2 / Solmate / forge-std are **not** copied into `contracts/src`; remappings point at `upstream/openlaunch/contracts/lib`.
+
 ### Files modified in Phase 1
 
 - **None** of the OpenLaunch source of truth.

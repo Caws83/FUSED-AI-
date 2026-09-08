@@ -17,7 +17,7 @@ contract DexAvailabilityTest is Test {
         assertFalse(v4.available());
         assertFalse(v2.implemented());
         assertFalse(v3.implemented());
-        assertFalse(v4.implemented());
+        assertTrue(v4.implemented());
     }
 
     function test_registryStartsEmpty() public {

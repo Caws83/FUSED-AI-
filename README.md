@@ -1,25 +1,25 @@
 # Fused AI
 
-**Launch a token with just 1 click from a tweet.**
+**Launch a token from a post.** One post. One click. One token.
 
 Fused AI is a social-first EVM launchpad. A public post becomes structured launch
 input, a human reviews it, and a wallet — never an AI process — signs the on-chain
 transaction.
 
-This repository is in **Phase 1: audit + foundation**. It is not a reskin of
-OpenLaunch and it does not ship mock launches, fake prices, or fake social feeds.
+This repository is in **Phase 2: OpenLaunch core in-tree + local UI shell**.
+It does not ship mock launches, fake prices, or fake social feeds.
 
 ## Status of this checkout
 
-| Subsystem | Phase 1 state |
+| Subsystem | Phase 2 state |
 |-----------|----------------|
-| OpenLaunch (reference) | Vendored at `upstream/openlaunch` (MIT, commit pinned in `docs/UPSTREAM_AUDIT.md`) |
-| Quiver contracts (reference) | Vendored at `upstream/quiver-contracts` (SPDX MIT claimed; no top-level LICENSE) |
-| Fused AI packages | Real TypeScript interfaces, validation, availability states, tests |
-| Launch contracts | **Not deployed.** Do not use OpenLaunch live addresses as Fused AI production |
-| Social / AI | Return `NOT_CONFIGURED` / `PROVIDER_UNAVAILABLE` without credentials or a live client |
-| DEX V2 / V3 | Not implemented; UI must not advertise them |
-| DEX V4 | Implemented upstream in OpenLaunch; Fused AI adapter reports not deployed |
+| OpenLaunch core | Copied unmodified into `contracts/src/core/` (MIT, see `NOTICE`) |
+| Quiver contracts (reference) | Vendored at `upstream/quiver-contracts` (no top-level LICENSE; not copied) |
+| Fused AI packages | Types, validation, availability, UI primitives |
+| Launch contracts | **Implemented, not deployed.** Do not use OpenLaunch live addresses |
+| Social / AI | Return `NOT_CONFIGURED` / `PROVIDER_UNAVAILABLE` without a live client |
+| DEX V2 / V3 | Planned; UI must not advertise them as live |
+| DEX V4 | `implemented = true`, `available = false` until Fused AI addresses exist |
 
 ## Product flow (target)
 
@@ -38,22 +38,26 @@ git clone --recurse-submodules <your-fused-ai-remote>
 cd fused-ai
 npm install
 cp .env.example .env
-npm test
+npm run dev
 ```
 
-OpenLaunch unit tests (isolated, unmodified):
+Local UI: http://localhost:3000
 
 ```bash
-cd upstream/openlaunch/contracts
-forge test --match-path test/LaunchFactory.t.sol
+npm test
+npm run typecheck
+npm run build
 ```
 
-Fused AI contract interfaces:
+Contracts:
 
 ```bash
 cd contracts
-forge test --match-path test/unit/DexAvailability.t.sol
+forge build
+forge test --match-path "test/unit/*.t.sol"
 ```
+
+Fork / rug tests need `FORK_TESTS=true` and a real RPC. See `contracts/test/FORK_TESTS.md`.
 
 ## Documentation
 
@@ -66,7 +70,7 @@ forge test --match-path test/unit/DexAvailability.t.sol
 | [docs/SOCIAL_INGESTION.md](docs/SOCIAL_INGESTION.md) | Tracked accounts, trending, no mocks |
 | [docs/TOKENIZED_STOCKS.md](docs/TOKENIZED_STOCKS.md) | Allowlisted assets, not tickers |
 | [docs/SECURITY.md](docs/SECURITY.md) | Keys, untrusted posts, oracles |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | Phase 2+ |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Phase 3+ |
 
 ## License
 

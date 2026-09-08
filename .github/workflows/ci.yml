@@ -40,22 +40,17 @@ jobs:
       - run: npm run build --workspace=@fused-ai/web
 
   contracts:
-    name: contracts · fused interfaces + OpenLaunch unit tests
+    name: contracts · OpenLaunch core unit tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: foundry-rs/foundry-toolchain@v1
-      - name: Link forge-std from OpenLaunch (do not fork the lib)
+      - name: Build
         working-directory: contracts
-        run: |
-          mkdir -p lib
-          ln -sfn ../../upstream/openlaunch/contracts/lib/forge-std lib/forge-std
-      - name: Fused AI interface tests
+        run: forge build
+      - name: Unit tests
         working-directory: contracts
-        run: forge test --match-path test/unit/DexAvailability.t.sol -vv
-      - name: OpenLaunch unit tests (unmodified)
-        working-directory: upstream/openlaunch/contracts
-        run: forge test --match-path test/LaunchFactory.t.sol -vv
-      # live-fork suites need RPC and run locally before a release; do not skip them to go green
+        run: forge test --match-path "test/unit/*.t.sol" -vv
+      # live-fork / rug suites need RPC (`FORK_TESTS=true`); do not delete them to go green

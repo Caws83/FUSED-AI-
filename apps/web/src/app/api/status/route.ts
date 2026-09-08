@@ -6,8 +6,9 @@ export const dynamic = "force-dynamic";
 
 export function GET() {
   const env = loadEnv();
+  const status = systemStatus(env);
   return NextResponse.json({
-    status: systemStatus(env),
+    status,
     dex: listDexAdapters(env).map((a) => a.info()),
   });
 }

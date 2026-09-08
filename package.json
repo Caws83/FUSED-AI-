@@ -10,6 +10,9 @@
     "services/*"
   ],
   "scripts": {
+    "dev": "npm run dev --workspace=@fused-ai/web",
+    "build": "npm run build --workspace=@fused-ai/web",
+    "start": "npm run start --workspace=@fused-ai/web",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",

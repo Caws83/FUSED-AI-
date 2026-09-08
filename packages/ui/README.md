@@ -1,7 +1,9 @@
 # @fused-ai/ui
 
-Intentionally empty in Phase 1.
+Production primitives for the Fused AI launchpad shell:
 
-OpenLaunch's production UI lives unmodified at `upstream/openlaunch/app`.
-Fused AI will not reskin it. The web app in `apps/web` is an operations/status
-surface until launch contracts, social ingestion, and AI generation are real.
+Button, Card, Badge, StatusBadge, Navigation, SectionHeader, EmptyState,
+PostCard, LaunchCard, RewardAssetCard, WalletButton.
+
+Production routes must not pass mock tweets, launches, or balances into these
+components. EmptyState is the correct path when a provider is missing.

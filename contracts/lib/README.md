@@ -1,15 +1,10 @@
 # contracts/lib
 
-`forge-std` is not vendored here. Link it from unmodified OpenLaunch:
+Forge dependencies are **not vendored** here. `remappings.txt` (no comments —
+Foundry rejects `#` lines) points at unmodified OpenLaunch submodules:
 
-Windows:
+`../upstream/openlaunch/contracts/lib/{forge-std,v4-periphery}`
 
-```
-mklink /J lib\forge-std ..\upstream\openlaunch\contracts\lib\forge-std
-```
+`v4-core`, Permit2, Solmate, and OpenZeppelin are nested under `v4-periphery`.
 
-Unix / CI:
-
-```
-ln -sfn ../../upstream/openlaunch/contracts/lib/forge-std lib/forge-std
-```
+Do not copy those trees into `contracts/src`.

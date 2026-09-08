@@ -1,33 +1,29 @@
 # Roadmap
 
-## Phase 1 (this checkout) — DONE when the foundation report is accepted
+## Phase 1 — DONE
 
 - Audit OpenLaunch + Quiver
 - Isolate upstream
 - Packages, env, availability states, docs, CI stubs
 - OpenLaunch unit tests still runnable in place
-- **Stop**
 
-## Phase 2 — Port OpenLaunch launch path without reskinning
+## Phase 2 (this checkout) — DONE when the local review is accepted
 
-Recommended next task (exact):
+- Copy unmodified OpenLaunch `LaunchFactory` / `LaunchLocker` / `LaunchToken` into `contracts/src/core/`
+- Copy unit + fork + rug tests; unit tests pass in `contracts/`
+- V4 adapter `implemented = true`, `available = false` until Fused AI addresses exist
+- Production frontend shell in `apps/web` with honest empty states
+- **Stop. Do not start Phase 3 in the same pass.**
 
-1. Copy OpenLaunch `LaunchFactory`, `LaunchLocker`, `LaunchToken` **unmodified**
-   into `contracts/src/core/` with MIT headers and NOTICE updates.
-2. Copy their Foundry tests (unit + keep fork/rug tests behind `FORK_TESTS`).
-3. Wire `@fused-ai/blockchain` V4 adapter `implemented() = true` only after
-   `forge test --match-path` of those unit tests passes in `contracts/`.
-4. Still leave `available() = false` until a Fused AI deployment address is set
-   in env (do not default to OpenLaunch's live factory).
+## Phase 3 — Indexer + wallet launch (recommended next)
 
-Do not start UI launch forms, AI vendor HTTP, or social polling in the same phase
-if it would slip mock data into the app.
+Exact next task:
 
-## Phase 3 — Indexer + wallet launch
-
-- Port indexer/schema (rename `bb_*` if desired, keep event semantics)
-- Wallet connect + `launch()` from a **reviewed** draft (still manual fields OK)
-- RPC fail-closed
+1. Port OpenLaunch indexer + Postgres schema into `apps/indexer` / `packages/database` (keep event semantics; rename `bb_*` if desired).
+2. Fail closed without `DATABASE_URL`, `RPC_URL`, `CHAIN_ID`, and Fused AI factory/locker addresses.
+3. Wire wagmi `launch()` from `/launch` using **reviewed manual fields** against a local Anvil or a chosen test chain — still no AI HTTP and no X polling.
+4. Only after a **Fused AI** factory/locker is deployed to that local/test chain, set `LAUNCH_FACTORY_ADDRESS` / `LAUNCH_LOCKER_ADDRESS` so the V4 adapter can become `available`.
+5. Do not default to OpenLaunch production addresses on Base / Robinhood.
 
 ## Phase 4 — Social ingestion
 

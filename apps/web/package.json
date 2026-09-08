@@ -16,9 +16,13 @@
     "@fused-ai/config": "0.1.0",
     "@fused-ai/social": "0.1.0",
     "@fused-ai/types": "0.1.0",
+    "@fused-ai/ui": "0.1.0",
+    "@tanstack/react-query": "^5.90.2",
     "next": "^16.2.9",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "viem": "^2.37.6",
+    "wagmi": "^2.16.9"
   },
   "devDependencies": {
     "@types/node": "^20",
