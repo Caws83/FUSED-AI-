@@ -4,6 +4,7 @@ import { type ReactNode, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { injected } from "wagmi/connectors";
+import { anvil } from "viem/chains";
 import { defineChain } from "viem";
 
 export type WalletRuntimeConfig = {
@@ -23,12 +24,19 @@ export function Providers({
 }) {
   const config = useMemo(() => {
     if (!wallet) return null;
-    const chain = defineChain({
-      id: wallet.chainId,
-      name: "Fused AI chain",
-      nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-      rpcUrls: { default: { http: [wallet.rpcUrl] } },
-    });
+    const chain =
+      wallet.chainId === 31337
+        ? {
+            ...anvil,
+            name: "Fused Local",
+            rpcUrls: { default: { http: [wallet.rpcUrl] }, public: { http: [wallet.rpcUrl] } },
+          }
+        : defineChain({
+            id: wallet.chainId,
+            name: "Fused AI chain",
+            nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+            rpcUrls: { default: { http: [wallet.rpcUrl] } },
+          });
     return createConfig({
       chains: [chain],
       connectors: [injected()],

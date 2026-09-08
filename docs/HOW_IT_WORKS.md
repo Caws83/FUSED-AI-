@@ -67,7 +67,7 @@ requires a signed transaction from the user’s wallet.
 
 - Social content is untrusted.
 - Tokenized assets are allowlisted by **chain id + contract address**, never by ticker alone.
-- DEX support is adapter-based. V4 core is in-tree; it is not live until Fused AI addresses are set. V2/V3 are not implemented.
+- DEX support is adapter-based. V4 core launches on local Anvil when Fused addresses are set. V2/V3 are not implemented.
 - The indexer only follows chain events. No synthetic tokens, prices, or volume.
 
 ## Public vs developer
@@ -79,6 +79,7 @@ requires a signed transaction from the user’s wallet.
 
 ## Current honesty
 
-This checkout can show the product shell and run contract unit tests locally.
-It does **not** yet fetch posts, call an AI vendor, or deploy Fused AI contracts.
-Those are later phases. See [TODO.md](../TODO.md).
+This checkout can run a **local Anvil launch**: wallet or Anvil #0 signs
+`LaunchFactory.launch`, liquidity locks in `LaunchLocker`, the indexer writes
+the `Launched` event, Explore shows the token. It does **not** fetch posts or
+call an AI vendor. See [TODO.md](../TODO.md) and [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md).

@@ -95,8 +95,8 @@ Aliases (either name works):
 
 | Phase | Fill |
 |-------|------|
-| 2.5 (now) | Template only. Local UI runs empty. |
-| 3 | Anvil `CHAIN_ID`/`RPC_URL`/`NEXT_PUBLIC_*`, then Fused factory/locker after local deploy |
+| 2.5 | Template only. Local UI runs empty. |
+| 3 (done) | Anvil `CHAIN_ID`/`RPC_URL`/`NEXT_PUBLIC_*`, Fused factory/locker after `npm run contracts:deploy:local`, local Postgres `DATABASE_URL` |
 | 4 | `SOCIAL_PROVIDER`, `X_BEARER_TOKEN`, `TRACKED_ACCOUNTS_PATH` |
 | 5 | `AI_PROVIDER`, `AI_API_KEY`, `AI_MODEL` |
 | 6 | `TOKENIZED_ASSET_REGISTRY_PATH` with verified chain+address rows |
@@ -106,6 +106,7 @@ Aliases (either name works):
 
 - **Fused factory/locker:** our Foundry deploy. Never OpenLaunch live Base/Robinhood addresses.
 - **Uniswap:** official Uniswap deployments for that chain (verify before pasting).
-- **Permit2:** canonical CREATE2 `0x000000000022D473030F116dDEE9F6B43aC78BA3` on most EVM chains — still confirm.
+- **Permit2 (local):** official Uniswap precompiled bytecode etched with `anvil_setCode` at the canonical address. Foundry `vm.etch` does not persist on Anvil.
+- **Permit2 (public chains):** canonical CREATE2 `0x000000000022D473030F116dDEE9F6B43aC78BA3` on most EVM chains — still confirm.
 - **X / AI:** vendor dashboards.
 - **Registry:** operator-maintained JSON; identity is chain + contract, not ticker.

@@ -29,7 +29,7 @@ export type {
   ValidatedLaunchDraft,
 } from "./ai.ts";
 
-export type { HexAddress, LaunchIntent, LaunchReceipt, LaunchRecipient } from "./launch.ts";
+export type { HexAddress, IndexedLaunch, LaunchIntent, LaunchReceipt, LaunchRecipient } from "./launch.ts";
 
 export type { RewardDestination, RewardRoute, TokenizedAsset } from "./assets.ts";
 

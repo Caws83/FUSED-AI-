@@ -8,13 +8,14 @@ transaction.
 
 ## Current state
 
-Phase 2.5: OpenLaunch core is in `contracts/src/core/`, the public UI is a
-product shell (no developer-console copy), branding and env strategy exist.
+Phase 3: local Anvil (31337) launch pipeline works — Uniswap v4 PoolManager /
+PositionManager / Permit2, Fused factory/locker, wallet or Anvil #0 `launch()`,
+indexer, Explore, token detail.
 
-Not yet: local Anvil deploy, X API, AI HTTP, V2/V3, testnet.
+Not yet: X API, AI HTTP, V2/V3, testnet.
 
-V4 is **implemented** in-tree and **not available** until Fused AI factory/locker
-addresses are set. V2/V3 are planned. Public pages do not advertise adapter flags.
+V4 is **implemented**. It is **available** only when Fused factory/locker
+addresses are set (local `.env.local` after deploy). V2/V3 are planned.
 
 ## Architecture
 
@@ -80,14 +81,19 @@ npm run build
 
 ## Local development
 
+Exact Anvil + deploy + wallet + launch steps: [docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md).
+
 | Command | What |
 |---------|------|
+| `npm run chain` | Anvil at http://127.0.0.1:8545 (chain 31337) |
+| `npm run db:up` | Local Postgres |
+| `npm run db:migrate` | Apply index schema |
+| `npm run contracts:deploy:local` | Uniswap v4 + Fused factory/locker |
+| `npm run indexer` | Follow `Launched` events |
 | `npm run dev` | Next.js at http://localhost:3000 |
-| `npm run build` | Production web build |
+| `npm run contracts:launch:local` | Real launch via Anvil account #0 |
+| `npm run local:reset` | Clear generated local addresses |
 | `npm run status` | CLI availability dump |
-| `apps/api` `npm start` | JSON API (port 3001) |
-
-Do not deploy Fused AI contracts until Phase 3 (local Anvil).
 
 ## Project structure
 
@@ -105,7 +111,7 @@ docs/               How it works, env, security, contracts, audit
 
 Master checklist: [TODO.md](TODO.md).
 
-Next: **Phase 3 — local Anvil deploy + real manual token launch.**
+Next: **Phase 4 — real X provider** (still no AI HTTP, no V2/V3).
 
 ## Security principles
 
@@ -121,6 +127,7 @@ Next: **Phase 3 — local Anvil deploy + real manual token launch.**
 |-----|----------|
 | [TODO.md](TODO.md) | Implementation checklist |
 | [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) | End-to-end product flow |
+| [docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md) | Anvil, deploy, wallet, launch |
 | [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md) | Every env var |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Package boundaries |
 | [docs/SECURITY.md](docs/SECURITY.md) | Keys, untrusted posts |

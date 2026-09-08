@@ -75,7 +75,7 @@ Any protocol fee or admin switch is an explicit later product decision, not a si
 | `src/dex/interfaces/IDexAdapter.sol` | Interface |
 | `src/dex/v2/V2Adapter.sol` | `implemented() == false`, `available() == false` |
 | `src/dex/v3/V3Adapter.sol` | `implemented() == false`, `available() == false` |
-| `src/dex/v4/V4Adapter.sol` | `implemented() == true`, `available() == false` until Fused AI deploys |
+| `src/dex/v4/V4Adapter.sol` | `implemented() == true`, `available()` when Fused factory/locker env is set |
 | `src/interfaces/ITokenizedAssetRegistry.sol` | Interface |
 | `src/interfaces/IRewardSink.sol` | Interface only |
 | `src/registry/TokenizedAssetRegistry.sol` | Empty allowlist |
@@ -83,9 +83,24 @@ Any protocol fee or admin switch is an explicit later product decision, not a si
 UI rule: never label Uniswap V2/V3/V4 as live unless the corresponding adapter
 returns `available()` and tests pass against the deployed bytecode.
 
-The TypeScript V4 adapter (`packages/blockchain`) reports `implemented: true`
-and `available: false` until `LAUNCH_FACTORY_ADDRESS` and `LAUNCH_LOCKER_ADDRESS`
-are set. V2/V3 stay unimplemented.
+## Local Anvil (Phase 3)
+
+Scripts: `contracts/script/local/`.
+
+Required Uniswap v4 for `launch()`: **PoolManager**, **PositionManager**, **Permit2**.
+Not required for launch: UniversalRouter, StateView, Quoter, hooks.
+
+`LaunchLocker` is constructed inside `LaunchFactory`. Do not paste OpenLaunch
+production addresses.
+
+Permit2 is the official Uniswap precompiled bytecode. On Anvil it must be
+written with `anvil_setCode` (`scripts/etch-permit2.mjs`); `vm.etch` in the
+Foundry script does not persist.
+
+Addresses after `npm run contracts:deploy:local` live in gitignored
+`deployments/local-31337.json` and `.env.local`.
+
+See [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md).
 
 ## Uniswap addresses
 

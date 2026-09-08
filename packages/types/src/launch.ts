@@ -26,3 +26,24 @@ export type LaunchReceipt = {
   launcher: HexAddress;
   blockNumber: bigint;
 };
+
+export type IndexedLaunch = {
+  chainId: number;
+  token: HexAddress;
+  name: string;
+  symbol: string;
+  launcher: HexAddress;
+  quote: HexAddress;
+  poolId: `0x${string}` | null;
+  tokenId: string;
+  startTick: number | null;
+  lpFee: number | null;
+  supply: string | null;
+  metadataURI: string;
+  txHash: `0x${string}`;
+  blockNumber: bigint;
+  createdAt: string | null;
+  factory: HexAddress | null;
+  locker: HexAddress | null;
+  dexVersion: string;
+};

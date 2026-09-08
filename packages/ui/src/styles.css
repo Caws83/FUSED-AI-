@@ -216,16 +216,48 @@ textarea {
 }
 
 .fused-logo-mark {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   display: block;
+  flex: none;
+}
+
+.fused-hero .fused-logo-mark {
+  width: 64px;
+  height: 64px;
 }
 
 .fused-brand-word {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.32em;
   font-family: var(--fused-display);
   font-weight: 800;
   letter-spacing: -0.05em;
   font-size: 20px;
+  line-height: 1;
+}
+
+.fused-brand-fused {
+  background: linear-gradient(90deg, #8a8a8a 0%, #e8892a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.fused-brand-ai {
+  color: #ff6a00;
+}
+
+.fused-brand[data-tone="light"] .fused-brand-fused {
+  background: linear-gradient(90deg, #ffffff 0%, #c8f54a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.fused-brand[data-tone="light"] .fused-brand-ai {
+  color: #c8f54a;
 }
 
 .fused-sr-only {
@@ -385,6 +417,48 @@ textarea {
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 12px;
+}
+
+.fused-input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--fused-line);
+  padding: 10px 12px;
+  background: var(--fused-white);
+  color: var(--fused-ink);
+}
+
+.fused-form-error {
+  margin: 0;
+  color: var(--fused-danger);
+  font-size: 14px;
+}
+
+.fused-review {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+
+.fused-review div {
+  display: grid;
+  gap: 2px;
+}
+
+.fused-review dt {
+  color: var(--fused-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fused-review dd {
+  margin: 0;
+  font-weight: 650;
 }
 
 .fused-pipeline {

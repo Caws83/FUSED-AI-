@@ -12,6 +12,7 @@ const PUBLIC_PAGES = [
   "src/app/launch/page.tsx",
   "src/app/rewards/page.tsx",
   "src/app/explore/page.tsx",
+  "src/app/token/[address]/page.tsx",
   "src/components/QuickFuse.tsx",
   "src/components/ConnectWallet.tsx",
   "src/components/SiteHeader.tsx",

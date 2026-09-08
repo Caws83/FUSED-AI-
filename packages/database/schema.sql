@@ -1,7 +1,7 @@
--- Fused AI index schema (Phase 1).
+-- Fused AI index schema.
 -- Applied only when DATABASE_URL is set. Empty tables; no seed rows.
 -- Amounts are wei as numeric(78,0). Addresses lowercase hex.
--- Source of truth is the chain. These tables are an index plus social/AI metadata.
+-- Source of truth is the chain.
 
 CREATE TABLE IF NOT EXISTS fused_migrations (
   id            bigserial PRIMARY KEY,
@@ -48,11 +48,22 @@ CREATE TABLE IF NOT EXISTS fused_launch_drafts (
 CREATE TABLE IF NOT EXISTS fused_launches (
   chain_id           integer NOT NULL,
   token              text NOT NULL,
+  name               text NOT NULL DEFAULT '',
+  symbol             text NOT NULL DEFAULT '',
   launcher           text NOT NULL,
   quote              text NOT NULL,
   pool_id            text,
+  token_id           numeric(78,0),
+  start_tick         integer,
+  lp_fee             integer,
+  supply             numeric(78,0),
+  metadata_uri       text NOT NULL DEFAULT '',
   tx_hash            text NOT NULL,
   block_number       bigint NOT NULL,
+  block_time         timestamptz,
+  factory            text,
+  locker             text,
+  dex_version        text NOT NULL DEFAULT 'v4',
   source_post_url    text,
   PRIMARY KEY (chain_id, token)
 );

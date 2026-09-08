@@ -55,3 +55,15 @@ test("invalid values are listed without inventing working config", () => {
   assert.equal(cfg.chainId, null);
   assert.equal(cfg.launchFactory, "not-an-address");
 });
+
+test("indexer is OK when database, rpc, and factory are set", () => {
+  const status = systemStatus(
+    loadEnv({
+      DATABASE_URL: "postgres://fused:fused@127.0.0.1:5432/fused_ai",
+      RPC_URL: "http://127.0.0.1:8545",
+      CHAIN_ID: "31337",
+      LAUNCH_FACTORY_ADDRESS: "0x0000000000000000000000000000000000000001",
+    }),
+  );
+  assert.equal(status.indexer.status, "OK");
+});

@@ -1,10 +1,11 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { loadEnv, systemStatus } from "@fused-ai/config";
+import { loadEnv, loadRepoEnv, systemStatus } from "@fused-ai/config";
 import { listDexAdapters } from "@fused-ai/blockchain";
 import { createSocialProvider } from "@fused-ai/social";
 import { createAIProvider } from "@fused-ai/ai";
 import { createDatabaseClient } from "@fused-ai/database";
 
+loadRepoEnv();
 const env = loadEnv();
 
 async function handle(req: IncomingMessage, res: ServerResponse) {

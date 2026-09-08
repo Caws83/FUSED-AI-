@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { DM_Sans, Syne } from "next/font/google";
-import { loadPublicEnv, publicWalletAvailability } from "@fused-ai/config";
+import { loadPublicEnv, publicWalletAvailability } from "@fused-ai/config/public";
 import { SiteHeader } from "../components/SiteHeader.tsx";
 import { Providers } from "../components/Providers.tsx";
 import "@fused-ai/ui/styles.css";
@@ -40,7 +40,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body className={`${dmSans.className} ${syne.variable} fused-shell`}>
         <Providers wallet={wallet}>
-          <SiteHeader walletConfigured={walletConfigured} />
+          <SiteHeader walletConfigured={walletConfigured} expectedChainId={pub.chainId} />
           {children}
           <footer className="fused-footer">
             <div className="fused-wrap" style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>

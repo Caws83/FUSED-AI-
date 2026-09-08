@@ -5,7 +5,9 @@ export type LaunchCardProps = {
   name: string;
   symbol: string;
   creator: string;
-  market: string;
+  token?: string;
+  txHash?: string;
+  market?: string;
   dexVersion: string;
   launchState: string;
   createdAt: string;
@@ -16,6 +18,8 @@ export function LaunchCard({
   name,
   symbol,
   creator,
+  token,
+  txHash,
   market,
   dexVersion,
   launchState,
@@ -42,13 +46,20 @@ export function LaunchCard({
           <div style={{ color: "var(--fused-muted)", fontSize: 13 }}>by {creator}</div>
         </div>
       </div>
+      {token ? (
+        <div style={{ color: "var(--fused-muted)", fontSize: 13, wordBreak: "break-all" }}>{token}</div>
+      ) : null}
       <div className="fused-launch-meta">
-        <span>{market}</span>
+        {market ? <span>{market}</span> : <span>{launchState}</span>}
         <Badge tone="blue">{dexVersion}</Badge>
       </div>
       <div className="fused-launch-meta">
-        <span>{launchState}</span>
         <time dateTime={createdAt}>{createdAt}</time>
+        {txHash ? (
+          <span style={{ wordBreak: "break-all" }}>
+            {txHash.slice(0, 10)}…{txHash.slice(-6)}
+          </span>
+        ) : null}
       </div>
     </article>
   );

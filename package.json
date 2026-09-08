@@ -15,10 +15,19 @@
     "start": "npm run start --workspace=@fused-ai/web",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present && node --test scripts/local-deploy.test.mjs",
     "test:packages": "npm run test --workspace=@fused-ai/types --workspace=@fused-ai/shared --workspace=@fused-ai/validation --workspace=@fused-ai/config --workspace=@fused-ai/social --workspace=@fused-ai/ai --workspace=@fused-ai/blockchain --workspace=@fused-ai/database",
     "build:web": "npm run build --workspace=@fused-ai/web",
-    "status": "node --experimental-strip-types --no-warnings apps/api/src/cli.ts"
+    "status": "node --experimental-strip-types --no-warnings apps/api/src/cli.ts",
+    "chain": "node scripts/chain.mjs",
+    "db:up": "docker compose up -d postgres",
+    "db:migrate": "node --experimental-strip-types --no-warnings scripts/migrate.mjs",
+    "contracts:deploy:local": "node scripts/deploy-local.mjs",
+    "contracts:launch:local": "node scripts/launch-local.mjs",
+    "contracts:e2e:local": "node --experimental-strip-types --no-warnings scripts/e2e-local-launch.mjs",
+    "indexer": "npm run start --workspace=@fused-ai/indexer",
+    "local:reset": "node scripts/local-reset.mjs",
+    "dev:local": "npm run dev"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

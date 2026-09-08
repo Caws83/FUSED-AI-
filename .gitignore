@@ -50,3 +50,6 @@ __pycache__/
 # Test artifacts
 tmp/
 .turbo/
+
+deployments/local-*.json
+!deployments/*.example.json

@@ -1,7 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Fused AI">
+  <title>Fused AI</title>
+  <defs>
+    <linearGradient id="fav-l" x1="6" y1="6" x2="12" y2="26" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C8FF4A"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+    <linearGradient id="fav-r" x1="18" y1="6" x2="26" y2="26" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7DD3FC"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
   <rect width="32" height="32" rx="8" fill="#071422"/>
-  <path d="M6 25C10 19 12 15 16 12" fill="none" stroke="#C8F54A" stroke-width="3.2" stroke-linecap="round"/>
-  <path d="M26 25C22 19 20 15 16 12" fill="none" stroke="#1F6FFF" stroke-width="3.2" stroke-linecap="round"/>
-  <circle cx="16" cy="12" r="3.1" fill="#C8F54A"/>
-  <circle cx="16" cy="12" r="1.4" fill="#1F6FFF"/>
+  <g fill="none" stroke-linecap="round">
+    <path d="M8.4 23.2A9.2 9.2 0 0 1 16 7.4" stroke="url(#fav-l)" stroke-width="2.4"/>
+    <path d="M23.6 23.2A9.2 9.2 0 0 0 16 7.4" stroke="url(#fav-r)" stroke-width="2.4"/>
+  </g>
+  <path fill="#22C55E" d="M10.6 25.2 14.2 20.4 16 23l1.9-2.6 3.5 4.8c-2 .9-7.2.9-10.8 0Z"/>
+  <ellipse cx="16" cy="16.4" rx="3.4" ry="2.8" fill="#7C3AED"/>
+  <g transform="translate(19.4 12) rotate(30)">
+    <path fill="#22C55E" d="M-1.4 1.2 -3.4 3.6 -0.8 2.2z"/>
+    <path fill="#16A34A" d="M1.4 1.2 3.4 3.6 0.8 2.2z"/>
+    <path fill="#fff" d="M0-3.8c1 0 1.5 1.1 1.5 2.3v2.8c0 .7-.7 1.2-1.5 1.2s-1.5-.5-1.5-1.2V-1.5c0-1.2.5-2.3 1.5-2.3z"/>
+    <circle cx="0" cy="-1.1" r=".72" fill="#38BDF8"/>
+  </g>
 </svg>

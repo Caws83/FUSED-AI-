@@ -1,11 +1,108 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" role="img" aria-label="FUSED AI">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 400" role="img" aria-label="FUSED AI">
   <title>FUSED AI</title>
-  <g transform="translate(0,0)">
-    <path d="M10 50C18 38 22 30 32 24" fill="none" stroke="#C8F54A" stroke-width="7" stroke-linecap="round"/>
-    <path d="M54 50C46 38 42 30 32 24" fill="none" stroke="#1F6FFF" stroke-width="7" stroke-linecap="round"/>
-    <path d="M32 6L34.4 16.2 45 14.2 36.6 22.2 43 32 32 26.4 21 32 27.4 22.2 19 14.2 29.6 16.2Z" fill="#C8F54A"/>
-    <circle cx="32" cy="24" r="5.5" fill="#071422"/>
-    <circle cx="32" cy="24" r="2.6" fill="#1F6FFF"/>
+  <defs>
+    <linearGradient id="logo-ring-l" x1="40" y1="20" x2="120" y2="220" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C8FF4A"/>
+      <stop offset="0.55" stop-color="#34D399"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+    <linearGradient id="logo-ring-r" x1="140" y1="20" x2="220" y2="220" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7DD3FC"/>
+      <stop offset="0.5" stop-color="#38BDF8"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="logo-brain" x1="90" y1="100" x2="170" y2="170" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#93C5FD"/>
+      <stop offset="0.45" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#6D28D9"/>
+    </linearGradient>
+    <linearGradient id="logo-base" x1="70" y1="180" x2="190" y2="230" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22C55E"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="logo-fused" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4A4A4A"/>
+      <stop offset="0.45" stop-color="#B8864A"/>
+      <stop offset="1" stop-color="#FF6A00"/>
+    </linearGradient>
+    <filter id="logo-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3.2" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="logo-soft">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.2" flood-color="#071422" flood-opacity="0.18"/>
+    </filter>
+    <filter id="logo-type">
+      <feDropShadow dx="0" dy="3" stdDeviation="2" flood-color="#071422" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <g transform="translate(36 72)">
+    <g fill="none" stroke-linecap="round">
+      <path d="M57.3 194.7A100 100 0 0 1 128 24" stroke="url(#logo-ring-l)" stroke-width="20"/>
+      <path d="M198.7 194.7A100 100 0 0 0 128 24" stroke="url(#logo-ring-r)" stroke-width="20"/>
+    </g>
+    <path fill="url(#logo-base)" d="M68 220 104 174l24 26 24-30 36 50c-24 12-88 12-120 0Z"/>
+    <g filter="url(#logo-glow)">
+      <path fill="url(#logo-brain)" d="M128 104c-22-12-48-4-52 22-4 24 12 44 36 48 6 2 10-4 12-10 2 6 6 12 12 10 24-4 40-24 36-48-4-26-30-34-44-22z"/>
+      <g fill="none" stroke="#E0E7FF" stroke-width="1.7" stroke-linecap="round" opacity="0.9">
+        <path d="M96 126 112 118 128 128 144 116 160 126"/>
+        <path d="M92 140 110 136 128 148 146 136 164 142"/>
+        <path d="M108 156 128 148 148 156"/>
+        <path d="M112 118 110 136 108 156"/>
+        <path d="M144 116 146 136 148 156"/>
+        <path d="M128 112 128 128 128 148"/>
+      </g>
+      <g fill="#fff">
+        <circle cx="96" cy="126" r="3.1"/>
+        <circle cx="112" cy="118" r="3.4"/>
+        <circle cx="144" cy="116" r="3.5"/>
+        <circle cx="160" cy="126" r="3.2"/>
+        <circle cx="92" cy="140" r="2.8"/>
+        <circle cx="110" cy="136" r="3"/>
+        <circle cx="128" cy="128" r="4.2" fill="#EEF2FF"/>
+        <circle cx="146" cy="136" r="3"/>
+        <circle cx="164" cy="142" r="2.9"/>
+        <circle cx="108" cy="156" r="2.8"/>
+        <circle cx="128" cy="148" r="3.2"/>
+        <circle cx="148" cy="156" r="2.8"/>
+        <circle cx="128" cy="112" r="3"/>
+      </g>
+    </g>
+    <g fill="none" stroke-linecap="round">
+      <path d="M90 124H48" stroke="#4ADE80" stroke-width="3.2"/>
+      <path d="M94 140H56" stroke="#22D3EE" stroke-width="2.6"/>
+      <path d="M98 110H60" stroke="#86EFAC" stroke-width="2.4"/>
+      <path d="M166 124h42" stroke="#38BDF8" stroke-width="3.2"/>
+      <path d="M164 142h40" stroke="#60A5FA" stroke-width="2.6"/>
+      <path d="M162 110h40" stroke="#7DD3FC" stroke-width="2.4"/>
+      <circle cx="44" cy="124" r="4" fill="#4ADE80" stroke="none"/>
+      <circle cx="52" cy="140" r="3.2" fill="#22D3EE" stroke="none"/>
+      <circle cx="56" cy="110" r="3" fill="#86EFAC" stroke="none"/>
+      <circle cx="212" cy="124" r="4" fill="#38BDF8" stroke="none"/>
+      <circle cx="208" cy="142" r="3.2" fill="#60A5FA" stroke="none"/>
+      <circle cx="206" cy="110" r="3" fill="#7DD3FC" stroke="none"/>
+    </g>
+    <path d="M150 102C140 124 134 146 136 168" fill="none" stroke="#F8FAFC" stroke-width="9" stroke-linecap="round" opacity="0.9"/>
+    <path d="M150 102C140 124 134 146 136 168" fill="none" stroke="#BFDBFE" stroke-width="3.2" stroke-linecap="round" opacity="0.5"/>
+    <g transform="translate(166 82) rotate(30)" filter="url(#logo-soft)">
+      <path fill="#22C55E" d="M-14 12 -32 34 -8 22z"/>
+      <path fill="#16A34A" d="M14 12 32 34 8 22z"/>
+      <path fill="#fff" d="M0-38c10 0 15 11 15 24v30c0 8-7 13-15 13s-15-5-15-13V-14c0-13 5-24 15-24z"/>
+      <path fill="#4ADE80" d="M0-42c8.5 0 13 9 13 18H-13c0-9 4.5-18 13-18z"/>
+      <circle cx="0" cy="-10" r="7.4" fill="#38BDF8"/>
+      <circle cx="-1.6" cy="-12.2" r="2.5" fill="#fff" opacity="0.75"/>
+    </g>
   </g>
-  <text x="74" y="42" font-family="Syne, ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="800" letter-spacing="-1.2" fill="#071422">FUSED AI</text>
+
+  <g font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+    <text x="318" y="208" font-size="92" font-weight="800" letter-spacing="-2.5" filter="url(#logo-type)">
+      <tspan fill="url(#logo-fused)">FUSED</tspan>
+      <tspan dx="16" fill="#FF6A00">AI</tspan>
+    </text>
+    <text x="618" y="258" text-anchor="middle" font-size="20" font-weight="500" fill="#C4A07A" letter-spacing="0.04em">— 1 click launch with a single tweet —</text>
+  </g>
 </svg>

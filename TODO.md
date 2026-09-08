@@ -30,15 +30,16 @@ Checkboxes reflect **this checkout**, not wishes. Do not mark future work comple
 
 ## PHASE 3 — LOCAL CHAIN
 
-- [ ] Start Anvil
-- [ ] Deploy Fused contracts locally
-- [ ] Configure local addresses (`LAUNCH_*`, Uniswap local or forked)
-- [ ] Connect wallet (public chain + public RPC)
-- [ ] Manual launch form bound to `LaunchFactory.launch`
-- [ ] Simulate transaction
-- [ ] Sign transaction
-- [ ] Verify locked liquidity
-- [ ] Index launch (fail closed without DB + RPC + factory)
+- [x] Start Anvil
+- [x] Deploy Fused contracts locally
+- [x] Configure local addresses (`LAUNCH_*`, Uniswap local)
+- [x] Connect wallet (public chain + public RPC)
+- [x] Manual launch form bound to `LaunchFactory.launch`
+- [x] Simulate transaction
+- [x] Sign transaction
+- [x] Verify locked liquidity
+- [x] Index launch (fail closed without DB + RPC + factory)
+- [x] Explore + token detail from real events
 
 ## PHASE 4 — SOCIAL
 
@@ -71,7 +72,7 @@ Checkboxes reflect **this checkout**, not wishes. Do not mark future work comple
 
 ## PHASE 7 — DEX
 
-- [x] V4 baseline (in-tree, not deployed)
+- [x] V4 baseline (in-tree; local Anvil deploy in Phase 3)
 - [ ] V3 adapter
 - [ ] V2 adapter
 - [ ] Integration tests against deployed bytecode

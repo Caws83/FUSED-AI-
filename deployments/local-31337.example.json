@@ -1,0 +1,12 @@
+{
+  "chainId": 31337,
+  "rpcUrl": "http://127.0.0.1:8545",
+  "contracts": {
+    "launchFactory": "",
+    "launchLocker": "",
+    "poolManager": "",
+    "positionManager": "",
+    "universalRouter": null,
+    "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+  }
+}

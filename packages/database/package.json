@@ -12,6 +12,7 @@
   "dependencies": {
     "@fused-ai/config": "0.1.0",
     "@fused-ai/shared": "0.1.0",
-    "@fused-ai/types": "0.1.0"
+    "@fused-ai/types": "0.1.0",
+    "postgres": "^3.4.7"
   }
 }

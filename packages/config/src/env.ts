@@ -259,10 +259,7 @@ export function indexerAvailability(cfg: FusedEnv): Availability {
   if (missing.length) {
     return notConfigured(missing, "Launch indexer is not configured.");
   }
-  return {
-    status: AVAILABILITY_STATUS.PROVIDER_UNAVAILABLE,
-    reason: "Indexer event loop is not implemented. Refusing to list synthetic launches.",
-  };
+  return { status: AVAILABILITY_STATUS.OK };
 }
 
 export function tokenizedAssetRegistryAvailability(cfg: FusedEnv): Availability {

@@ -2,10 +2,7 @@
 
 The living checklist is [TODO.md](../TODO.md). This file is the short narrative.
 
-**Now:** Phase 2.5 complete (public UI, brand, env, docs).
+**Now:** Phase 3 local Anvil launch pipeline is in-tree.
 
-**Next (Phase 3):** Local Anvil, deploy Fused factory/locker, connect wallet,
-manual `launch()`, confirm locked LP, start indexer against that chain. Still
-no X API, no AI HTTP, no OpenLaunch production addresses.
-
-Do not start Phase 3 in the same pass as product-cleanup work.
+**Next (Phase 4):** Real X provider, tracked accounts, trending, Fuse on live posts.
+Still no AI HTTP, no V2/V3, no testnet.

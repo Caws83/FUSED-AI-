@@ -1,1 +1,1 @@
-export { createDatabaseClient, type DatabaseClient } from "./client.ts";
+export { createDatabaseClient, type DatabaseClient, type LaunchInsert } from "./client.ts";

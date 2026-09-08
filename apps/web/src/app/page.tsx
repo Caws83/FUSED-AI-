@@ -1,6 +1,7 @@
-import { Badge, Card, EmptyState, FusedLogo, SectionHeader } from "@fused-ai/ui";
+import { Badge, Card, EmptyState, FusedLogo, LaunchCard, SectionHeader } from "@fused-ai/ui";
 import { QuickFuse } from "../components/QuickFuse.tsx";
 import { loadRuntime } from "../lib/runtime.ts";
+import { loadIndexedLaunches } from "../lib/launches.ts";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ const REWARD_CATEGORIES = ["Creator Rewards", "Holder Rewards", "Referral Reward
 export default async function HomePage() {
   const { registry } = await loadRuntime();
   const assets = registry.ok ? registry.value.filter((asset) => asset.enabled) : [];
+  const launches = await loadIndexedLaunches();
 
   return (
     <main>
@@ -115,7 +117,26 @@ export default async function HomePage() {
       <section className="fused-section">
         <div className="fused-wrap">
           <SectionHeader kicker="Explore" title="New launches" />
-          <EmptyState title="No launches yet." body="The board fills as real launches land onchain." />
+          {launches.length === 0 ? (
+            <EmptyState title="No launches yet." body="The board fills as real launches land onchain." />
+          ) : (
+            <div className="fused-grid-3">
+              {launches.map((launch) => (
+                <a key={launch.token} href={`/token/${launch.token}`} style={{ color: "inherit" }}>
+                  <LaunchCard
+                    name={launch.name || "Token"}
+                    symbol={launch.symbol || "—"}
+                    creator={`${launch.launcher.slice(0, 6)}…${launch.launcher.slice(-4)}`}
+                    token={launch.token}
+                    txHash={launch.txHash}
+                    dexVersion={launch.dexVersion.toUpperCase()}
+                    launchState="Locked liquidity"
+                    createdAt={launch.createdAt ? new Date(launch.createdAt).toLocaleString() : `block ${launch.blockNumber}`}
+                  />
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </main>

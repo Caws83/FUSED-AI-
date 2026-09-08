@@ -16,3 +16,4 @@ export {
   type FusedEnv,
   type PublicEnv,
 } from "./env.ts";
+export { findRepoRoot, loadRepoEnv } from "./load-repo-env.ts";

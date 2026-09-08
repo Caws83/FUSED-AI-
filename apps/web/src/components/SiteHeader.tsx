@@ -6,7 +6,13 @@ import { FusedLogo, Navigation } from "@fused-ai/ui";
 import { navFor } from "../lib/nav.ts";
 import { ConnectWallet } from "./ConnectWallet.tsx";
 
-export function SiteHeader({ walletConfigured }: { walletConfigured: boolean }) {
+export function SiteHeader({
+  walletConfigured,
+  expectedChainId,
+}: {
+  walletConfigured: boolean;
+  expectedChainId: number | null;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   return (
@@ -20,7 +26,7 @@ export function SiteHeader({ walletConfigured }: { walletConfigured: boolean }) 
           <button type="button" className="fused-menu-toggle" onClick={() => setOpen((v) => !v)}>
             Menu
           </button>
-          <ConnectWallet configured={walletConfigured} />
+          <ConnectWallet configured={walletConfigured} expectedChainId={expectedChainId} />
         </div>
       </div>
     </header>
