@@ -32,9 +32,9 @@ export function parseLaunchDraft(input: unknown): {
   }
 
   const nameRaw = str(input.name);
-  const tickerRaw = str(input.ticker);
+  const tickerRaw = str(input.ticker) ?? str(input.symbol);
   const descriptionRaw = str(input.description);
-  const imageConceptRaw = str(input.imageConcept);
+  const imageConceptRaw = str(input.imageConcept) ?? str(input.imagePrompt);
   const categoryRaw = str(input.category);
   const model = str(input.model);
   const provider = str(input.provider);
@@ -142,6 +142,9 @@ export function detectPromptInjection(text: string): string[] {
     [/you are now /i, "role_override"],
     [/<\/?system>/i, "system_tag"],
     [/\bdo not validate\b/i, "bypass_validation"],
+    [/reveal.{0,40}(api key|secret|token)/i, "reveal_secret"],
+    [/change.{0,40}contract address/i, "change_contract"],
+    [/\bsend (all )?(funds|eth|tokens)\b/i, "send_funds"],
   ];
   for (const [re, code] of patterns) {
     if (re.test(text)) hits.push(code);

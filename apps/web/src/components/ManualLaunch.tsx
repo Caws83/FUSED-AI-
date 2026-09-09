@@ -1,16 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useAccount, useChainId, usePublicClient, useSwitchChain, useWalletClient } from "wagmi";
-import { parseEventLogs } from "viem";
+import { useAccount, useChainId, useConfig, useSwitchChain } from "wagmi";
+import { parseEther, parseEventLogs } from "viem";
 import { Button, Card } from "@fused-ai/ui";
 import {
-  LAUNCH_ERROR_MESSAGES,
-  LAUNCH_FACTORY_ABI,
-  toLaunchParams,
-  validateLaunchForm,
-} from "@fused-ai/blockchain/abi";
+  FUSED_ERROR_MESSAGES,
+  FUSED_FACTORY_ABI,
+  toCreateParams,
+} from "@fused-ai/blockchain/fused";
+import { validateLaunchForm } from "@fused-ai/blockchain/abi";
 import type { SocialPost } from "@fused-ai/types";
+import { chainLabelFor, writeClientError } from "../lib/wallet.ts";
+import { resolveWriteClients } from "../lib/wallet-clients.ts";
 
 type Step = "form" | "review" | "done";
 
@@ -29,15 +31,16 @@ export function ManualLaunch({
   ready: boolean;
   sourcePost?: SocialPost | null;
 }) {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, connector } = useAccount();
   const walletChainId = useChainId();
-  const publicClient = usePublicClient();
-  const { data: walletClient } = useWalletClient();
+  const config = useConfig();
   const { switchChain } = useSwitchChain();
 
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("");
   const [description, setDescription] = useState("");
+  const [imagePrompt, setImagePrompt] = useState("");
+  const [creatorBuy, setCreatorBuy] = useState("");
   const [imageId, setImageId] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [step, setStep] = useState<Step>("form");
@@ -48,9 +51,8 @@ export function ManualLaunch({
 
   const wrongNetwork = Boolean(isConnected && chainId && walletChainId !== chainId);
   const params = useMemo(() => {
-    if (!address) return null;
-    return toLaunchParams({ name, symbol, metadataURI: description, creator: address });
-  }, [address, name, symbol, description]);
+    return toCreateParams({ name, symbol, metadataURI: description });
+  }, [name, symbol, description]);
 
   if (!ready || !factory) {
     return (
@@ -73,6 +75,59 @@ export function ManualLaunch({
     }
     setImageId(json.id);
     setImagePreview(json.url);
+  }
+
+  async function onAiDraft() {
+    setError(null);
+    if (!sourcePost) return;
+    setPending(true);
+    try {
+      const res = await fetch("/api/ai/draft", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ postId: sourcePost.postId }),
+      });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        draft?: { name: string; ticker: string; description: string; imageConcept: string };
+        error?: string;
+      };
+      if (!json.ok || !json.draft) {
+        setError(json.error || "AI draft is temporarily unavailable.");
+        return;
+      }
+      setName(json.draft.name);
+      setSymbol(json.draft.ticker);
+      setDescription(json.draft.description);
+      setImagePrompt(json.draft.imageConcept);
+    } catch {
+      setError("AI draft is temporarily unavailable.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function onAiImage() {
+    setError(null);
+    setPending(true);
+    try {
+      const res = await fetch("/api/ai/image", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name, symbol, description, imagePrompt }),
+      });
+      const json = (await res.json()) as { ok?: boolean; id?: string; url?: string; error?: string };
+      if (!json.ok || !json.id || !json.url) {
+        setError(json.error || "AI artwork is temporarily unavailable.");
+        return;
+      }
+      setImageId(json.id);
+      setImagePreview(json.url);
+    } catch {
+      setError("AI artwork is temporarily unavailable.");
+    } finally {
+      setPending(false);
+    }
   }
 
   async function onReview() {
@@ -99,18 +154,39 @@ export function ManualLaunch({
 
   async function onLaunch() {
     setError(null);
-    if (!publicClient || !walletClient || !params || !address || !factory) {
-      setError("Wallet is not ready.");
+    if (!isConnected || !address) {
+      setError(writeClientError("account"));
       return;
+    }
+    if (!factory || !chainId) {
+      setError("Launch is temporarily unavailable.");
+      return;
+    }
+    if (walletChainId !== chainId) {
+      try {
+        await switchChain({ chainId });
+      } catch {
+        setError(writeClientError("chain"));
+        return;
+      }
     }
     setPending(true);
     try {
+      const resolved = await resolveWriteClients(config, { chainId, account: address, connector });
+      if (!resolved.ok) {
+        setError(writeClientError(resolved.reason));
+        return;
+      }
+      const { publicClient, walletClient } = resolved;
+      const launchParams = toCreateParams({ name, symbol, metadataURI: description });
+      const value = creatorBuy.trim() ? parseEther(creatorBuy) : 0n;
       const { request } = await publicClient.simulateContract({
         address: factory,
-        abi: LAUNCH_FACTORY_ABI,
-        functionName: "launch",
-        args: [params],
+        abi: FUSED_FACTORY_ABI,
+        functionName: "create",
+        args: [launchParams],
         account: address,
+        value,
       });
       const hash = await walletClient.writeContract(request);
       setTxHash(hash);
@@ -119,12 +195,12 @@ export function ManualLaunch({
         setError("The transaction did not succeed.");
         return;
       }
-      const launched = parseEventLogs({
-        abi: LAUNCH_FACTORY_ABI,
+      const created = parseEventLogs({
+        abi: FUSED_FACTORY_ABI,
         logs: receipt.logs,
-        eventName: "Launched",
+        eventName: "Created",
       })[0];
-      const launchedToken = launched?.args.token;
+      const launchedToken = created?.args.token;
       if (launchedToken) setToken(launchedToken);
       await fetch(`/api/launch/sync?tx=${hash}`, {
         method: "POST",
@@ -148,10 +224,10 @@ export function ManualLaunch({
       <Card>
         <p className="fused-kicker">Live</p>
         <h2 className="fused-h2" style={{ fontSize: 28 }}>
-          {name} launched
+          {name} is on the curve
         </h2>
         <p style={{ color: "var(--fused-muted)" }}>
-          {symbol.toUpperCase()} is onchain. Liquidity is locked.
+          {symbol.toUpperCase()} is onchain. Buy and sell on the bonding curve until it graduates.
         </p>
         <p>
           <a href={`/token/${token}`}>Open token</a>
@@ -189,7 +265,7 @@ export function ManualLaunch({
           <div>
             <dt>Chain</dt>
             <dd>
-              {chainName} ({chainId})
+              {chainLabelFor(walletChainId) ?? chainName} ({walletChainId || chainId})
             </dd>
           </div>
           <div>
@@ -207,8 +283,16 @@ export function ManualLaunch({
             <dd>ETH</dd>
           </div>
           <div>
-            <dt>LP fee</dt>
-            <dd>1%</dd>
+            <dt>Lifecycle</dt>
+            <dd>Bonding curve, then Uniswap at graduation</dd>
+          </div>
+          <div>
+            <dt>Creator buy</dt>
+            <dd>
+              {creatorBuy.trim()
+                ? `${creatorBuy} ETH through the same bonding curve`
+                : "0 ETH — no creator buy. The curve starts with virtual reserves only."}
+            </dd>
           </div>
           {sourcePost ? (
             <div>
@@ -218,7 +302,7 @@ export function ManualLaunch({
           ) : null}
           <div>
             <dt>Action</dt>
-            <dd>LaunchFactory.launch</dd>
+            <dd>FusedFactory.create</dd>
           </div>
         </dl>
         {error ? <p className="fused-form-error">{error}</p> : null}
@@ -238,9 +322,14 @@ export function ManualLaunch({
     <Card>
       {sourcePost ? <SourcePost post={sourcePost} /> : null}
       <p style={{ marginTop: 0, color: "var(--fused-muted)" }}>
-        Set the name and ticker. You review everything before your wallet signs.
+        Set the name and ticker. You review everything before your wallet signs. AI never signs.
       </p>
       <div style={{ display: "grid", gap: 12 }}>
+        {sourcePost ? (
+          <Button type="button" variant="ghost" onClick={() => void onAiDraft()} disabled={pending}>
+            {pending ? "Generating…" : "Generate AI draft"}
+          </Button>
+        ) : null}
         <label>
           Token name
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Token name" className="fused-input" />
@@ -260,14 +349,32 @@ export function ManualLaunch({
           />
         </label>
         <label>
-          Token logo
+          Creator buy (ETH, optional)
           <input
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
+            value={creatorBuy}
+            onChange={(e) => setCreatorBuy(e.target.value)}
+            placeholder="0"
             className="fused-input"
-            onChange={(e) => void onUpload(e.target.files?.[0])}
           />
         </label>
+        <p style={{ margin: 0, color: "var(--fused-muted)", fontSize: 13 }}>
+          Defaults to 0. Any amount is spent through the same bonding curve as every other buy — not a premine.
+          It counts toward graduation. A buy large enough to hit the target graduates in this same transaction.
+        </p>
+        <div className="fused-quick-row">
+          <label style={{ flex: 1 }}>
+            Upload logo
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="fused-input"
+              onChange={(e) => void onUpload(e.target.files?.[0])}
+            />
+          </label>
+          <Button type="button" variant="ghost" onClick={() => void onAiImage()} disabled={pending || !name || !symbol}>
+            Generate AI logo
+          </Button>
+        </div>
         {imagePreview ? (
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <img src={imagePreview} alt="" width={64} height={64} style={{ borderRadius: 16, objectFit: "cover" }} />
@@ -279,11 +386,12 @@ export function ManualLaunch({
                 setImagePreview(null);
               }}
             >
-              Remove
+              No logo
             </Button>
           </div>
-        ) : null}
-        <p style={{ margin: 0, color: "var(--fused-muted)", fontSize: 13 }}>AI artwork — coming soon</p>
+        ) : (
+          <p style={{ margin: 0, color: "var(--fused-muted)", fontSize: 13 }}>No logo selected.</p>
+        )}
         {wrongNetwork ? <p className="fused-form-error">Switch to {chainName} to launch.</p> : null}
         {error ? <p className="fused-form-error">{error}</p> : null}
         <Button type="button" variant="lime" onClick={() => void onReview()}>
@@ -312,7 +420,7 @@ function SourcePost({ post }: { post: SocialPost }) {
 
 function humanError(caught: unknown): string {
   const text = caught instanceof Error ? caught.message : String(caught);
-  for (const [code, message] of Object.entries(LAUNCH_ERROR_MESSAGES)) {
+  for (const [code, message] of Object.entries(FUSED_ERROR_MESSAGES)) {
     if (text.includes(code)) return message;
   }
   if (text.includes("User rejected") || text.includes("denied")) return "Signature declined.";

@@ -49,6 +49,12 @@ export type FusedEnv = {
     bucket: string | null;
   };
   aiImageProvider: string | null;
+  aiImage: {
+    provider: string | null;
+    apiKey: string | null;
+    apiBaseUrl: string | null;
+    model: string | null;
+  };
   ai: {
     provider: string | null;
     apiKey: string | null;
@@ -204,6 +210,12 @@ export function loadEnv(env: NodeJS.Dict<string> = process.env): FusedEnv {
       bucket: read("BUCKET_NAME", env),
     },
     aiImageProvider: read("AI_IMAGE_PROVIDER", env),
+    aiImage: {
+      provider: read("AI_IMAGE_PROVIDER", env),
+      apiKey: first(env, "AI_IMAGE_API_KEY", "AI_API_KEY"),
+      apiBaseUrl: first(env, "AI_IMAGE_API_BASE_URL", "AI_API_BASE_URL"),
+      model: first(env, "AI_IMAGE_MODEL"),
+    },
     ai: {
       provider: read("AI_PROVIDER", env),
       apiKey: read("AI_API_KEY", env),
@@ -273,8 +285,11 @@ export function walletConnectAvailability(cfg: FusedEnv): Availability {
 }
 
 export function aiImageAvailability(cfg: FusedEnv): Availability {
-  if (!cfg.aiImageProvider) return notConfigured(["AI_IMAGE_PROVIDER"], "AI image generation is not available.");
-  return notConfigured(["AI_IMAGE_PROVIDER"], "AI image generation is not implemented.");
+  const missing: string[] = [];
+  if (!cfg.aiImage.provider) missing.push("AI_IMAGE_PROVIDER");
+  if (!cfg.aiImage.apiKey) missing.push("AI_IMAGE_API_KEY");
+  if (missing.length) return notConfigured(missing, "AI image generation is not available.");
+  return { status: AVAILABILITY_STATUS.OK };
 }
 
 export function localChainAvailability(cfg: FusedEnv): Availability {

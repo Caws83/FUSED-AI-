@@ -42,14 +42,14 @@ npm run contracts:deploy:local
 ```
 
 This deploys official Uniswap v4 **PoolManager** + **PositionManager**, then
-deploys **Fused** `LaunchFactory` (which constructs `LaunchLocker`).
+deploys **Fused** `FusedFactory` (which constructs `LaunchLocker`).
 
 Foundry `vm.etch` does **not** persist Permit2 onto Anvil. The deploy script
 writes canonical Permit2 bytecode with `anvil_setCode` at
 `0x000000000022D473030F116dDEE9F6B43aC78BA3`. Without that step, `launch()`
 reverts.
 
-Universal Router / StateView / Quoter are **not** required for `launch()` and
+Universal Router / StateView / Quoter are **not** required for `create()` and
 are not deployed.
 
 It writes gitignored:
@@ -69,14 +69,30 @@ It writes gitignored:
 
 The account is pre-funded on Anvil.
 
+## Wallet testing (browser vs scripts)
+
+Browser wallets (MetaMask, Rabby) **sign themselves**. The app never holds a
+user key. Local E2E scripts (`npm run contracts:e2e:local`,
+`scripts/e2e-ui-path.mjs`) send as Anvil’s **unlocked** accounts over HTTP
+(`from = 0xf39F…` / `0x7099…`). They do not use the wallet popup.
+
+Do **not** reuse public Foundry/Anvil private keys on testnet or mainnet.
+
+This checkout observed `viem.privateKeyToAccount` deriving a different address
+from the well-known Anvil #0 key than the documented `0xf39F…` account. Scripts
+therefore use Anvil unlocked `from` addresses. That observation is recorded
+here; the root cause is **not** claimed solved. Import the documented Anvil
+address into the browser wallet instead of trusting a derived key from a script.
+
 ## 5. Start the indexer
 
 ```bash
 npm run indexer
 ```
 
-It reads `Launched` events from `LAUNCH_FACTORY_ADDRESS` on chain `31337` and
-writes rows to Postgres. No synthetic launches.
+It reads `Created` / `Trade` / `Graduated` events from `LAUNCH_FACTORY_ADDRESS`
+(the Fused factory) on chain `31337` and writes rows to Postgres. No synthetic
+launches, prices, or volume.
 
 Optional: set `SOCIAL_PROVIDER=x` and `X_BEARER_TOKEN` in `.env` (not
 `.env.example`) to fuse real posts. Token logos upload to `.local-data/media`.
@@ -99,9 +115,12 @@ network, use **Switch Network**.
 Open http://localhost:3000/launch
 
 1. Enter name and ticker.
-2. Review.
-3. Click **LAUNCH TOKEN**.
-4. Sign in the wallet.
+2. Leave **Creator buy** at 0 unless you want to buy through the curve now.
+   Local graduation is 0.1 ETH of real ETH in. A 0.5 ETH creator buy graduates
+   immediately. The amount is editable; the curve math does not change.
+3. Review.
+4. Click **LAUNCH TOKEN**.
+5. Sign in the wallet.
 
 Or, without the browser (still a real chain tx with Anvil #0):
 

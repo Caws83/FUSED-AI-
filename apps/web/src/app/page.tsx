@@ -1,32 +1,25 @@
-import { Badge, Card, EmptyState, FusedLogo, LaunchCard, SectionHeader } from "@fused-ai/ui";
+import { EmptyState, FusedLogo, PostCard, SectionHeader } from "@fused-ai/ui";
+import { formatEngagement } from "@fused-ai/social";
 import { QuickFuse } from "../components/QuickFuse.tsx";
 import { loadRuntime } from "../lib/runtime.ts";
 import { loadIndexedLaunches } from "../lib/launches.ts";
+import { loadTrendingPosts } from "../lib/social.ts";
+import { LaunchGrid, splitBoards } from "../lib/boards.tsx";
 
 export const dynamic = "force-dynamic";
 
 const PIPELINE = [
-  { id: "POST", caption: "See the moment" },
-  { id: "AI", caption: "Draft the launch" },
-  { id: "REVIEW", caption: "You stay in control" },
-  { id: "LAUNCH", caption: "Token, live" },
+  { id: "FUSE", caption: "From a post" },
+  { id: "CURVE", caption: "Trade the curve" },
+  { id: "TRADE", caption: "Live buys and sells" },
+  { id: "GRAD", caption: "Graduate to Uniswap" },
 ] as const;
-
-const FEATURES = [
-  { title: "Instant Launch", body: "From a public post to an onchain token in one flow." },
-  { title: "AI Assisted", body: "A draft you review — never a transaction you did not sign." },
-  { title: "Social Discovery", body: "Find the conversation. Fuse the moment." },
-  { title: "Tokenized Rewards", body: "Route value through verified real-world assets." },
-  { title: "Locked Liquidity", body: "Supply is locked as LP. Nobody rugs the pool." },
-  { title: "Multi-DEX Architecture", body: "Built to plug in additional DEX versions over time." },
-] as const;
-
-const REWARD_CATEGORIES = ["Creator Rewards", "Holder Rewards", "Referral Rewards", "Community Rewards"] as const;
 
 export default async function HomePage() {
-  const { registry, status } = await loadRuntime();
-  const assets = registry.ok ? registry.value.filter((asset) => asset.enabled) : [];
+  const { status } = await loadRuntime();
   const launches = await loadIndexedLaunches();
+  const posts = await loadTrendingPosts();
+  const boards = splitBoards(launches);
 
   return (
     <main>
@@ -63,80 +56,71 @@ export default async function HomePage() {
 
       <section className="fused-section">
         <div className="fused-wrap">
-          <SectionHeader kicker="Trending" title="Find the conversation. Fuse the moment." />
-          <EmptyState title="Trending launches coming soon." body="Live posts will appear here as soon as the feed is connected." />
-        </div>
-      </section>
-
-      <section className="fused-section">
-        <div className="fused-wrap">
-          <SectionHeader kicker="Built for the next generation of onchain launches" title="See a post. Fuse it. Launch it." />
-          <div className="fused-grid-3">
-            {FEATURES.map((feature) => (
-              <Card key={feature.title}>
-                <div className="fused-feature-icon">{feature.title.slice(0, 1)}</div>
-                <strong>{feature.title}</strong>
-                <p style={{ margin: "8px 0 0", color: "var(--fused-muted)" }}>{feature.body}</p>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="fused-section">
-        <div className="fused-wrap">
-          <SectionHeader kicker="Tokenized Rewards" title="Launch memes. Reward with real-world assets." />
-          <p style={{ marginTop: -8, color: "var(--fused-muted)", maxWidth: 640 }}>
-            Fused AI is being designed so launches can distribute supported rewards using verified tokenized
-            assets.
-          </p>
-          <div className="fused-grid-4" style={{ margin: "18px 0 0" }}>
-            {REWARD_CATEGORIES.map((label) => (
-              <Card key={label}>
-                <Badge tone="lime">{label}</Badge>
-              </Card>
-            ))}
-          </div>
-          {assets.length > 0 ? (
-            <div className="fused-grid-3" style={{ marginTop: 18 }}>
-              {assets.map((asset) => (
-                <Card key={`${asset.chainId}:${asset.contractAddress}`}>
-                  <strong>
-                    {asset.name} <span style={{ color: "var(--fused-muted)" }}>{asset.symbol}</span>
-                  </strong>
-                  <div style={{ color: "var(--fused-muted)", fontSize: 13 }}>
-                    {asset.issuer} · chain {asset.chainId}
-                  </div>
-                </Card>
+          <SectionHeader kicker="Trending posts" title="Find the conversation. Fuse the moment." />
+          {posts.length === 0 ? (
+            <EmptyState title="No conversations yet." body="Live posts will appear here as soon as the feed is connected." />
+          ) : (
+            <div style={{ display: "grid", gap: 16, maxWidth: 720 }}>
+              {posts.slice(0, 3).map((post) => (
+                <PostCard
+                  key={post.postId}
+                  author={post.authorDisplayName || post.authorUsername}
+                  username={post.authorUsername}
+                  text={post.text}
+                  timestamp={new Date(post.publishedAt).toLocaleString()}
+                  engagement={formatEngagement(post)}
+                  avatarUrl={post.avatarUrl}
+                  verified={post.verified}
+                  mediaUrl={post.media.find((m) => m.type === "photo")?.url}
+                  fuseDisabled={false}
+                  fuseHref={`/launch?post=${encodeURIComponent(post.postId)}`}
+                />
               ))}
             </div>
-          ) : null}
+          )}
         </div>
       </section>
 
       <section className="fused-section">
         <div className="fused-wrap">
-          <SectionHeader kicker="Explore" title="New launches" />
-          {launches.length === 0 ? (
+          <SectionHeader kicker="Live tokens" title="On the bonding curve" />
+          {boards.live.length === 0 ? (
+            <EmptyState title="No live curves yet." body="New tokens appear here after a wallet launch." />
+          ) : (
+            <LaunchGrid launches={boards.live} />
+          )}
+        </div>
+      </section>
+
+      <section className="fused-section">
+        <div className="fused-wrap">
+          <SectionHeader kicker="Newly created" title="Just launched" />
+          {boards.newly.length === 0 ? (
             <EmptyState title="No launches yet." body="The board fills as real launches land onchain." />
           ) : (
-            <div className="fused-grid-3">
-              {launches.map((launch) => (
-                <a key={launch.token} href={`/token/${launch.token}`} style={{ color: "inherit" }}>
-                  <LaunchCard
-                    imageUrl={launch.imageUrl || "/brand/fused-token.svg"}
-                    name={launch.name || "Token"}
-                    symbol={launch.symbol || "—"}
-                    creator={`${launch.launcher.slice(0, 6)}…${launch.launcher.slice(-4)}`}
-                    token={launch.token}
-                    txHash={launch.txHash}
-                    dexVersion={launch.dexVersion.toUpperCase()}
-                    launchState="Locked liquidity"
-                    createdAt={launch.createdAt ? new Date(launch.createdAt).toLocaleString() : `block ${launch.blockNumber}`}
-                  />
-                </a>
-              ))}
-            </div>
+            <LaunchGrid launches={boards.newly} />
+          )}
+        </div>
+      </section>
+
+      <section className="fused-section">
+        <div className="fused-wrap">
+          <SectionHeader kicker="Graduating" title="Close to Uniswap" />
+          {boards.graduating.length === 0 ? (
+            <EmptyState title="Nothing graduating yet." body="Tokens near the on-chain target show up here." />
+          ) : (
+            <LaunchGrid launches={boards.graduating} />
+          )}
+        </div>
+      </section>
+
+      <section className="fused-section">
+        <div className="fused-wrap">
+          <SectionHeader kicker="Graduated" title="Trading on Uniswap" />
+          {boards.graduated.length === 0 ? (
+            <EmptyState title="No graduates yet." body="When a curve hits its target, locked Uniswap liquidity appears here." />
+          ) : (
+            <LaunchGrid launches={boards.graduated} />
           )}
         </div>
       </section>

@@ -1,5 +1,4 @@
 export { listDexAdapters, operationalDexVersions, type DexAdapter } from "./dex.ts";
-export { loadAssetRegistry, resolveAllowlistedAsset } from "./registry.ts";
 export {
   DEFAULT_LP_FEE,
   DEFAULT_START_TICK,
@@ -15,3 +14,18 @@ export {
   validateLaunchForm,
   type LaunchParams,
 } from "./abi.ts";
+export {
+  ERC20_ABI,
+  FUSED_ERROR_MESSAGES,
+  FUSED_FACTORY_ABI,
+  STATE_LABEL,
+  ZERO_ADDRESS,
+  clampSlippageBps,
+  fdvWei,
+  marketCapWei,
+  minOut,
+  progressBps,
+  toCreateParams,
+  tradePriceX18,
+  venueName,
+} from "./fused.ts";

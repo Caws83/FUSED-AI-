@@ -102,6 +102,18 @@ Addresses after `npm run contracts:deploy:local` live in gitignored
 
 See [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md).
 
+## Fused curve (product path)
+
+OpenLaunch `LaunchFactory.launch()` is **not** the product create path. Local
+deploy uses `src/fused/FusedFactory.sol`:
+
+- `create` — token + curve
+- `buy` / `sell` — curve, then Uniswap v4 after graduation
+- `graduate` — permissionless when `realQuote >= graduationTarget`
+
+`LaunchToken` and `LaunchLocker` are reused unmodified. The Fused factory
+deploys **its own** locker instance. See [BONDING_CURVE_ARCHITECTURE.md](BONDING_CURVE_ARCHITECTURE.md).
+
 ## Uniswap addresses
 
 Canonical Uniswap deployments may be documented per chain when we pick a chain.

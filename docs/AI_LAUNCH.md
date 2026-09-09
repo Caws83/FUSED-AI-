@@ -20,11 +20,11 @@ interface AIProvider {
 }
 ```
 
-The active vendor is selected by `AI_PROVIDER`. Core packages do not import a
-specific SDK. Phase 1 `EnvAIProvider`:
+The active vendor is selected by `AI_PROVIDER`. `EnvAIProvider` calls an
+OpenAI-compatible `chat/completions` endpoint when credentials exist:
 
 - missing `AI_PROVIDER` / `AI_API_KEY` / `AI_MODEL` → `NOT_CONFIGURED`
-- credentials present but no HTTP client yet → `PROVIDER_UNAVAILABLE`
+- HTTP or schema failure → `PROVIDER_UNAVAILABLE`
 - **never** returns a fabricated `LaunchDraft`
 
 ## Schema

@@ -88,8 +88,13 @@ CREATE TABLE IF NOT EXISTS fused_launches (
   block_time         timestamptz,
   factory            text,
   locker             text,
-  dex_version        text NOT NULL DEFAULT 'v4',
+  dex_version        text NOT NULL DEFAULT 'curve',
   source_post_url    text,
+  lifecycle_state    text NOT NULL DEFAULT 'CURVE',
+  real_quote         numeric(78,0),
+  graduation_target  numeric(78,0),
+  circulating        numeric(78,0),
+  price_x18          numeric(78,0),
   PRIMARY KEY (chain_id, token)
 );
 
@@ -112,4 +117,43 @@ CREATE TABLE IF NOT EXISTS fused_sync_cursor (
   chain_id           integer PRIMARY KEY,
   block_number       bigint NOT NULL,
   updated_at         timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS fused_trades (
+  chain_id           integer NOT NULL,
+  token              text NOT NULL,
+  tx_hash            text NOT NULL,
+  log_index          integer NOT NULL,
+  block_number       bigint NOT NULL,
+  traded_at          timestamptz NOT NULL,
+  trader             text NOT NULL,
+  is_buy             boolean NOT NULL,
+  token_amount       numeric(78,0) NOT NULL,
+  quote_amount       numeric(78,0) NOT NULL,
+  price_x18          numeric(78,0) NOT NULL,
+  venue              text NOT NULL,
+  PRIMARY KEY (chain_id, tx_hash, log_index)
+);
+
+CREATE TABLE IF NOT EXISTS fused_candles (
+  chain_id           integer NOT NULL,
+  token              text NOT NULL,
+  interval_sec       integer NOT NULL,
+  bucket_start       timestamptz NOT NULL,
+  open_x18           numeric(78,0) NOT NULL,
+  high_x18           numeric(78,0) NOT NULL,
+  low_x18            numeric(78,0) NOT NULL,
+  close_x18          numeric(78,0) NOT NULL,
+  volume_token       numeric(78,0) NOT NULL,
+  volume_quote       numeric(78,0) NOT NULL,
+  trade_count        integer NOT NULL,
+  PRIMARY KEY (chain_id, token, interval_sec, bucket_start)
+);
+
+CREATE TABLE IF NOT EXISTS fused_holders (
+  chain_id           integer NOT NULL,
+  token              text NOT NULL,
+  holder             text NOT NULL,
+  balance            numeric(78,0) NOT NULL DEFAULT 0,
+  PRIMARY KEY (chain_id, token, holder)
 );

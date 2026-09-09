@@ -24,7 +24,7 @@
     "db:migrate": "node --experimental-strip-types --no-warnings scripts/migrate.mjs",
     "contracts:deploy:local": "node scripts/deploy-local.mjs",
     "contracts:launch:local": "node scripts/launch-local.mjs",
-    "contracts:e2e:local": "node --experimental-strip-types --no-warnings scripts/e2e-local-launch.mjs",
+    "contracts:e2e:local": "node --experimental-strip-types --no-warnings scripts/e2e-curve.mjs",
     "indexer": "npm run start --workspace=@fused-ai/indexer",
     "local:reset": "node scripts/local-reset.mjs",
     "dev:local": "node scripts/dev-local.mjs"

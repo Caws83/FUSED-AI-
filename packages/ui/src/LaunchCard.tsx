@@ -11,6 +11,10 @@ export type LaunchCardProps = {
   dexVersion: string;
   launchState: string;
   createdAt: string;
+  progressPct?: number | null;
+  marketCap?: string | null;
+  volume?: string | null;
+  state?: string | null;
 };
 
 export function LaunchCard({
@@ -24,7 +28,14 @@ export function LaunchCard({
   dexVersion,
   launchState,
   createdAt,
+  progressPct,
+  marketCap,
+  volume,
+  state,
 }: LaunchCardProps) {
+  const badge = (state ?? "").toUpperCase() === "GRADUATED" || dexVersion === "uniswap_v4" || dexVersion === "v4"
+    ? "GRADUATED"
+    : "CURVE";
   return (
     <article className="fused-card fused-launch">
       <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
@@ -45,13 +56,25 @@ export function LaunchCard({
           </strong>
           <div style={{ color: "var(--fused-muted)", fontSize: 13 }}>by {creator}</div>
         </div>
+        <Badge tone={badge === "GRADUATED" ? "blue" : "lime"}>{badge}</Badge>
       </div>
       {token ? (
         <div style={{ color: "var(--fused-muted)", fontSize: 13, wordBreak: "break-all" }}>{token}</div>
       ) : null}
+      {progressPct != null ? (
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--fused-muted)" }}>
+            <span>Bonding</span>
+            <span>{(progressPct / 100).toFixed(1)}%</span>
+          </div>
+          <div className="fused-progress">
+            <i style={{ width: `${Math.min(100, progressPct / 100)}%` }} />
+          </div>
+        </div>
+      ) : null}
       <div className="fused-launch-meta">
-        {market ? <span>{market}</span> : <span>{launchState}</span>}
-        <Badge tone="blue">{dexVersion}</Badge>
+        {marketCap ? <span>MC {marketCap}</span> : market ? <span>{market}</span> : <span>{launchState}</span>}
+        {volume ? <span>Vol {volume}</span> : null}
       </div>
       <div className="fused-launch-meta">
         <time dateTime={createdAt}>{createdAt}</time>

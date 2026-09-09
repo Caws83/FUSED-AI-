@@ -1,9 +1,19 @@
 import { createPublicClient, http, parseEventLogs, type Hex, type Log } from "viem";
 import { loadEnv, type FusedEnv } from "@fused-ai/config";
 import { createDatabaseClient, type DatabaseClient, type LaunchInsert } from "@fused-ai/database";
-import { LAUNCH_FACTORY_ABI, LAUNCH_TOKEN_ABI } from "@fused-ai/blockchain";
+import {
+  ERC20_ABI,
+  FUSED_FACTORY_ABI,
+  LAUNCH_FACTORY_ABI,
+  LAUNCH_TOKEN_ABI,
+  STATE_LABEL,
+  tradePriceX18,
+  venueName,
+  ZERO_ADDRESS,
+} from "@fused-ai/blockchain";
 
-const ZERO = "0x0000000000000000000000000000000000000000";
+const ZERO = ZERO_ADDRESS;
+const DEAD = "0x000000000000000000000000000000000000dead";
 
 export type IndexerRunResult = {
   started: true;
@@ -77,52 +87,205 @@ export function launchedToInsert(
     factory: env.launchFactory as Hex | null,
     locker: env.launchLocker as Hex | null,
     dexVersion: "v4",
+    lifecycleState: "GRADUATED",
   };
+}
+
+export function createdToInsert(
+  env: FusedEnv,
+  log: Log,
+  args: {
+    token: Hex;
+    creator: Hex;
+    supply: bigint;
+    virtualQuote: bigint;
+    virtualToken: bigint;
+    graduationTarget: bigint;
+    metadataURI: string;
+  },
+  blockTime: Date | null,
+): Omit<LaunchInsert, "name" | "symbol"> & { name?: string; symbol?: string; metadataURI: string } {
+  return {
+    chainId: env.chainId ?? 0,
+    token: args.token,
+    launcher: args.creator,
+    quote: ZERO,
+    poolId: null,
+    tokenId: "0",
+    startTick: 0,
+    lpFee: 0,
+    supply: args.supply.toString(),
+    metadataURI: args.metadataURI,
+    txHash: log.transactionHash as Hex,
+    blockNumber: log.blockNumber ?? 0n,
+    createdAt: blockTime,
+    factory: env.launchFactory as Hex | null,
+    locker: env.launchLocker as Hex | null,
+    dexVersion: "curve",
+    lifecycleState: "CURVE",
+    graduationTarget: args.graduationTarget.toString(),
+  };
+}
+
+async function blockTimeOf(
+  client: NonNullable<ReturnType<typeof createRpc>>,
+  log: Log,
+): Promise<Date | null> {
+  if (log.blockNumber == null) return null;
+  const block = await client.getBlock({ blockNumber: log.blockNumber });
+  return new Date(Number(block.timestamp) * 1000);
+}
+
+async function refreshMarket(
+  env: FusedEnv,
+  client: NonNullable<ReturnType<typeof createRpc>>,
+  db: DatabaseClient,
+  token: Hex,
+): Promise<void> {
+  if (!env.launchFactory || !env.chainId) return;
+  try {
+    const v = await client.readContract({
+      address: env.launchFactory as Hex,
+      abi: FUSED_FACTORY_ABI,
+      functionName: "getMarket",
+      args: [token],
+    });
+    if (v.state === 0) return;
+    const graduated = v.state === 2;
+    await db.updateMarket({
+      chainId: env.chainId,
+      token,
+      lifecycleState: STATE_LABEL[v.state] ?? "UNKNOWN",
+      realQuote: v.realQuote.toString(),
+      graduationTarget: v.graduationTarget.toString(),
+      circulating: v.circulating.toString(),
+      priceX18: v.priceX18.toString(),
+      tokenId: v.tokenId > 0n ? v.tokenId.toString() : null,
+      poolId: null,
+      dexVersion: graduated ? "uniswap_v4" : "curve",
+    });
+  } catch {
+    /* LaunchFactory (no getMarket) or unknown token */
+  }
 }
 
 export async function applyRange(env: FusedEnv, db: DatabaseClient, fromBlock: bigint, toBlock: bigint): Promise<number> {
   const client = createRpc(env);
   if (!client || !env.launchFactory || !env.chainId) return 0;
-  const logs = await client.getLogs({
-    address: env.launchFactory as Hex,
+  const factory = env.launchFactory as Hex;
+  let count = 0;
+
+  const createdLogs = await client.getLogs({
+    address: factory,
+    event: FUSED_FACTORY_ABI.find((x) => x.type === "event" && x.name === "Created"),
+    fromBlock,
+    toBlock,
+  });
+  for (const log of createdLogs) {
+    const parsed = parseEventLogs({ abi: FUSED_FACTORY_ABI, logs: [log], eventName: "Created" })[0];
+    if (!parsed) continue;
+    const base = createdToInsert(env, log, parsed.args, await blockTimeOf(client, log));
+    const row = await enrichLaunch(client, base);
+    const saved = await db.upsertLaunch(row);
+    if (saved.ok) count += 1;
+    await refreshMarket(env, client, db, parsed.args.token);
+  }
+
+  const launchedLogs = await client.getLogs({
+    address: factory,
     event: LAUNCH_FACTORY_ABI.find((x) => x.type === "event" && x.name === "Launched"),
     fromBlock,
     toBlock,
   });
-  let count = 0;
-  for (const log of logs) {
-    const parsed = parseEventLogs({
-      abi: LAUNCH_FACTORY_ABI,
-      logs: [log],
-      eventName: "Launched",
-    })[0];
+  for (const log of launchedLogs) {
+    const parsed = parseEventLogs({ abi: LAUNCH_FACTORY_ABI, logs: [log], eventName: "Launched" })[0];
     if (!parsed) continue;
-    const args = parsed.args;
-    let blockTime: Date | null = null;
-    if (log.blockNumber != null) {
-      const block = await client.getBlock({ blockNumber: log.blockNumber });
-      blockTime = new Date(Number(block.timestamp) * 1000);
-    }
-    const base = launchedToInsert(
-      env,
-      log,
-      {
-        token: args.token,
-        tokenId: args.tokenId,
-        launcher: args.launcher,
-        quote: args.quote,
-        poolId: args.poolId,
-        startTick: args.startTick,
-        lpFee: args.lpFee,
-        supply: args.supply,
-        metadataURI: args.metadataURI,
-      },
-      blockTime,
-    );
+    const base = launchedToInsert(env, log, parsed.args, await blockTimeOf(client, log));
     const row = await enrichLaunch(client, base);
     const saved = await db.upsertLaunch(row);
     if (saved.ok) count += 1;
   }
+
+  const tradeLogs = await client.getLogs({
+    address: factory,
+    event: FUSED_FACTORY_ABI.find((x) => x.type === "event" && x.name === "Trade"),
+    fromBlock,
+    toBlock,
+  });
+  for (const log of tradeLogs) {
+    const parsed = parseEventLogs({ abi: FUSED_FACTORY_ABI, logs: [log], eventName: "Trade" })[0];
+    if (!parsed) continue;
+    const args = parsed.args;
+    let price = args.priceX18;
+    if (price === 0n) price = tradePriceX18(args.quoteAmount, args.tokenAmount);
+    await db.insertTrade({
+      chainId: env.chainId,
+      token: args.token,
+      txHash: log.transactionHash as Hex,
+      logIndex: Number(log.logIndex ?? 0),
+      blockNumber: log.blockNumber ?? 0n,
+      tradedAt: (await blockTimeOf(client, log)) ?? new Date(),
+      trader: args.trader,
+      isBuy: args.isBuy,
+      tokenAmount: args.tokenAmount.toString(),
+      quoteAmount: args.quoteAmount.toString(),
+      priceX18: price.toString(),
+      venue: venueName(Number(args.venue)),
+    });
+    count += 1;
+    await refreshMarket(env, client, db, args.token);
+  }
+
+  const graduatedLogs = await client.getLogs({
+    address: factory,
+    event: FUSED_FACTORY_ABI.find((x) => x.type === "event" && x.name === "Graduated"),
+    fromBlock,
+    toBlock,
+  });
+  for (const log of graduatedLogs) {
+    const parsed = parseEventLogs({ abi: FUSED_FACTORY_ABI, logs: [log], eventName: "Graduated" })[0];
+    if (!parsed) continue;
+    await db.updateMarket({
+      chainId: env.chainId,
+      token: parsed.args.token,
+      lifecycleState: "GRADUATED",
+      realQuote: "0",
+      graduationTarget: "0",
+      circulating: "0",
+      priceX18: "0",
+      tokenId: parsed.args.tokenId.toString(),
+      poolId: parsed.args.poolId,
+      dexVersion: "uniswap_v4",
+    });
+    await refreshMarket(env, client, db, parsed.args.token);
+    count += 1;
+  }
+
+  const known = await db.listLaunches(env.chainId);
+  const tokens = known.ok ? known.value.map((row) => row.token as Hex) : [];
+  if (tokens.length > 0) {
+    const transferLogs = await client.getLogs({
+      address: tokens,
+      event: ERC20_ABI.find((x) => x.type === "event" && x.name === "Transfer"),
+      fromBlock,
+      toBlock,
+    });
+    for (const log of transferLogs) {
+      const parsed = parseEventLogs({ abi: ERC20_ABI, logs: [log], eventName: "Transfer" })[0];
+      if (!parsed || !log.address) continue;
+      const from = parsed.args.from.toLowerCase();
+      const to = parsed.args.to.toLowerCase();
+      if (from === DEAD && to === DEAD) continue;
+      await db.applyTransfer({
+        chainId: env.chainId,
+        token: log.address,
+        from: parsed.args.from,
+        to: parsed.args.to,
+        value: parsed.args.value.toString(),
+      });
+    }
+  }
+
   return count;
 }
 

@@ -53,4 +53,11 @@ export type IndexedLaunch = {
   sourcePostUrl: string | null;
   sourceAuthor: string | null;
   sourceExcerpt: string | null;
+  lifecycleState: string;
+  realQuote: string | null;
+  graduationTarget: string | null;
+  circulating: string | null;
+  priceX18: string | null;
+  volumeQuote: string | null;
+  holderCount: number | null;
 };

@@ -6,7 +6,9 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./abi": "./src/abi.ts"
+    "./abi": "./src/abi.ts",
+    "./fused": "./src/fused.ts",
+    "./registry": "./src/registry.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

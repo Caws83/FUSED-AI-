@@ -34,7 +34,7 @@ Checkboxes reflect **this checkout**, not wishes. Do not mark future work comple
 - [x] Deploy Fused contracts locally
 - [x] Configure local addresses (`LAUNCH_*`, Uniswap local)
 - [x] Connect wallet (public chain + public RPC)
-- [x] Manual launch form bound to `LaunchFactory.launch`
+- [x] Manual launch form bound to `FusedFactory.create`
 - [x] Simulate transaction
 - [x] Sign transaction
 - [x] Verify locked liquidity
@@ -53,15 +53,26 @@ Checkboxes reflect **this checkout**, not wishes. Do not mark future work comple
 - [x] Token media upload + local store
 - [x] Token metadata + source-post association
 
-## PHASE 5 — AI
+## PHASE 5 — AI + BONDING CURVE
 
-- [ ] AI provider HTTP client
-- [ ] Prompt isolation
-- [ ] Post → LaunchDraft
-- [ ] Schema validation
-- [ ] Metadata generation
-- [ ] Human review screen
-- [ ] AI safety validation
+Local bonding-curve trading is complete. Live X/AI credentials and public deploys are not.
+
+- [x] Bonding curve (`FusedCurveMath` + `FusedFactory`)
+- [x] Buy / sell on the curve
+- [x] Trade indexer
+- [x] OHLCV charting from indexed trades
+- [x] Market cap / FDV from on-chain price × circulating / supply
+- [x] Holders from ERC-20 transfers
+- [x] Graduation at the on-chain ETH target
+- [x] Uniswap v4 migration on graduate
+- [x] LP NFT to locker
+- [x] Post-graduation swaps through the same buy/sell ABI
+- [x] Manual launch independent of X and AI
+- [x] AI provider HTTP client (fail-closed without credentials)
+- [x] Prompt isolation + schema validation + human review
+- [ ] Live X credentials (`X_BEARER_TOKEN`) — provider exists; smoke not run
+- [ ] Live AI text provider (`AI_PROVIDER` / `AI_API_KEY`)
+- [ ] Live AI image provider (`AI_IMAGE_PROVIDER` / `AI_IMAGE_API_KEY`)
 
 ## PHASE 6 — REWARDS
 
@@ -99,5 +110,6 @@ Checkboxes reflect **this checkout**, not wishes. Do not mark future work comple
 
 ## Explicitly not started
 
-Live X credentials (provider implemented; smoke pending), AI vendor HTTP, V2/V3
-contracts, Quiver source, mainnet/testnet deploy of Fused AI.
+Live X credentials (provider implemented; smoke pending), live AI text/image
+credentials, tokenized-stock rewards, V2/V3 adapters, Quiver source,
+mainnet/testnet deploy of Fused AI.

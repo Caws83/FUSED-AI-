@@ -85,11 +85,16 @@ Aliases (either name works):
 | `AI_MODEL` | ai-launch | no | before drafts | empty | Model name |
 | `AI_MAX_OUTPUT_TOKENS` | ai-launch | no | no | 1200 | Cap |
 | `AI_TIMEOUT_MS` | ai-launch | no | no | 30000 | HTTP timeout |
+| `AI_IMAGE_PROVIDER` | media | no | before AI art | empty | Image vendor id |
+| `AI_IMAGE_API_KEY` | media | **yes** | before AI art | empty | Falls back to `AI_API_KEY` |
+| `AI_IMAGE_MODEL` | media | no | no | empty | Image model |
+| `FUSED_VIRTUAL_QUOTE_WEI` | forge local | no | no | 0.05 ETH | Local curve virtual quote |
+| `FUSED_VIRTUAL_TOKEN` | forge local | no | no | 1e9e18 | Local curve virtual token |
+| `FUSED_GRADUATION_TARGET_WEI` | forge local | no | no | 0.1 ETH | Local graduation target |
 | `TOKENIZED_ASSET_REGISTRY_PATH` | blockchain, web | no | before reward assets | empty | Allowlist JSON |
 | `IMAGE_STORE` / `MEDIA_STORE` | media | no | local launches | `local` | `local` or `s3`/`r2` |
 | `MEDIA_LOCAL_PATH` | media | no | local launches | `.local-data/media` | Gitignored filesystem store |
 | `AWS_*` / `BUCKET_NAME` / `IMAGE_PUBLIC_BASE` | images | **yes** (keys) | if S3 | empty | Object storage (inactive without creds) |
-| `AI_IMAGE_PROVIDER` | media | no | Phase 5 | empty | No fake generator |
 | `ADMIN_WALLETS` | ops later | no | no | empty | Not used for launch authority |
 | `PRESENCE_SALT` | ops later | **yes** | no | empty | Unused in Fused AI yet |
 

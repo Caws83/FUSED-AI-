@@ -80,6 +80,37 @@ export default async function StatusPage() {
           </tbody>
         </table>
         <div style={{ marginTop: 28 }}>
+          <p className="fused-kicker">Local contracts</p>
+          <table className="fused-status-table">
+            <thead>
+              <tr>
+                <th>Contract</th>
+                <th>Address</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { label: "Fused Curve Factory", value: env.launchFactory },
+                { label: "Fused Curve Locker", value: env.launchLocker },
+                { label: "PoolManager", value: env.uniswap.poolManager },
+                { label: "PositionManager", value: env.uniswap.positionManager },
+                { label: "Permit2", value: env.uniswap.permit2 },
+              ].map((row) => (
+                <tr key={row.label}>
+                  <td>{row.label}</td>
+                  <td style={{ wordBreak: "break-all", fontSize: 14, color: "var(--fused-muted)" }}>
+                    {row.value || "unset"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p style={{ color: "var(--fused-muted)", fontSize: 14 }}>
+            Manual create calls FusedFactory.create at the factory address above. OpenLaunch LaunchFactory.launch is
+            not the Phase 5 create path.
+          </p>
+        </div>
+        <div style={{ marginTop: 28 }}>
           <p className="fused-kicker">DEX adapters</p>
           <LaunchModes adapters={dex} />
         </div>

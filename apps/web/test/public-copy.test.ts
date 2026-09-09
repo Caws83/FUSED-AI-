@@ -16,6 +16,9 @@ const PUBLIC_PAGES = [
   "src/components/QuickFuse.tsx",
   "src/components/ConnectWallet.tsx",
   "src/components/SiteHeader.tsx",
+  "src/components/ManualLaunch.tsx",
+  "src/components/TokenTerminal.tsx",
+  "src/lib/boards.tsx",
 ];
 
 const FORBIDDEN = [

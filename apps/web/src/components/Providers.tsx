@@ -23,35 +23,39 @@ export function Providers({
   wallet: WalletRuntimeConfig | null;
   children: ReactNode;
 }) {
+  const chainId = wallet?.chainId ?? null;
+  const rpcUrl = wallet?.rpcUrl ?? null;
+  const walletConnectProjectId = wallet?.walletConnectProjectId ?? null;
+
   const config = useMemo(() => {
-    if (!wallet) return null;
+    if (chainId == null || !rpcUrl) return null;
     const chain =
-      wallet.chainId === 31337
+      chainId === 31337
         ? {
             ...anvil,
             name: "Fused Local",
-            rpcUrls: { default: { http: [wallet.rpcUrl] }, public: { http: [wallet.rpcUrl] } },
+            rpcUrls: { default: { http: [rpcUrl] }, public: { http: [rpcUrl] } },
           }
         : defineChain({
-            id: wallet.chainId,
+            id: chainId,
             name: "Fused AI chain",
             nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-            rpcUrls: { default: { http: [wallet.rpcUrl] } },
+            rpcUrls: { default: { http: [rpcUrl] } },
           });
-    const kinds = walletConnectorKinds(wallet.walletConnectProjectId);
+    const kinds = walletConnectorKinds(walletConnectProjectId);
     const connectors = [
       injected(),
-      ...(kinds.includes("walletConnect") && wallet.walletConnectProjectId
-        ? [walletConnect({ projectId: wallet.walletConnectProjectId, showQrModal: true })]
+      ...(kinds.includes("walletConnect") && walletConnectProjectId
+        ? [walletConnect({ projectId: walletConnectProjectId, showQrModal: true })]
         : []),
     ];
     return createConfig({
       chains: [chain],
       connectors,
-      transports: { [chain.id]: http(wallet.rpcUrl) },
+      transports: { [chain.id]: http(rpcUrl) },
       ssr: true,
     });
-  }, [wallet]);
+  }, [chainId, rpcUrl, walletConnectProjectId]);
 
   if (!config) return children;
   return (

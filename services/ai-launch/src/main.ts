@@ -1,8 +1,8 @@
 import { loadEnv } from "@fused-ai/config";
 import { createAIProvider } from "@fused-ai/ai";
 
-export function aiLaunchStatus() {
-  return createAIProvider(loadEnv()).availability();
+export function aiLaunchStatus(env = loadEnv()) {
+  return createAIProvider(env).availability();
 }
 
 const isMain = process.argv[1] && process.argv[1].endsWith("main.ts");

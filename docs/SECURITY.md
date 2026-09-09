@@ -63,3 +63,12 @@ Index `(platform, postId)` and refuse unbounded repeats until product policy exi
 
 Fused AI production contracts should remain non-upgradeable unless a later audit
 justifies a proxy — default is OpenLaunch's no-proxy design.
+
+## Bonding curve
+
+- Rounding floors output (favours the pool).
+- `minOut` + `deadline` on every trade. This is not MEV protection.
+- Fees, if any, are constructor-immutable and capped at 100 bps.
+- Graduation is on-chain only. After graduation the curve cannot be sold into.
+- Graduated LP NFT is owned by `LaunchLocker`. Creator and protocol cannot withdraw liquidity.
+

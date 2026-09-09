@@ -10,13 +10,13 @@ import {IPositionDescriptor} from "@uniswap/v4-periphery/src/interfaces/IPositio
 import {IWETH9} from "@uniswap/v4-periphery/src/interfaces/external/IWETH9.sol";
 import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
 import {DeployPermit2} from "permit2/test/utils/DeployPermit2.sol";
-import {LaunchFactory} from "src/LaunchFactory.sol";
+import {FusedFactory} from "src/fused/FusedFactory.sol";
 
 /// @notice One-shot local Anvil deploy: Uniswap v4 (required) + Fused factory/locker.
 /// `vm.etch` for Permit2 does not persist on Anvil; `scripts/deploy-local.mjs`
 /// follows this script with `anvil_setCode` using the same official bytecode.
 contract DeployLocalStack is Script, DeployPermit2 {
-    function deployAll() public returns (LaunchFactory factory) {
+    function deployAll() public returns (FusedFactory factory) {
         IAllowanceTransfer permit2 = IAllowanceTransfer(deployPermit2());
 
         address deployer = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
@@ -24,7 +24,22 @@ contract DeployLocalStack is Script, DeployPermit2 {
         IPoolManager manager = IPoolManager(address(new PoolManager(msg.sender)));
         PositionManager posm =
             new PositionManager(manager, permit2, 50_000, IPositionDescriptor(address(0)), IWETH9(address(0)));
-        factory = new LaunchFactory(manager, IPositionManager(address(posm)), permit2);
+        uint256 virtualQuote = vm.envOr("FUSED_VIRTUAL_QUOTE_WEI", uint256(0.05 ether));
+        uint256 virtualToken = vm.envOr("FUSED_VIRTUAL_TOKEN", uint256(1_000_000_000 ether));
+        uint256 graduationTarget = vm.envOr("FUSED_GRADUATION_TARGET_WEI", uint256(0.1 ether));
+        factory = new FusedFactory(
+            manager,
+            IPositionManager(address(posm)),
+            permit2,
+            FusedFactory.CurveParams({
+                virtualQuote: virtualQuote,
+                virtualToken: virtualToken,
+                graduationTarget: graduationTarget,
+                feeBps: 0,
+                feeRecipient: address(0),
+                lpFee: 10_000
+            })
+        );
         vm.stopBroadcast();
 
         console2.log("poolManager", address(manager));

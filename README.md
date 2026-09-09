@@ -2,28 +2,29 @@
 
 **Launch a token from a post.** One post. One click. One token.
 
-Fused AI is a social-first EVM launchpad. A public post becomes a launch draft,
-a human reviews it, and a **wallet** — never an AI process — signs the on-chain
-transaction.
+Fused AI is a social-first AI token **launch and trading** platform:
+
+FUSE → CURVE → TRADE → GRADUATE → UNISWAP (locked LP)
+
+A public post becomes a launch draft, a human reviews it, and a **wallet** — never an AI process — signs the on-chain transaction. Tokens trade on a bonding curve, then graduate into Uniswap v4 with locked liquidity.
 
 ## Current state
 
-Phase 4: local launch pipeline plus X provider, Fuse → manual launch, token
-logo upload, polished wallet (injected; WalletConnect only with a project id).
+Phase 5: Fused bonding-curve factory, real buy/sell, graduation into Uniswap v4, trade/candle indexer, token terminal, HTTP AI drafts when credentials exist.
 
-Not yet: AI text/image generation, V2/V3, testnet. Live X feed needs
-`X_BEARER_TOKEN`.
+Not yet: testnet/mainnet deploy, V2/V3. Live X feed needs `X_BEARER_TOKEN`. AI HTTP needs `AI_PROVIDER` + `AI_API_KEY` + `AI_MODEL` (fail closed otherwise).
 
-V4 is **implemented**. It is **available** only when Fused factory/locker
-addresses are set (local `.env.local` after deploy). V2/V3 are planned.
+V4 is **implemented** for graduated tokens. It is **available** when Fused factory/locker addresses are set (local `.env.local` after deploy).
 
 ## Architecture
 
-See [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) for the end-to-end flow.
+See [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) and [docs/BONDING_CURVE_ARCHITECTURE.md](docs/BONDING_CURVE_ARCHITECTURE.md).
 
 ```
 Post → SocialProvider → AI draft → user review → wallet sign
-    → LaunchFactory → token + locked Uniswap v4 LP → indexer → Explore
+    → FusedFactory.create → bonding curve buy/sell
+    → graduate → Uniswap v4 LP in LaunchLocker
+    → indexer (trades + candles) → Explore / token terminal
 ```
 
 | Process | Path |

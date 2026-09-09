@@ -1,5 +1,6 @@
 import { loadEnv, loadPublicEnv, systemStatus, walletAvailability } from "@fused-ai/config";
-import { listDexAdapters, loadAssetRegistry } from "@fused-ai/blockchain";
+import { listDexAdapters } from "@fused-ai/blockchain";
+import { loadAssetRegistry } from "@fused-ai/blockchain/registry";
 import { createSocialProvider } from "@fused-ai/social";
 import type { WalletRuntimeConfig } from "../components/Providers.tsx";
 

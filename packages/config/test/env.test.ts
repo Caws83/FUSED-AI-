@@ -80,3 +80,22 @@ test("indexer is OK when database, rpc, and factory are set", () => {
   );
   assert.equal(status.indexer.status, "OK");
 });
+
+test("manual launch contracts and wallet are OK without AI or X", () => {
+  const status = systemStatus(
+    loadEnv({
+      LAUNCH_FACTORY_ADDRESS: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      LAUNCH_LOCKER_ADDRESS: "0x75537828f2ce51be7289709686A69CbFDbB714F1",
+      CHAIN_ID: "31337",
+      RPC_URL: "http://127.0.0.1:8545",
+      NEXT_PUBLIC_CHAIN_ID: "31337",
+      NEXT_PUBLIC_RPC_URL: "http://127.0.0.1:8545",
+    }),
+  );
+  assert.equal(status.launchContracts.status, "OK");
+  assert.equal(status.wallet.status, "OK");
+  assert.equal(status.rpc.status, "OK");
+  assert.equal(status.social.status, "NOT_CONFIGURED");
+  assert.equal(status.ai.status, "NOT_CONFIGURED");
+  assert.equal(status.aiImage.status, "NOT_CONFIGURED");
+});

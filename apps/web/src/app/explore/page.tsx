@@ -1,5 +1,6 @@
-import { EmptyState, LaunchCard, SectionHeader } from "@fused-ai/ui";
+import { EmptyState, SectionHeader } from "@fused-ai/ui";
 import { loadIndexedLaunches } from "../../lib/launches.ts";
+import { LaunchGrid } from "../../lib/boards.tsx";
 
 export const dynamic = "force-dynamic";
 
@@ -12,23 +13,7 @@ export default async function ExplorePage() {
         {launches.length === 0 ? (
           <EmptyState title="No launches yet." body="New tokens will land here after they launch onchain." />
         ) : (
-          <div className="fused-grid-3">
-            {launches.map((launch) => (
-              <a key={launch.token} href={`/token/${launch.token}`} style={{ color: "inherit" }}>
-                <LaunchCard
-                  imageUrl={launch.imageUrl || "/brand/fused-token.svg"}
-                  name={launch.name || "Token"}
-                  symbol={launch.symbol || "—"}
-                  creator={`${launch.launcher.slice(0, 6)}…${launch.launcher.slice(-4)}`}
-                  token={launch.token}
-                  txHash={launch.txHash}
-                  dexVersion={launch.dexVersion.toUpperCase()}
-                  launchState="Locked liquidity"
-                  createdAt={launch.createdAt ? new Date(launch.createdAt).toLocaleString() : `block ${launch.blockNumber}`}
-                />
-              </a>
-            ))}
-          </div>
+          <LaunchGrid launches={launches} />
         )}
       </div>
     </main>
