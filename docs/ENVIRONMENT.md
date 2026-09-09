@@ -1,9 +1,16 @@
 # Environment
 
-Single source of truth: repository-root `.env.example`.
+Human-readable templates:
 
-Copy it to `.env` (gitignored). Next.js loads that root file via `apps/web/next.config.ts`.
-Optional override: `apps/web/.env.local` (gitignored).
+- [`.env.example`](../.env.example) — variable names, grouped. No generated Anvil addresses.
+- [`.env.local.example`](../.env.local.example) — what `npm run contracts:deploy:local` writes.
+- [docs/VERCEL.md](VERCEL.md) — production website env table.
+
+Local contract source of truth: gitignored `deployments/local-31337.json` (plus a generated `.env.local` copy). Public Robinhood: `deployments/robinhood-4663.example.json` is **NOT_DEPLOYED**.
+
+Single loader: `packages/config`.
+
+Copy `.env.example` to `.env` only for extra secrets. Next.js loads the repo via `apps/web/next.config.ts` locally; Vercel uses dashboard env only.
 
 ## Rules
 

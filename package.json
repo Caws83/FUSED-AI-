@@ -27,7 +27,8 @@
     "contracts:e2e:local": "node --experimental-strip-types --no-warnings scripts/e2e-curve.mjs",
     "indexer": "npm run start --workspace=@fused-ai/indexer",
     "local:reset": "node scripts/local-reset.mjs",
-    "dev:local": "node scripts/dev-local.mjs"
+    "dev:local": "node scripts/dev-local.mjs",
+    "build:prodcheck": "node scripts/production-build-check.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.4",

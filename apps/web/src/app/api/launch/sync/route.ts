@@ -8,8 +8,9 @@ import { assertPublicMediaUrl, createMediaStore } from "@fused-ai/media";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  loadRepoEnv();
-  const env = loadEnv();
+  try {
+    loadRepoEnv();
+    const env = loadEnv();
   const url = new URL(request.url);
   let extra: { imageId?: string; sourcePostId?: string; description?: string; tx?: string } = {};
   const contentType = request.headers.get("content-type") ?? "";
@@ -83,7 +84,6 @@ export async function POST(request: Request) {
   }
 
   const db = createDatabaseClient(env);
-  await db.migrate();
   const saved = await db.upsertLaunch({
     chainId: env.chainId,
     token,
@@ -156,4 +156,7 @@ export async function POST(request: Request) {
   });
   await db.close();
   return NextResponse.json({ ok: saved.ok, token });
+  } catch {
+    return NextResponse.json({ ok: false }, { status: 503 });
+  }
 }

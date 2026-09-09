@@ -17,7 +17,9 @@ export function writeDeployment(contracts, extra = {}) {
   const dir = path.join(root, "deployments");
   mkdirSync(dir, { recursive: true });
   const payload = {
+    network: "local",
     chainId: LOCAL_CHAIN_ID,
+    status: "DEPLOYED",
     rpcUrl: LOCAL_RPC_URL,
     contracts: {
       launchFactory: contracts.launchFactory,
@@ -26,6 +28,14 @@ export function writeDeployment(contracts, extra = {}) {
       positionManager: contracts.positionManager,
       universalRouter: contracts.universalRouter ?? null,
       permit2: contracts.permit2 || PERMIT2,
+    },
+    curve: {
+      virtualQuoteWei: "50000000000000000",
+      virtualToken: "1000000000000000000000000000",
+      graduationTargetWei: "100000000000000000",
+      feeBps: 0,
+      lpFee: 10000,
+      note: "LOCAL TEST PARAMETERS. Not production defaults.",
     },
     ...extra,
   };
@@ -61,6 +71,13 @@ export function writeLocalEnv(deployment) {
     MEDIA_STORE: existing.MEDIA_STORE || "local",
     MEDIA_LOCAL_PATH: existing.MEDIA_LOCAL_PATH || ".local-data/media",
     TRACKED_ACCOUNTS_PATH: existing.TRACKED_ACCOUNTS_PATH || "config/tracked-accounts.json",
+    FUSED_VIRTUAL_QUOTE_WEI: existing.FUSED_VIRTUAL_QUOTE_WEI || "50000000000000000",
+    FUSED_VIRTUAL_TOKEN: existing.FUSED_VIRTUAL_TOKEN || "1000000000000000000000000000",
+    FUSED_GRADUATION_TARGET_WEI: existing.FUSED_GRADUATION_TARGET_WEI || "100000000000000000",
+    FUSED_FEE_BPS: existing.FUSED_FEE_BPS || "0",
+    FUSED_LP_FEE: existing.FUSED_LP_FEE || "10000",
+    PUBLIC_LAUNCH_ENABLED: existing.PUBLIC_LAUNCH_ENABLED || "true",
+    PUBLIC_CHAIN_CONFIGURED: existing.PUBLIC_CHAIN_CONFIGURED || "false",
   };
   const merged = { ...existing, ...generated };
   const lines = [

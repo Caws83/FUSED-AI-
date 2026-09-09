@@ -1,12 +1,23 @@
 {
+  "network": "local",
   "chainId": 31337,
+  "status": "NOT_DEPLOYED",
   "rpcUrl": "http://127.0.0.1:8545",
   "contracts": {
-    "launchFactory": "",
-    "launchLocker": "",
-    "poolManager": "",
-    "positionManager": "",
+    "launchFactory": null,
+    "launchLocker": null,
+    "poolManager": null,
+    "positionManager": null,
     "universalRouter": null,
     "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
-  }
+  },
+  "curve": {
+    "virtualQuoteWei": "50000000000000000",
+    "virtualToken": "1000000000000000000000000000",
+    "graduationTargetWei": "100000000000000000",
+    "feeBps": 0,
+    "lpFee": 10000,
+    "note": "LOCAL TEST PARAMETERS. Written by npm run contracts:deploy:local into gitignored local-31337.json."
+  },
+  "deployBlock": null
 }

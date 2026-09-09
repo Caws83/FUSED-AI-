@@ -1,0 +1,24 @@
+{
+  "network": "robinhood",
+  "chainId": 4663,
+  "status": "NOT_DEPLOYED",
+  "rpcUrl": null,
+  "contracts": {
+    "launchFactory": null,
+    "launchLocker": null,
+    "poolManager": null,
+    "positionManager": null,
+    "universalRouter": null,
+    "permit2": null
+  },
+  "curve": {
+    "virtualQuoteWei": null,
+    "virtualToken": null,
+    "graduationTargetWei": null,
+    "feeBps": null,
+    "lpFee": null,
+    "targetUsdDisplay": 50000,
+    "note": "Public Fused contracts are NOT DEPLOYED. Graduation USD $50,000 is product intent only. Native wei target must be set explicitly at deploy. No local 0.1 ETH fallback. Fees must be reviewed — no hidden defaults."
+  },
+  "deployBlock": null
+}

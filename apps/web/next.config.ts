@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { loadEnvConfig } from "@next/env";
 import type { NextConfig } from "next";
 
@@ -14,9 +15,22 @@ function findRepoRoot(start: string): string {
   return start;
 }
 
-loadEnvConfig(findRepoRoot(process.cwd()));
+const configDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRootFromWalk = findRepoRoot(configDir);
+const repoRootCandidate = path.resolve(configDir, "..", "..");
+const repoRoot =
+  existsSync(path.join(repoRootCandidate, "package.json")) &&
+  existsSync(path.join(repoRootCandidate, "apps", "web", "package.json"))
+    ? repoRootCandidate
+    : repoRootFromWalk;
+
+// Vercel injects env in the dashboard. Do not load gitignored local secrets there.
+if (!process.env.VERCEL) {
+  loadEnvConfig(repoRoot);
+}
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: repoRoot,
   transpilePackages: [
     "@fused-ai/ai",
     "@fused-ai/blockchain",

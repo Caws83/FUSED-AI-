@@ -103,10 +103,11 @@ Local bonding-curve trading is complete. Live X/AI credentials and public deploy
 
 ## PHASE 9 — PRODUCTION
 
+- [x] Deployment architecture docs (Vercel web, managed Postgres, persistent indexer)
 - [ ] Audit
-- [ ] Deployment plan
 - [ ] Monitoring
-- [ ] Production deployment
+- [ ] Production website deploy (Vercel `apps/web` — see docs/VERCEL.md)
+- [ ] Public/Robinhood contract deploy (not this phase)
 
 ## Explicitly not started
 

@@ -52,5 +52,6 @@ __pycache__/
 tmp/
 .turbo/
 
-deployments/local-*.json
+deployments/*.json
 !deployments/*.example.json
+

@@ -63,6 +63,37 @@ test("WalletConnect and AI image stay unavailable without ids", () => {
   assert.equal(status.media.status, "OK");
 });
 
+test("production rejects local media, localhost RPC/DB, and Anvil factory addresses", () => {
+  const status = systemStatus(
+    loadEnv({
+      NODE_ENV: "production",
+      MEDIA_STORE: "local",
+      DATABASE_URL: "postgres://fused:fused@127.0.0.1:5432/fused_ai",
+      RPC_URL: "http://127.0.0.1:8545",
+      NEXT_PUBLIC_RPC_URL: "http://127.0.0.1:8545",
+      NEXT_PUBLIC_CHAIN_ID: "4663",
+      CHAIN_ID: "4663",
+      LAUNCH_FACTORY_ADDRESS: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      LAUNCH_LOCKER_ADDRESS: "0x75537828f2ce51be7289709686A69CbFDbB714F1",
+    }),
+  );
+  assert.equal(status.media.status, "NOT_CONFIGURED");
+  assert.equal(status.database.status, "NOT_CONFIGURED");
+  assert.equal(status.rpc.status, "NOT_CONFIGURED");
+  assert.equal(status.launchContracts.status, "CONTRACTS_NOT_DEPLOYED");
+  assert.equal(status.publicLaunchEnabled, false);
+});
+
+test("production website config does not require X, AI, or WalletConnect", () => {
+  const cfg = loadEnv({ NODE_ENV: "production", NEXT_PUBLIC_APP_URL: "https://example.vercel.app" });
+  const status = systemStatus(cfg);
+  assert.equal(status.social.status, "NOT_CONFIGURED");
+  assert.equal(status.ai.status, "NOT_CONFIGURED");
+  assert.equal(status.aiImage.status, "NOT_CONFIGURED");
+  assert.equal(status.walletConnect.status, "NOT_CONFIGURED");
+  assert.equal(cfg.publicLaunchEnabled, false);
+});
+
 test("tracked-account registry defaults to the repo JSON path", () => {
   const cfg = loadEnv({});
   assert.equal(cfg.social.trackedAccountsPath, "config/tracked-accounts.json");

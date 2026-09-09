@@ -67,7 +67,7 @@ Local Anvil (small so e2e can graduate):
 | `feeBps` | 0 |
 | `lpFee` (v4 after grad) | 1% (10_000 pips) |
 
-A future public deployment passes larger constructor values. Unsafe local targets must not be hardcoded as the only bytecode constants.
+A future public deployment **must pass explicit constructor values**. Unsafe local targets must not be used as fallbacks. See [PRODUCTION_ARCHITECTURE.md](PRODUCTION_ARCHITECTURE.md).
 
 Quote asset this phase: **native ETH only**. Arbitrary ERC-20 quotes are rejected. A later allowlist can add approved quotes.
 

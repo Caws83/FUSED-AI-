@@ -1,25 +1,40 @@
+import { notFound } from "next/navigation";
 import { LaunchModes } from "../../components/LaunchModes.tsx";
 import { StatusBadge } from "@fused-ai/ui";
 import { loadRuntime } from "../../lib/runtime.ts";
 import { availabilityReason, toDisplayStatus } from "../../lib/status.ts";
-import { loadEnv, loadRepoEnv } from "@fused-ai/config";
+import { notConfigured, type Availability } from "@fused-ai/types";
+import { isStatusPageEnabled, loadEnv, loadRepoEnv } from "@fused-ai/config";
 import { createDatabaseClient } from "@fused-ai/database";
 
 export const dynamic = "force-dynamic";
 
+function sanitizeDetail(value: string): string {
+  return value
+    .replace(/postgres:\/\/[^@\s]+@/gi, "postgres://***@")
+    .replace(/Bearer\s+\S+/gi, "Bearer ***")
+    .replace(/sk-[A-Za-z0-9_-]+/g, "sk-***");
+}
+
 export default async function StatusPage() {
   loadRepoEnv();
+  if (!isStatusPageEnabled()) notFound();
   const { status, dex } = await loadRuntime();
   const env = loadEnv();
-  const db = createDatabaseClient(env);
-  if (env.databaseUrl) await db.migrate();
-  const sync = env.databaseUrl ? await db.lastSocialSync() : null;
-  await db.close();
+  let lastSync: Availability = notConfigured(["SOCIAL_PROVIDER"], "No social sync yet.");
+  if (env.databaseUrl) {
+    try {
+      const db = createDatabaseClient(env);
+      const sync = await db.lastSocialSync();
+      await db.close();
+      if (sync.ok && sync.value.lastSyncAt) {
+        lastSync = { status: "OK" };
+      }
+    } catch {
+      lastSync = notConfigured(["DATABASE_URL"], "Database is not reachable.");
+    }
+  }
   const v4 = dex.find((a) => a.version === "v4");
-  const lastSync =
-    sync && sync.ok && sync.value.lastSyncAt
-      ? { status: "OK" as const, reason: `${sync.value.lastSyncAt} (${sync.value.postCount} posts)` }
-      : { status: "NOT_CONFIGURED" as const, reason: "No social sync yet.", missing: ["SOCIAL_PROVIDER"] };
   const rows = [
     { label: "Social Provider", value: status.social },
     { label: "Tracked Accounts", value: status.trackedAccounts },
@@ -43,6 +58,12 @@ export default async function StatusPage() {
           : { status: "ADAPTER_NOT_IMPLEMENTED" as const, reason: v4?.reason ?? "not implemented" },
     },
     { label: "Tokenized Asset Registry", value: status.tokenizedAssetRegistry },
+    {
+      label: "Public launch",
+      value: env.publicLaunchEnabled
+        ? { status: "OK" as const }
+        : { status: "NOT_CONFIGURED" as const, reason: "Launching soon.", missing: ["PUBLIC_LAUNCH_ENABLED"] },
+    },
   ];
 
   return (
@@ -51,7 +72,8 @@ export default async function StatusPage() {
         <p className="fused-kicker">Developer</p>
         <h1 className="fused-h2">System status</h1>
         <p style={{ color: "var(--fused-muted)" }}>
-          Internal availability only. Public pages never show these strings.
+          Internal availability only. Public pages never show these strings. Values are names and statuses — never
+          secrets.
         </p>
         {status.invalid.length ? (
           <p style={{ color: "var(--fused-danger)" }}>Invalid fields: {status.invalid.join(", ")}</p>
@@ -73,14 +95,16 @@ export default async function StatusPage() {
                   <td>
                     <StatusBadge status={display} />
                   </td>
-                  <td style={{ color: "var(--fused-muted)", fontSize: 14 }}>{availabilityReason(row.value)}</td>
+                  <td style={{ color: "var(--fused-muted)", fontSize: 14 }}>
+                    {sanitizeDetail(availabilityReason(row.value))}
+                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
         <div style={{ marginTop: 28 }}>
-          <p className="fused-kicker">Local contracts</p>
+          <p className="fused-kicker">Configured contracts</p>
           <table className="fused-status-table">
             <thead>
               <tr>
@@ -107,7 +131,7 @@ export default async function StatusPage() {
           </table>
           <p style={{ color: "var(--fused-muted)", fontSize: 14 }}>
             Manual create calls FusedFactory.create at the factory address above. OpenLaunch LaunchFactory.launch is
-            not the Phase 5 create path.
+            not the Phase 5 create path. Local Anvil addresses are rejected on public chains.
           </p>
         </div>
         <div style={{ marginTop: 28 }}>

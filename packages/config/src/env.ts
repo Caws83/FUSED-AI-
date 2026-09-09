@@ -5,6 +5,13 @@ import {
   type TrendingWeights,
 } from "@fused-ai/types";
 import { loadPublicEnv, publicWalletAvailability, type PublicEnv } from "./public-env.ts";
+import { mergeLocalDeployment } from "./deployment.ts";
+import { isPublicLaunchEnabled, isPublicChainConfigured, isStatusPageEnabled } from "./features.ts";
+import {
+  isProductionEnv,
+  shouldRejectAnvilAddress,
+  shouldRejectLocalhostUrl,
+} from "./production-safety.ts";
 
 export type { PublicEnv };
 
@@ -39,7 +46,7 @@ export type FusedEnv = {
     weights: TrendingWeights;
   };
   media: {
-    store: string;
+    store: string | null;
     localPath: string | null;
     publicBase: string | null;
     awsAccessKeyId: string | null;
@@ -64,7 +71,7 @@ export type FusedEnv = {
     timeoutMs: number;
   };
   tokenizedAssetRegistryPath: string | null;
-  imageStore: string;
+  imageStore: string | null;
   indexer: {
     startBlock: number | null;
     confirmations: number;
@@ -74,6 +81,11 @@ export type FusedEnv = {
     syncLoop: boolean;
   };
   public: PublicEnv;
+  production: boolean;
+  publicLaunchEnabled: boolean;
+  publicChainConfigured: boolean;
+  statusPageEnabled: boolean;
+  graduationTargetUsdDisplay: number | null;
   invalid: readonly string[];
 };
 
@@ -118,10 +130,25 @@ function isAddress(value: string | null): boolean {
   return Boolean(value && ADDRESS_RE.test(value));
 }
 
+function rejectOrKeep(
+  value: string | null,
+  reject: boolean,
+  key: string,
+  invalid: string[],
+): string | null {
+  if (!value) return null;
+  if (reject) {
+    invalid.push(key);
+    return null;
+  }
+  return value;
+}
+
 function collectInvalid(env: NodeJS.Dict<string>): string[] {
   const invalid: string[] = [];
   const maybeAddress = [
     "LAUNCH_FACTORY_ADDRESS",
+    "FUSED_FACTORY_ADDRESS",
     "LAUNCH_LOCKER_ADDRESS",
     "UNISWAP_POOL_MANAGER_ADDRESS",
     "UNISWAP_POOL_MANAGER",
@@ -164,78 +191,179 @@ export function fieldState(value: string | number | null, invalid = false): Conf
 }
 
 export function loadEnv(env: NodeJS.Dict<string> = process.env): FusedEnv {
-  const publicEnv = loadPublicEnv(env);
-  const startBlock = firstInt(env, "INDEXER_START_BLOCK", "LAUNCH_DEPLOY_BLOCK");
+  const source = env === process.env ? mergeLocalDeployment(env) : env;
+  const production = isProductionEnv(source);
+  const invalid = collectInvalid(source);
+  const chainId = firstInt(source, "CHAIN_ID", "NEXT_PUBLIC_CHAIN_ID");
+  const publicEnv = loadPublicEnv(source);
+
+  const databaseUrl = rejectOrKeep(
+    read("DATABASE_URL", source),
+    shouldRejectLocalhostUrl(read("DATABASE_URL", source), source),
+    "DATABASE_URL",
+    invalid,
+  );
+  const rpcUrl = rejectOrKeep(
+    read("RPC_URL", source),
+    shouldRejectLocalhostUrl(read("RPC_URL", source), source),
+    "RPC_URL",
+    invalid,
+  );
+  const rpcUrlFallback = rejectOrKeep(
+    read("RPC_URL_FALLBACK", source),
+    shouldRejectLocalhostUrl(read("RPC_URL_FALLBACK", source), source),
+    "RPC_URL_FALLBACK",
+    invalid,
+  );
+
+  const launchFactory = rejectOrKeep(
+    first(source, "LAUNCH_FACTORY_ADDRESS", "FUSED_FACTORY_ADDRESS"),
+    shouldRejectAnvilAddress(first(source, "LAUNCH_FACTORY_ADDRESS", "FUSED_FACTORY_ADDRESS"), chainId, source),
+    "LAUNCH_FACTORY_ADDRESS",
+    invalid,
+  );
+  const launchLocker = rejectOrKeep(
+    first(source, "LAUNCH_LOCKER_ADDRESS", "FUSED_LOCKER_ADDRESS"),
+    shouldRejectAnvilAddress(first(source, "LAUNCH_LOCKER_ADDRESS", "FUSED_LOCKER_ADDRESS"), chainId, source),
+    "LAUNCH_LOCKER_ADDRESS",
+    invalid,
+  );
+
+  const poolManagerRaw = first(source, "UNISWAP_POOL_MANAGER_ADDRESS", "UNISWAP_POOL_MANAGER");
+  const positionManagerRaw = first(source, "UNISWAP_POSITION_MANAGER_ADDRESS", "UNISWAP_POSITION_MANAGER");
+  const poolManager = rejectOrKeep(
+    poolManagerRaw,
+    shouldRejectAnvilAddress(poolManagerRaw, chainId, source),
+    "UNISWAP_POOL_MANAGER_ADDRESS",
+    invalid,
+  );
+  const positionManager = rejectOrKeep(
+    positionManagerRaw,
+    shouldRejectAnvilAddress(positionManagerRaw, chainId, source),
+    "UNISWAP_POSITION_MANAGER_ADDRESS",
+    invalid,
+  );
+
+  const mediaStoreRaw = first(source, "MEDIA_STORE", "IMAGE_STORE");
+  const mediaStore = mediaStoreRaw ?? (production ? null : "local");
+  if (production && (mediaStore ?? "local").toLowerCase() === "local") {
+    invalid.push("MEDIA_STORE");
+  }
+  const mediaPublicBase = rejectOrKeep(
+    first(source, "IMAGE_PUBLIC_BASE", "MEDIA_PUBLIC_BASE"),
+    shouldRejectLocalhostUrl(first(source, "IMAGE_PUBLIC_BASE", "MEDIA_PUBLIC_BASE"), source),
+    "IMAGE_PUBLIC_BASE",
+    invalid,
+  );
+
+  let siteUrl = first(source, "NEXT_PUBLIC_APP_URL", "FUSED_SITE_URL");
+  if (shouldRejectLocalhostUrl(siteUrl, source)) {
+    invalid.push("NEXT_PUBLIC_APP_URL");
+    siteUrl = null;
+  }
+  if (!siteUrl) siteUrl = production ? "" : "http://localhost:3000";
+
+  const startBlock = firstInt(source, "INDEXER_START_BLOCK", "LAUNCH_DEPLOY_BLOCK");
+  const contractsOk =
+    Boolean(launchFactory) &&
+    Boolean(launchLocker) &&
+    !invalid.includes("LAUNCH_FACTORY_ADDRESS") &&
+    !invalid.includes("LAUNCH_LOCKER_ADDRESS");
+
+  const publicLaunchEnabled = isPublicLaunchEnabled(
+    {
+      chainId,
+      publicChainId: publicEnv.chainId,
+      publicRpcUrl: publicEnv.rpcUrl,
+      contractsOk,
+    },
+    source,
+  );
+  const publicChainConfigured = isPublicChainConfigured(
+    {
+      chainId,
+      publicChainId: publicEnv.chainId,
+      publicRpcUrl: publicEnv.rpcUrl,
+      contractsOk,
+    },
+    source,
+  );
+
   return {
-    siteUrl: first(env, "NEXT_PUBLIC_APP_URL", "FUSED_SITE_URL") ?? "http://localhost:3000",
-    databaseUrl: read("DATABASE_URL", env),
-    chainId: firstInt(env, "CHAIN_ID", "NEXT_PUBLIC_CHAIN_ID"),
-    rpcUrl: read("RPC_URL", env),
-    rpcUrlFallback: read("RPC_URL_FALLBACK", env),
-    launchFactory: first(env, "LAUNCH_FACTORY_ADDRESS"),
-    launchLocker: first(env, "LAUNCH_LOCKER_ADDRESS"),
+    siteUrl,
+    databaseUrl,
+    chainId,
+    rpcUrl,
+    rpcUrlFallback,
+    launchFactory,
+    launchLocker,
     launchDeployBlock: startBlock,
     uniswap: {
-      poolManager: first(env, "UNISWAP_POOL_MANAGER_ADDRESS", "UNISWAP_POOL_MANAGER"),
-      positionManager: first(env, "UNISWAP_POSITION_MANAGER_ADDRESS", "UNISWAP_POSITION_MANAGER"),
-      stateView: read("UNISWAP_STATE_VIEW", env),
-      quoter: read("UNISWAP_QUOTER", env),
-      universalRouter: first(env, "UNISWAP_UNIVERSAL_ROUTER_ADDRESS", "UNISWAP_UNIVERSAL_ROUTER"),
-      permit2: first(env, "UNISWAP_PERMIT2_ADDRESS", "UNISWAP_PERMIT2"),
-      v3Factory: read("UNISWAP_V3_FACTORY", env),
-      v2Factory: read("UNISWAP_V2_FACTORY", env),
+      poolManager,
+      positionManager,
+      stateView: read("UNISWAP_STATE_VIEW", source),
+      quoter: read("UNISWAP_QUOTER", source),
+      universalRouter: first(source, "UNISWAP_UNIVERSAL_ROUTER_ADDRESS", "UNISWAP_UNIVERSAL_ROUTER"),
+      permit2: first(source, "UNISWAP_PERMIT2_ADDRESS", "UNISWAP_PERMIT2"),
+      v3Factory: read("UNISWAP_V3_FACTORY", source),
+      v2Factory: read("UNISWAP_V2_FACTORY", source),
     },
     social: {
-      provider: read("SOCIAL_PROVIDER", env),
-      bearerToken: first(env, "X_BEARER_TOKEN", "X_APP_ONLY_TOKEN"),
-      apiKey: read("X_API_KEY", env),
-      apiSecret: read("X_API_SECRET", env),
-      trackedAccountsPath: read("TRACKED_ACCOUNTS_PATH", env) || "config/tracked-accounts.json",
+      provider: read("SOCIAL_PROVIDER", source),
+      bearerToken: first(source, "X_BEARER_TOKEN", "X_APP_ONLY_TOKEN"),
+      apiKey: read("X_API_KEY", source),
+      apiSecret: read("X_API_SECRET", source),
+      trackedAccountsPath: read("TRACKED_ACCOUNTS_PATH", source) || "config/tracked-accounts.json",
       lastSync: null,
       weights: {
-        velocity: readWeight("TRENDING_VELOCITY_WEIGHT", 0.45, env),
-        recency: readWeight("TRENDING_RECENCY_WEIGHT", 0.25, env),
-        totals: readWeight("TRENDING_TOTALS_WEIGHT", 0.3, env),
-        priority: readWeight("TRENDING_PRIORITY_WEIGHT", 0.1, env),
+        velocity: readWeight("TRENDING_VELOCITY_WEIGHT", 0.45, source),
+        recency: readWeight("TRENDING_RECENCY_WEIGHT", 0.25, source),
+        totals: readWeight("TRENDING_TOTALS_WEIGHT", 0.3, source),
+        priority: readWeight("TRENDING_PRIORITY_WEIGHT", 0.1, source),
       },
     },
     media: {
-      store: first(env, "MEDIA_STORE", "IMAGE_STORE") ?? "local",
-      localPath: read("MEDIA_LOCAL_PATH", env),
-      publicBase: first(env, "IMAGE_PUBLIC_BASE", "MEDIA_PUBLIC_BASE"),
-      awsAccessKeyId: read("AWS_ACCESS_KEY_ID", env),
-      awsSecretAccessKey: read("AWS_SECRET_ACCESS_KEY", env),
-      awsEndpoint: read("AWS_ENDPOINT_URL_S3", env),
-      awsRegion: read("AWS_REGION", env),
-      bucket: read("BUCKET_NAME", env),
+      store: production && (mediaStore ?? "local").toLowerCase() === "local" ? null : mediaStore,
+      localPath: production ? null : read("MEDIA_LOCAL_PATH", source),
+      publicBase: mediaPublicBase,
+      awsAccessKeyId: read("AWS_ACCESS_KEY_ID", source),
+      awsSecretAccessKey: read("AWS_SECRET_ACCESS_KEY", source),
+      awsEndpoint: read("AWS_ENDPOINT_URL_S3", source),
+      awsRegion: read("AWS_REGION", source),
+      bucket: read("BUCKET_NAME", source),
     },
-    aiImageProvider: read("AI_IMAGE_PROVIDER", env),
+    aiImageProvider: read("AI_IMAGE_PROVIDER", source),
     aiImage: {
-      provider: read("AI_IMAGE_PROVIDER", env),
-      apiKey: first(env, "AI_IMAGE_API_KEY", "AI_API_KEY"),
-      apiBaseUrl: first(env, "AI_IMAGE_API_BASE_URL", "AI_API_BASE_URL"),
-      model: first(env, "AI_IMAGE_MODEL"),
+      provider: read("AI_IMAGE_PROVIDER", source),
+      apiKey: first(source, "AI_IMAGE_API_KEY", "AI_API_KEY"),
+      apiBaseUrl: first(source, "AI_IMAGE_API_BASE_URL", "AI_API_BASE_URL"),
+      model: first(source, "AI_IMAGE_MODEL"),
     },
     ai: {
-      provider: read("AI_PROVIDER", env),
-      apiKey: read("AI_API_KEY", env),
-      apiBaseUrl: read("AI_API_BASE_URL", env),
-      model: read("AI_MODEL", env),
-      maxOutputTokens: readInt("AI_MAX_OUTPUT_TOKENS", env) ?? 1200,
-      timeoutMs: readInt("AI_TIMEOUT_MS", env) ?? 30_000,
+      provider: read("AI_PROVIDER", source),
+      apiKey: read("AI_API_KEY", source),
+      apiBaseUrl: read("AI_API_BASE_URL", source),
+      model: read("AI_MODEL", source),
+      maxOutputTokens: readInt("AI_MAX_OUTPUT_TOKENS", source) ?? 1200,
+      timeoutMs: readInt("AI_TIMEOUT_MS", source) ?? 30_000,
     },
-    tokenizedAssetRegistryPath: read("TOKENIZED_ASSET_REGISTRY_PATH", env),
-    imageStore: first(env, "MEDIA_STORE", "IMAGE_STORE") ?? "local",
+    tokenizedAssetRegistryPath: read("TOKENIZED_ASSET_REGISTRY_PATH", source),
+    imageStore: production && (mediaStore ?? "local").toLowerCase() === "local" ? null : mediaStore,
     indexer: {
       startBlock: startBlock,
-      confirmations: readInt("INDEXER_CONFIRMATIONS", env) ?? 2,
-      intervalMs: firstInt(env, "INDEXER_POLL_INTERVAL", "INDEXER_INTERVAL_MS") ?? 15_000,
-      overlapBlocks: readInt("INDEXER_OVERLAP_BLOCKS", env) ?? 50,
-      lagAlertBlocks: readInt("INDEXER_LAG_ALERT_BLOCKS", env) ?? 200,
-      syncLoop: read("INDEXER_SYNC_LOOP", env) === "1",
+      confirmations: readInt("INDEXER_CONFIRMATIONS", source) ?? 2,
+      intervalMs: firstInt(source, "INDEXER_POLL_INTERVAL", "INDEXER_INTERVAL_MS") ?? 15_000,
+      overlapBlocks: readInt("INDEXER_OVERLAP_BLOCKS", source) ?? 50,
+      lagAlertBlocks: readInt("INDEXER_LAG_ALERT_BLOCKS", source) ?? 200,
+      syncLoop: read("INDEXER_SYNC_LOOP", source) === "1",
     },
     public: publicEnv,
-    invalid: collectInvalid(env),
+    production,
+    publicLaunchEnabled,
+    publicChainConfigured,
+    statusPageEnabled: isStatusPageEnabled(source),
+    graduationTargetUsdDisplay: firstInt(source, "NEXT_PUBLIC_GRADUATION_TARGET_USD"),
+    invalid: [...new Set(invalid)],
   };
 }
 
@@ -249,6 +377,9 @@ export function databaseAvailability(cfg: FusedEnv): Availability {
 
 export function rpcAvailability(cfg: FusedEnv): Availability {
   if (!cfg.rpcUrl || !cfg.chainId) return notConfigured(["RPC_URL", "CHAIN_ID"]);
+  if (cfg.invalid.includes("RPC_URL")) {
+    return { status: AVAILABILITY_STATUS.NOT_CONFIGURED, reason: "RPC_URL is invalid.", missing: ["RPC_URL"] };
+  }
   return { status: AVAILABILITY_STATUS.OK };
 }
 
@@ -266,7 +397,7 @@ export function trackedAccountsAvailability(cfg: FusedEnv): Availability {
 }
 
 export function mediaAvailability(cfg: FusedEnv): Availability {
-  const store = (cfg.media.store || "local").toLowerCase();
+  const store = (cfg.media.store || "").toLowerCase();
   if (store === "s3" || store === "r2") {
     const missing: string[] = [];
     if (!cfg.media.awsAccessKeyId) missing.push("AWS_ACCESS_KEY_ID");
@@ -276,7 +407,11 @@ export function mediaAvailability(cfg: FusedEnv): Availability {
     if (missing.length) return notConfigured(missing, "Object storage is not configured.");
     return { status: AVAILABILITY_STATUS.OK };
   }
-  return { status: AVAILABILITY_STATUS.OK };
+  if (cfg.production || store === "") {
+    return notConfigured(["MEDIA_STORE"], "Local filesystem media is not allowed in production. Configure S3/R2.");
+  }
+  if (store === "local") return { status: AVAILABILITY_STATUS.OK };
+  return notConfigured(["MEDIA_STORE"], "Media store is not configured.");
 }
 
 export function walletConnectAvailability(cfg: FusedEnv): Availability {
@@ -293,6 +428,9 @@ export function aiImageAvailability(cfg: FusedEnv): Availability {
 }
 
 export function localChainAvailability(cfg: FusedEnv): Availability {
+  if (cfg.production) {
+    return notConfigured(["CHAIN_ID"], "Local Anvil is not used in production.");
+  }
   if (cfg.chainId === 31337 && cfg.rpcUrl) return { status: AVAILABILITY_STATUS.OK };
   if (!cfg.chainId || !cfg.rpcUrl) return notConfigured(["CHAIN_ID", "RPC_URL"], "Local chain is not configured.");
   return { status: AVAILABILITY_STATUS.OK };
@@ -362,6 +500,8 @@ export function systemStatus(cfg: FusedEnv = loadEnv()) {
     indexer: indexerAvailability(cfg),
     tokenizedAssetRegistry: tokenizedAssetRegistryAvailability(cfg),
     wallet: walletAvailability(cfg),
+    publicLaunchEnabled: cfg.publicLaunchEnabled,
+    publicChainConfigured: cfg.publicChainConfigured,
     invalid: cfg.invalid,
   };
 }

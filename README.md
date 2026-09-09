@@ -54,7 +54,9 @@ Local UI: http://localhost:3000
 ## Environment
 
 All variables are documented in [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md).
-Template: [`.env.example`](.env.example). Secrets stay gitignored (`.env`, `.env.local`).
+Vercel website: [docs/VERCEL.md](docs/VERCEL.md).
+Architecture: [docs/PRODUCTION_ARCHITECTURE.md](docs/PRODUCTION_ARCHITECTURE.md).
+Template: [`.env.example`](.env.example). Local addresses: generated `.env.local` (see [`.env.local.example`](.env.local.example)).
 
 Never put `AI_API_KEY`, `X_BEARER_TOKEN`, `DATABASE_URL`, or a keyed RPC on
 `NEXT_PUBLIC_*`.

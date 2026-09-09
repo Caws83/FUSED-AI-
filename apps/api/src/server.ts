@@ -5,6 +5,9 @@ import { createSocialProvider } from "@fused-ai/social";
 import { createAIProvider } from "@fused-ai/ai";
 import { createDatabaseClient } from "@fused-ai/database";
 
+// Local/developer HTTP helper and `npm run status`. Not the public website.
+// Do not deploy this package to Vercel. The public site is apps/web.
+
 loadRepoEnv();
 const env = loadEnv();
 

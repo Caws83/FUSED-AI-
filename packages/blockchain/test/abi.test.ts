@@ -53,6 +53,7 @@ test("example deployment file has the required contract keys and no invented add
   const file = join(dirname(fileURLToPath(import.meta.url)), "../../../deployments/local-31337.example.json");
   const json = JSON.parse(readFileSync(file, "utf8"));
   assert.equal(json.chainId, 31337);
+  assert.equal(json.status, "NOT_DEPLOYED");
   assert.equal(json.rpcUrl, "http://127.0.0.1:8545");
   assert.deepEqual(Object.keys(json.contracts).sort(), [
     "launchFactory",
@@ -62,6 +63,7 @@ test("example deployment file has the required contract keys and no invented add
     "positionManager",
     "universalRouter",
   ]);
-  assert.equal(json.contracts.launchFactory, "");
+  assert.equal(json.contracts.launchFactory, null);
+  assert.equal(json.contracts.launchLocker, null);
   assert.equal(json.contracts.universalRouter, null);
 });

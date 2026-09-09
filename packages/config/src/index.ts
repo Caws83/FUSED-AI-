@@ -22,3 +22,40 @@ export {
   type PublicEnv,
 } from "./env.ts";
 export { findRepoRoot, loadRepoEnv } from "./load-repo-env.ts";
+export {
+  CANONICAL_PERMIT2,
+  KNOWN_ANVIL_CREATE_ADDRESSES,
+  LOCAL_CHAIN_ID,
+  isKnownAnvilCreateAddress,
+  isLocalhostUrl,
+  isProductionEnv,
+  shouldRejectAnvilAddress,
+  shouldRejectLocalhostUrl,
+} from "./production-safety.ts";
+export {
+  LOCAL_CURVE,
+  LOCAL_GRADUATION_TARGET_ETH,
+  PUBLIC_GRADUATION_TARGET_USD,
+  isLocalGraduationTargetWei,
+  localCurveParams,
+  requirePublicCurveParams,
+  type PublicCurveParams,
+  type PublicCurveResult,
+} from "./curve.ts";
+export {
+  localDeploymentPath,
+  mergeLocalDeployment,
+  parseDeploymentManifest,
+  publicDeploymentPath,
+  readLocalDeploymentManifest,
+  readPublicDeploymentManifest,
+  type DeploymentManifest,
+  type DeploymentStatus,
+} from "./deployment.ts";
+export {
+  isPublicChainConfigured,
+  isPublicLaunchEnabled,
+  isStatusPageEnabled,
+  readPublicChainConfiguredFlag,
+  readPublicLaunchEnabledFlag,
+} from "./features.ts";

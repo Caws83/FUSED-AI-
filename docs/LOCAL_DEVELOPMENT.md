@@ -54,8 +54,10 @@ are not deployed.
 
 It writes gitignored:
 
-- `deployments/local-31337.json`
-- `.env.local`
+- `deployments/local-31337.json` — **source of truth** for local FusedFactory, locker, Uniswap, and local curve params
+- `.env.local` — same addresses plus RPC, Postgres, indexer flags
+
+`packages/config` overlays the JSON on chain 31337 so header, launch, trading, `/status`, indexer, and scripts agree. Do not copy those addresses into `.env.example`.
 
 ## 4. Import one Anvil account into MetaMask or Rabby
 

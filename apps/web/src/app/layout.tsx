@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { DM_Sans, Syne } from "next/font/google";
-import { loadPublicEnv, publicWalletAvailability } from "@fused-ai/config/public";
+import { isStatusPageEnabled, loadPublicEnv, publicWalletAvailability } from "@fused-ai/config/public";
 import { SiteHeader } from "../components/SiteHeader.tsx";
 import { Providers } from "../components/Providers.tsx";
 import "@fused-ai/ui/styles.css";
@@ -35,6 +35,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           walletConnectProjectId: pub.walletConnectProjectId,
         }
       : null;
+  const showStatus = isStatusPageEnabled();
 
   return (
     <html lang="en">
@@ -45,7 +46,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <footer className="fused-footer">
             <div className="fused-wrap" style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
               <span>FUSED AI</span>
-              <a href="/status">Status</a>
+              {showStatus ? <a href="/status">Status</a> : null}
             </div>
           </footer>
         </Providers>

@@ -7,14 +7,14 @@ import { FUSED_FACTORY_ABI, STATE_LABEL } from "@fused-ai/blockchain";
 export const dynamic = "force-dynamic";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ address: string }> }) {
-  loadRepoEnv();
-  const env = loadEnv();
-  const { address } = await params;
-  if (!env.databaseUrl || !env.chainId || !address?.startsWith("0x")) {
-    return NextResponse.json({ ok: false }, { status: 400 });
-  }
+  try {
+    loadRepoEnv();
+    const env = loadEnv();
+    const { address } = await params;
+    if (!env.databaseUrl || !env.chainId || !address?.startsWith("0x")) {
+      return NextResponse.json({ ok: false }, { status: 400 });
+    }
   const db = createDatabaseClient(env);
-  await db.migrate();
 
   if (env.rpcUrl && env.launchFactory) {
     try {
@@ -78,4 +78,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ add
     },
     stats: stats.ok ? stats.value : { volumeTotal: "0", volume24h: "0", tradeCount: 0, holderCount: 0 },
   });
+  } catch {
+    return NextResponse.json({ ok: false }, { status: 503 });
+  }
 }

@@ -1,4 +1,5 @@
 import { AVAILABILITY_STATUS, notConfigured, type Availability } from "@fused-ai/types";
+import { isProductionEnv, shouldRejectLocalhostUrl } from "./production-safety.ts";
 
 /**
  * Browser-safe env. Only NEXT_PUBLIC_* keys. Never read AI, X, database, or
@@ -9,6 +10,7 @@ export type PublicEnv = {
   chainId: number | null;
   rpcUrl: string | null;
   walletConnectProjectId: string | null;
+  graduationTargetUsdDisplay: number | null;
 };
 
 function read(name: string, env: NodeJS.Dict<string>): string | null {
@@ -24,13 +26,35 @@ function readInt(name: string, env: NodeJS.Dict<string>): number | null {
 }
 
 export function loadPublicEnv(env: NodeJS.Dict<string> = process.env): PublicEnv {
+  const production = isProductionEnv(env);
+  let appUrl = read("NEXT_PUBLIC_APP_URL", env);
+  if (shouldRejectLocalhostUrl(appUrl, env)) appUrl = null;
+  if (!appUrl) appUrl = production ? "" : "http://localhost:3000";
+
+  let rpcUrl = read("NEXT_PUBLIC_RPC_URL", env);
+  if (shouldRejectLocalhostUrl(rpcUrl, env)) rpcUrl = null;
+
+  const chainId = readInt("NEXT_PUBLIC_CHAIN_ID", env);
+  if (production && chainId === 31337) {
+    return {
+      appUrl,
+      chainId: null,
+      rpcUrl: null,
+      walletConnectProjectId: read("NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID", env),
+      graduationTargetUsdDisplay: readInt("NEXT_PUBLIC_GRADUATION_TARGET_USD", env),
+    };
+  }
+
   return {
-    appUrl: read("NEXT_PUBLIC_APP_URL", env) ?? "http://localhost:3000",
-    chainId: readInt("NEXT_PUBLIC_CHAIN_ID", env),
-    rpcUrl: read("NEXT_PUBLIC_RPC_URL", env),
+    appUrl,
+    chainId,
+    rpcUrl,
     walletConnectProjectId: read("NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID", env),
+    graduationTargetUsdDisplay: readInt("NEXT_PUBLIC_GRADUATION_TARGET_USD", env),
   };
 }
+
+export { isStatusPageEnabled } from "./features.ts";
 
 export function publicWalletAvailability(pub: PublicEnv): Availability {
   const missing: string[] = [];

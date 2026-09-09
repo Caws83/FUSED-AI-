@@ -14,7 +14,8 @@ test("manual launch does not require AI or X and resolves wallet clients at clic
   const root = join(dirname(fileURLToPath(import.meta.url)), "..");
   const launchPage = readFileSync(join(root, "src/app/launch/page.tsx"), "utf8");
   const manual = readFileSync(join(root, "src/components/ManualLaunch.tsx"), "utf8");
-  assert.match(launchPage, /launchContractsAvailability/);
+  assert.match(launchPage, /publicLaunchEnabled/);
+  assert.match(launchPage, /Launching soon/);
   assert.equal(launchPage.includes("aiAvailability"), false);
   assert.equal(launchPage.includes("socialAvailability"), false);
   assert.match(manual, /resolveWriteClients/);

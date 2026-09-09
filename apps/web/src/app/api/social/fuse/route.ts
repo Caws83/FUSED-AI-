@@ -25,7 +25,6 @@ export async function POST(request: Request) {
   }
   const db = createDatabaseClient(env);
   if (env.databaseUrl) {
-    await db.migrate();
     await db.upsertSocialPost(fetched.value);
   }
   await db.close();

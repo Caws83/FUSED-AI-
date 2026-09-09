@@ -6,7 +6,9 @@ Graduation is decided **on chain**, not by the frontend.
 
 `realQuote >= graduationTarget`
 
-Local Anvil default target: **0.1 ETH** (`FUSED_GRADUATION_TARGET_WEI`). Production deployments must pass a larger constructor value.
+Local Anvil default target: **0.1 ETH** (`FUSED_GRADUATION_TARGET_WEI`). That value is a **local test parameter**. Public networks must pass an explicit native-quote wei amount. There is no fallback to 0.1 ETH.
+
+Product intent for public tokens: about **USD $50,000**. That number is **not** encoded in Solidity. The contract stores ETH/native wei. `NEXT_PUBLIC_GRADUATION_TARGET_USD` is a display estimate only (not a live oracle).
 
 `buy()` auto-graduates in the same transaction when the threshold is met. `graduate(token)` is also permissionless after the threshold.
 

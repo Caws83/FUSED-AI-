@@ -46,10 +46,12 @@ export function TokenTerminal({
   initial,
   factory,
   chainId,
+  graduationTargetUsd = null,
 }: {
   initial: IndexedLaunch;
   factory: `0x${string}` | null;
   chainId: number;
+  graduationTargetUsd?: number | null;
 }) {
   const [live, setLive] = useState<LivePayload | null>(null);
   const [intervalSec, setIntervalSec] = useState(60);
@@ -251,6 +253,12 @@ export function TokenTerminal({
               <dt>Graduation target</dt>
               <dd>{formatEth(launch.graduationTarget)}</dd>
             </div>
+            {graduationTargetUsd ? (
+              <div>
+                <dt>Display USD estimate</dt>
+                <dd>~${graduationTargetUsd.toLocaleString()} (not a live price)</dd>
+              </div>
+            ) : null}
             <div>
               <dt>Remaining</dt>
               <dd>
