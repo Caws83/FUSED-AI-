@@ -50,6 +50,7 @@ const nextConfig: NextConfig = {
     "@fused-ai/media",
     "@fused-ai/ui",
   ],
+  serverExternalPackages: ["postgres"],
 };
 
 export default nextConfig;

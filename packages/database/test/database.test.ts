@@ -92,3 +92,19 @@ test("listLaunches filters by chain_id", () => {
   assert.match(src, /WHERE l.chain_id = \$\{chainId\}/);
 });
 
+test("client uses postgres connection options helper", () => {
+  const src = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "src", "client.ts"), "utf8");
+  assert.match(src, /postgresClientOptions/);
+  assert.match(src, /fused_sync_cursor/);
+});
+
+test("public Postgres URLs require TLS; local and Railway private DNS do not", async () => {
+  const { postgresSslMode, postgresClientOptions } = await import("../src/postgres-options.ts");
+  assert.equal(postgresSslMode("postgres://fused:fused@127.0.0.1:5432/fused_ai"), false);
+  assert.equal(postgresSslMode("postgres://postgres:x@postgres.railway.internal:5432/railway"), false);
+  assert.equal(postgresSslMode("postgres://postgres:x@altaria.proxy.rlwy.net:49142/railway"), "require");
+  assert.equal(postgresSslMode("postgres://postgres:x@altaria.proxy.rlwy.net:49142/railway?sslmode=disable"), false);
+  const remote = postgresClientOptions("postgres://postgres:x@altaria.proxy.rlwy.net:49142/railway");
+  assert.equal(remote.ssl, "require");
+});
+

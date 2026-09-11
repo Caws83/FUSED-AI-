@@ -62,3 +62,20 @@ export function shouldRejectAnvilAddress(
 export function shouldRejectLocalhostUrl(value: string | null | undefined, env: NodeJS.Dict<string>): boolean {
   return isProductionEnv(env) && isLocalhostUrl(value);
 }
+
+/** Railway private DNS works inside Railway. Vercel cannot resolve it. */
+export function isPrivateRailwayUrl(value: string | null | undefined): boolean {
+  if (!value) return false;
+  const raw = value.trim();
+  if (!raw) return false;
+  try {
+    const parsed = new URL(raw.includes("://") ? raw : `http://${raw}`);
+    return parsed.hostname.toLowerCase().endsWith(".railway.internal");
+  } catch {
+    return /\.railway\.internal/i.test(raw);
+  }
+}
+
+export function shouldRejectPrivateRailwayUrl(value: string | null | undefined, env: NodeJS.Dict<string>): boolean {
+  return Boolean(env.VERCEL) && isPrivateRailwayUrl(value);
+}

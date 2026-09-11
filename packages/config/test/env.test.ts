@@ -137,3 +137,16 @@ test("manual launch contracts and wallet are OK without AI or X", () => {
   assert.equal(status.ai.status, "NOT_CONFIGURED");
   assert.equal(status.aiImage.status, "NOT_CONFIGURED");
 });
+
+test("Vercel cannot use Railway private DNS as DATABASE_URL", () => {
+  const cfg = loadEnv({
+    VERCEL: "1",
+    VERCEL_ENV: "production",
+    NODE_ENV: "production",
+    DATABASE_URL: "postgres://postgres:x@postgres.railway.internal:5432/railway",
+    CHAIN_ID: "46630",
+  });
+  assert.equal(cfg.databaseUrl, null);
+  assert.equal(cfg.invalid.includes("DATABASE_URL"), true);
+  assert.equal(systemStatus(cfg).database.status, "NOT_CONFIGURED");
+});

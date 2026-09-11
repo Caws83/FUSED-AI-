@@ -6,6 +6,7 @@ import { FUSED_FACTORY_ABI, STATE_LABEL } from "@fused-ai/blockchain";
 import { loadOnchainLaunch } from "../../../../../lib/launches.ts";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ address: string }> }) {
   try {

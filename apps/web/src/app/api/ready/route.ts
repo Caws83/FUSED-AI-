@@ -3,6 +3,7 @@ import { loadEnv, loadRepoEnv, systemStatus } from "@fused-ai/config";
 import { loadIndexerFreshness } from "../../../lib/launches.ts";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET() {
   loadRepoEnv();

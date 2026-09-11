@@ -28,9 +28,11 @@ export {
   LOCAL_CHAIN_ID,
   isKnownAnvilCreateAddress,
   isLocalhostUrl,
+  isPrivateRailwayUrl,
   isProductionEnv,
   shouldRejectAnvilAddress,
   shouldRejectLocalhostUrl,
+  shouldRejectPrivateRailwayUrl,
 } from "./production-safety.ts";
 export {
   LOCAL_CURVE,

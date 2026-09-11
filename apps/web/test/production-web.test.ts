@@ -21,6 +21,7 @@ test("ready route reports subsystem flags without secrets", () => {
   assert.match(src, /database/);
   assert.match(src, /media/);
   assert.match(src, /indexing/);
+  assert.match(src, /runtime = "nodejs"/);
   assert.equal(src.includes("DEPLOYER_PRIVATE_KEY"), false);
   assert.equal(src.includes("AWS_SECRET_ACCESS_KEY"), false);
   assert.equal(src.includes("X_BEARER_TOKEN"), false);
@@ -39,6 +40,8 @@ test("next config traces the monorepo root and public deployment manifests", () 
   assert.match(src, /outputFileTracingRoot/);
   assert.match(src, /outputFileTracingIncludes/);
   assert.match(src, /deployments/);
+  assert.match(src, /serverExternalPackages/);
+  assert.match(src, /postgres/);
 });
 
 test("token page can render from onchain when the indexer is delayed", () => {

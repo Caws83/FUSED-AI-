@@ -3,9 +3,11 @@ import test from "node:test";
 import {
   isKnownAnvilCreateAddress,
   isLocalhostUrl,
+  isPrivateRailwayUrl,
   isProductionEnv,
   shouldRejectAnvilAddress,
   shouldRejectLocalhostUrl,
+  shouldRejectPrivateRailwayUrl,
 } from "../src/production-safety.ts";
 
 test("known Anvil CREATE addresses are detected", () => {
@@ -39,4 +41,14 @@ test("Anvil addresses are allowed only on local non-production 31337", () => {
 test("Vercel preview is treated as production", () => {
   assert.equal(isProductionEnv({ VERCEL_ENV: "preview" }), true);
   assert.equal(isProductionEnv({ NODE_ENV: "development" }), false);
+});
+
+test("Vercel rejects Railway private DNS DATABASE_URL", () => {
+  const internal = "postgres://postgres:x@postgres.railway.internal:5432/railway";
+  const pub = "postgres://postgres:x@altaria.proxy.rlwy.net:49142/railway";
+  assert.equal(isPrivateRailwayUrl(internal), true);
+  assert.equal(isPrivateRailwayUrl(pub), false);
+  assert.equal(shouldRejectPrivateRailwayUrl(internal, { VERCEL: "1" }), true);
+  assert.equal(shouldRejectPrivateRailwayUrl(internal, {}), false);
+  assert.equal(shouldRejectPrivateRailwayUrl(pub, { VERCEL: "1" }), false);
 });

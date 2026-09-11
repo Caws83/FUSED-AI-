@@ -11,6 +11,7 @@ import {
   isProductionEnv,
   shouldRejectAnvilAddress,
   shouldRejectLocalhostUrl,
+  shouldRejectPrivateRailwayUrl,
 } from "./production-safety.ts";
 
 export type { PublicEnv };
@@ -200,7 +201,8 @@ export function loadEnv(env: NodeJS.Dict<string> = process.env): FusedEnv {
 
   const databaseUrl = rejectOrKeep(
     read("DATABASE_URL", source),
-    shouldRejectLocalhostUrl(read("DATABASE_URL", source), source),
+    shouldRejectLocalhostUrl(read("DATABASE_URL", source), source) ||
+      shouldRejectPrivateRailwayUrl(read("DATABASE_URL", source), source),
     "DATABASE_URL",
     invalid,
   );

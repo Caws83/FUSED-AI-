@@ -5,6 +5,7 @@ import { loadLaunchPage } from "../../../lib/launches.ts";
 import { TokenTerminal } from "../../../components/TokenTerminal.tsx";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export default async function TokenPage({ params }: { params: Promise<{ address: string }> }) {
   loadRepoEnv();

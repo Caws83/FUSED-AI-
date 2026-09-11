@@ -7,6 +7,7 @@ import { loadTrendingPosts } from "../lib/social.ts";
 import { LaunchGrid, splitBoards } from "../lib/boards.tsx";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 const PIPELINE = [
   { id: "FUSE", caption: "From a post" },

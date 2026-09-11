@@ -5,6 +5,7 @@ import postgres from "postgres";
 import { databaseUnavailable, type Availability } from "@fused-ai/types";
 import { err, fail, ok, type Result } from "@fused-ai/shared";
 import { databaseAvailability, type FusedEnv } from "@fused-ai/config";
+import { postgresClientOptions } from "./postgres-options.ts";
 import type { HexAddress, IndexedLaunch, SocialPost, TrackedAccount } from "@fused-ai/types";
 
 export type LaunchInsert = {
@@ -147,7 +148,7 @@ export function createDatabaseClient(env: FusedEnv): DatabaseClient {
 
   const conn = () => {
     if (!env.databaseUrl) return null;
-    if (!sql) sql = postgres(env.databaseUrl, { max: 4, idle_timeout: 20 });
+    if (!sql) sql = postgres(env.databaseUrl, postgresClientOptions(env.databaseUrl));
     return sql;
   };
 
