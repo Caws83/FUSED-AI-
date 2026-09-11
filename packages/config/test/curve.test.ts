@@ -131,6 +131,7 @@ test("example Robinhood JSON does not invent addresses", () => {
   });
   assert.equal(parsed?.status, "NOT_DEPLOYED");
   assert.equal(parsed?.contracts.launchFactory, null);
+  assert.equal(parsed?.deployBlock, null);
 });
 
 test("production launch stays off until the flag and contracts are set", () => {

@@ -87,7 +87,12 @@ export function parseDeploymentManifest(raw: unknown): DeploymentManifest | null
       quoter: asAddress(contracts.quoter),
     },
     curve: row.curve && typeof row.curve === "object" ? (row.curve as DeploymentManifest["curve"]) : undefined,
-    deployBlock: Number.isInteger(Number(row.deployBlock)) ? Number(row.deployBlock) : null,
+    deployBlock:
+      row.deployBlock == null || row.deployBlock === ""
+        ? null
+        : Number.isInteger(Number(row.deployBlock))
+          ? Number(row.deployBlock)
+          : null,
   };
 }
 

@@ -55,7 +55,9 @@ const rows = [
 
 if (factory) rows.push(["LAUNCH_FACTORY_ADDRESS", factory]);
 if (locker) rows.push(["LAUNCH_LOCKER_ADDRESS", locker]);
-if (manifest.deployBlock != null) rows.push(["INDEXER_START_BLOCK", String(manifest.deployBlock)]);
+if (manifest.deployBlock != null && manifest.deployBlock > 0) {
+  rows.push(["INDEXER_START_BLOCK", String(manifest.deployBlock)]);
+}
 
 console.log(`# FUSED AI — Robinhood Chain Testnet (${ROBINHOOD_TESTNET_CHAIN_ID})`);
 console.log(`# Network: ${ROBINHOOD_TESTNET.name}`);

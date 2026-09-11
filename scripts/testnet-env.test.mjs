@@ -21,6 +21,7 @@ test("testnet example JSON does not invent Fused factory addresses", () => {
   assert.equal(row.status, "NOT_DEPLOYED");
   assert.equal(row.contracts.launchFactory, null);
   assert.equal(row.contracts.launchLocker, null);
+  assert.equal(row.deployBlock, null);
   assert.match(row.contracts.poolManager, /^0x[a-fA-F0-9]{40}$/);
   const blob = JSON.stringify(row);
   assert.equal(blob.includes("DEPLOYER_PRIVATE_KEY"), false);
@@ -44,4 +45,5 @@ test("env:testnet prints public Vercel vars and no secrets", () => {
   assert.equal(result.stdout.includes("DATABASE_URL="), false);
   assert.equal(result.stdout.includes("AWS_SECRET_ACCESS_KEY="), false);
   assert.equal(result.stdout.includes("LAUNCH_FACTORY_ADDRESS="), false);
+  assert.equal(result.stdout.includes("INDEXER_START_BLOCK="), false);
 });
