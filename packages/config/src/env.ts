@@ -78,6 +78,7 @@ export type FusedEnv = {
     intervalMs: number;
     overlapBlocks: number;
     lagAlertBlocks: number;
+    maxRangeBlocks: number;
     syncLoop: boolean;
   };
   public: PublicEnv;
@@ -355,6 +356,7 @@ export function loadEnv(env: NodeJS.Dict<string> = process.env): FusedEnv {
       intervalMs: firstInt(source, "INDEXER_POLL_INTERVAL", "INDEXER_INTERVAL_MS") ?? 15_000,
       overlapBlocks: readInt("INDEXER_OVERLAP_BLOCKS", source) ?? 50,
       lagAlertBlocks: readInt("INDEXER_LAG_ALERT_BLOCKS", source) ?? 200,
+      maxRangeBlocks: Math.max(1, readInt("INDEXER_MAX_RANGE_BLOCKS", source) ?? 2_000),
       syncLoop: read("INDEXER_SYNC_LOOP", source) === "1",
     },
     public: publicEnv,

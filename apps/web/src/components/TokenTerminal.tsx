@@ -15,6 +15,7 @@ import {
   shortAddr,
   stateBadge,
 } from "../lib/format.ts";
+import { chainLabelFor } from "../lib/wallet.ts";
 
 type TradeRow = {
   traded_at: string;
@@ -47,14 +48,17 @@ export function TokenTerminal({
   factory,
   chainId,
   graduationTargetUsd = null,
+  indexing = false,
 }: {
   initial: IndexedLaunch;
   factory: `0x${string}` | null;
   chainId: number;
   graduationTargetUsd?: number | null;
+  indexing?: boolean;
 }) {
   const [live, setLive] = useState<LivePayload | null>(null);
   const [intervalSec, setIntervalSec] = useState(60);
+  const [refresh, setRefresh] = useState(0);
 
   useEffect(() => {
     let stop = false;
@@ -73,7 +77,7 @@ export function TokenTerminal({
       stop = true;
       clearInterval(id);
     };
-  }, [initial.token]);
+  }, [initial.token, refresh]);
 
   const launch = live?.launch ?? {
     ...initial,
@@ -108,6 +112,9 @@ export function TokenTerminal({
               </h1>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                 <Badge tone={graduated ? "blue" : "lime"}>{graduated ? "GRADUATED" : "CURVE"}</Badge>
+                {graduated ? <Badge tone="blue">Uniswap V4</Badge> : null}
+                {indexing && !live ? <Badge tone="blue">Indexing…</Badge> : null}
+                <span style={{ color: "var(--fused-muted)", fontSize: 13 }}>{chainLabelFor(chainId) ?? `Chain ${chainId}`}</span>
                 <span style={{ color: "var(--fused-muted)", fontSize: 13, wordBreak: "break-all" }}>{launch.token}</span>
               </div>
             </div>
@@ -162,13 +169,13 @@ export function TokenTerminal({
               </button>
             ))}
           </div>
-          <CandleChart candles={candles} />
+          <CandleChart candles={candles} emptyLabel={indexing && candles.length === 0 ? "Indexing…" : "No trades yet"} />
         </Card>
 
         <Card>
           <p className="fused-kicker">Trades</p>
           {trades.length === 0 ? (
-            <p style={{ color: "var(--fused-muted)" }}>No trades yet.</p>
+            <p style={{ color: "var(--fused-muted)" }}>{indexing ? "Indexing…" : "No trades yet."}</p>
           ) : (
             <div style={{ overflowX: "auto" }}>
               <table className="fused-trades">
@@ -233,7 +240,13 @@ export function TokenTerminal({
         <Card>
           <p className="fused-kicker">Trade</p>
           {factory ? (
-            <TradePanel factory={factory} token={launch.token} symbol={launch.symbol || "TOKEN"} graduated={graduated} />
+            <TradePanel
+              factory={factory}
+              token={launch.token}
+              symbol={launch.symbol || "TOKEN"}
+              graduated={graduated}
+              onTraded={() => setRefresh((n) => n + 1)}
+            />
           ) : (
             <p style={{ color: "var(--fused-muted)" }}>Trading is temporarily unavailable.</p>
           )}
@@ -274,7 +287,7 @@ export function TokenTerminal({
             </div>
             <div>
               <dt>Status</dt>
-              <dd>{graduated ? "Graduated to Uniswap" : "Curve active"}</dd>
+              <dd>{graduated ? "Graduated · Uniswap V4" : "Curve active"}</dd>
             </div>
           </dl>
         </Card>

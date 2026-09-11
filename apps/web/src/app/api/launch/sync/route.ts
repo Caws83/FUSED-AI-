@@ -84,6 +84,11 @@ export async function POST(request: Request) {
   }
 
   const db = createDatabaseClient(env);
+  const migrated = await db.migrate();
+  if (!migrated.ok) {
+    await db.close();
+    return NextResponse.json({ ok: false }, { status: 503 });
+  }
   const saved = await db.upsertLaunch({
     chainId: env.chainId,
     token,
@@ -146,14 +151,18 @@ export async function POST(request: Request) {
       };
     }
   }
-  await db.upsertTokenMetadata({
-    chainId: env.chainId,
-    token,
-    description: extra.description ?? metadataURI,
-    imageId: extra.imageId ?? null,
-    imageUrl,
-    ...source,
-  });
+  try {
+    await db.upsertTokenMetadata({
+      chainId: env.chainId,
+      token,
+      description: extra.description ?? metadataURI,
+      imageId: extra.imageId ?? null,
+      imageUrl,
+      ...source,
+    });
+  } catch {
+    /* onchain launch row is already saved */
+  }
   await db.close();
   return NextResponse.json({ ok: saved.ok, token });
   } catch {

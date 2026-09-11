@@ -36,7 +36,7 @@ Routes do not keep a permanent process, do not write `.local-data/media` in prod
 | Local media | `.local-data/media` | Ephemeral on serverless. Use S3/R2 for public token images. |
 | Anvil | `npm run chain` | Local only. |
 
-Possible future indexer hosts: Railway, Fly, Render, a VPS. None is selected or deployed in this phase.
+Possible future indexer hosts: Railway, Fly, Render, a VPS. **Railway is the intended host** for Robinhood testnet. Follow `docs/RAILWAY.md`. Until Railway Postgres + the indexer worker are actually running, Vercel boards stay empty even though tokens exist onchain.
 
 ## Database
 
@@ -45,7 +45,7 @@ Possible future indexer hosts: Railway, Fly, Render, a VPS. None is selected or 
 | Local | Docker Postgres `postgres://fused:fused@127.0.0.1:5432/fused_ai` |
 | Production | Managed Postgres you create. Do not invent one in git. |
 
-Public pages render with **no** database (empty boards). Live token terminals need Postgres **and** an indexer filling it.
+Public pages render with **no** database (empty boards plus **Indexing…** if the indexer has not caught up). Live token terminals need Postgres **and** an indexer filling it. A token that exists onchain can still open `/token/0x…` from `getMarket` so BUY/SELL is not blocked by indexer lag.
 
 Production rejects localhost / `127.0.0.1` database URLs.
 
@@ -99,7 +99,7 @@ Until public contracts exist, Launch shows **Launching soon**.
 
 ## Media
 
-`MEDIA_STORE=local` is Anvil-only. Production treats local filesystem media as not configured. Uploads return unavailable until S3/R2 credentials exist. The website can still deploy.
+`MEDIA_STORE=local` is Anvil-only. Production uses the S3/R2 adapter (`ObjectMediaStore`) with `AWS_*` + `BUCKET_NAME` + `IMAGE_PUBLIC_BASE`. Uploads return unavailable until those credentials exist. The website can still deploy. See `docs/TOKEN_MEDIA.md`.
 
 ## Local source of truth
 
@@ -125,4 +125,4 @@ status: DEPLOYED only after a real reviewed deploy
 
 Until the matching file exists with real Fused addresses, production says **NOT DEPLOYED**. Example JSON may include bytecode-verified Uniswap v4 addresses so Vercel does not need them pasted by hand.
 
-See `docs/ENV_QUICKSTART.md`.
+See `docs/ENV_QUICKSTART.md` and `docs/RAILWAY.md`.

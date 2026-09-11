@@ -52,11 +52,13 @@ Expected JSON:
 
 This route does not use X, AI, database, or contracts. If this URL 500s, the Vercel project is still the wrong root/app.
 
+`/api/ready` reports whether blockchain, database, media, and the indexer are configured, plus indexer lag. It does not include credentials.
+
 ## Minimum env for the first public website
 
 None required. Homepage, Trending, Launch (“Launching soon”), Rewards, and Explore must render.
 
-`DATABASE_URL` is **not** required for those pages. Without it, token boards are empty. Token detail pages 404 until an indexer has written rows.
+`DATABASE_URL` is **not** required for the shell. Without it, token boards show **Indexing…**. Token detail pages still open from onchain `getMarket` when the factory is configured. Charts/trades/holders need Postgres + the indexer.
 
 Do not set:
 
@@ -68,7 +70,9 @@ Do not set:
 
 Production rejects local RPC, local Postgres, and Anvil CREATE addresses.
 
-For Robinhood **testnet** wallets, copy the public list from `npm run env:testnet` (chain id **46630**). Do not use mainnet 4663. Factory/locker stay unset until a real testnet deploy. Committed `deployments/*.json` overlays Uniswap v4 addresses so you should not paste a long address list.
+For Robinhood **testnet** wallets, copy the public list from `npm run env:testnet` (chain id **46630**). Do not use mainnet 4663.
+
+Hosted **Postgres** (`DATABASE_URL`, server-only) plus a Railway indexer are required for homepage boards, charts, trades, and holders. See `docs/RAILWAY.md`. Token pages can still open from onchain `getMarket` if the indexer is behind.
 
 See `docs/ENV_QUICKSTART.md`.
 
@@ -122,7 +126,7 @@ Leave those variables empty. You should see product pages, empty boards, and **L
 
 ## After you have managed Postgres (optional)
 
-Set `DATABASE_URL` to the **hosted** URL, not `127.0.0.1`. Run `npm run db:migrate` against that database from a machine you control (or the indexer host). Vercel request handlers do not migrate schema on every hit.
+Set `DATABASE_URL` to the **hosted** URL, not `127.0.0.1`. Run `npm run db:migrate` against that database from a machine you control (or the Railway indexer start command). Vercel request handlers migrate only on `/api/launch/sync`. The indexer migrates on every poll.
 
 ## Node version
 

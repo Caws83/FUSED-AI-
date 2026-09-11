@@ -3,6 +3,7 @@ import { loadEnv, loadRepoEnv } from "@fused-ai/config";
 import { createMediaStore, validateImage } from "@fused-ai/media";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   loadRepoEnv();

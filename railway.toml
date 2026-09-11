@@ -1,0 +1,10 @@
+# Railway indexer worker. Public website stays on Vercel (apps/web).
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "npm install"
+
+[deploy]
+startCommand = "npm run db:migrate && npm run indexer"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

@@ -51,18 +51,19 @@ When you want wallets on testnet, also set:
 
 After Fused contracts exist on 46630 and `deployments/robinhood-testnet-46630.json` is `DEPLOYED`, set `PUBLIC_LAUNCH_ENABLED=true`. You should not need to paste Uniswap or factory addresses if that JSON is in the repo.
 
-Do **not** set `DEPLOYER_PRIVATE_KEY`, X tokens, AI keys, AWS secrets, or database passwords unless that service is actually in use.
+For live boards, charts, and history, add hosted `DATABASE_URL` (Vercel **server-only**) and run the indexer on Railway. See `docs/RAILWAY.md`.
 
 `/api/health` should return `{ "status": "ok", "service": "FUSED AI Web" }`.
+`/api/ready` reports database / media / indexer freshness without secrets.
 
 ## Optional
 
 | Want | Need |
 |------|------|
-| Explore / charts / history | Hosted `DATABASE_URL` + indexer process |
+| Explore / charts / history | Hosted `DATABASE_URL` + Railway indexer (`docs/RAILWAY.md`) |
 | X fuse | `SOCIAL_PROVIDER=x` + `X_BEARER_TOKEN` |
 | AI draft / logo | `AI_PROVIDER` + `AI_API_KEY` (and image keys if used) |
 | WalletConnect QR | `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` |
-| Token image uploads in production | `MEDIA_STORE=s3` or `r2` + bucket credentials |
+| Token image uploads in production | `MEDIA_STORE=r2` or `s3` + existing `AWS_*` / `BUCKET_NAME` / `IMAGE_PUBLIC_BASE` |
 
 Manual launch and buy/sell do **not** require X or AI. Missing optional vendors return 503, not 500.

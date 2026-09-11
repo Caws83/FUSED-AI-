@@ -47,7 +47,10 @@ export function shortAddr(addr: string): string {
 }
 
 export function explorerTx(chainId: number, hash: string): string | null {
+  if (!hash || hash === "0x0000000000000000000000000000000000000000000000000000000000000000") return null;
   if (chainId === 31337) return null;
+  if (chainId === 46630) return `https://explorer.testnet.chain.robinhood.com/tx/${hash}`;
+  if (chainId === 4663) return `https://explorer.chain.robinhood.com/tx/${hash}`;
   if (chainId === 8453) return `https://basescan.org/tx/${hash}`;
   if (chainId === 1) return `https://etherscan.io/tx/${hash}`;
   return null;

@@ -6,6 +6,10 @@ export function jsonSafe(value: unknown): string {
   return JSON.stringify(value, (_, v) => (typeof v === "bigint" ? v.toString() : v));
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function startIndexer() {
   const env = loadEnv();
   const db = createDatabaseClient(env);
@@ -20,14 +24,21 @@ export async function startIndexer() {
 
   if (env.indexer.syncLoop) {
     console.log(jsonSafe({ loop: true, intervalMs: env.indexer.intervalMs, ...once }));
-    const tick = async () => {
-      const result = await pollOnce(env, db);
-      console.log(jsonSafe(result));
-    };
-    setInterval(() => {
-      void tick();
-    }, env.indexer.intervalMs);
-    return { ...once, loop: true };
+    for (;;) {
+      await sleep(env.indexer.intervalMs);
+      try {
+        const result = await pollOnce(env, db);
+        console.log(jsonSafe(result));
+      } catch (error) {
+        console.log(
+          jsonSafe({
+            started: false,
+            reconnect: true,
+            error: error instanceof Error ? error.message : String(error),
+          }),
+        );
+      }
+    }
   }
 
   await db.close();

@@ -19,7 +19,7 @@ function n(v: string): number {
   }
 }
 
-export function CandleChart({ candles }: { candles: Candle[] }) {
+export function CandleChart({ candles, emptyLabel = "No trades yet" }: { candles: Candle[]; emptyLabel?: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -38,7 +38,7 @@ export function CandleChart({ candles }: { candles: Candle[] }) {
     if (candles.length === 0) {
       ctx.fillStyle = "#8a97a6";
       ctx.font = "14px sans-serif";
-      ctx.fillText("No trades yet", 16, height / 2);
+      ctx.fillText(emptyLabel, 16, height / 2);
       return;
     }
     const highs = candles.map((c) => n(c.high_x18));
@@ -78,7 +78,7 @@ export function CandleChart({ candles }: { candles: Candle[] }) {
         ctx.globalAlpha = 1;
       }
     });
-  }, [candles]);
+  }, [candles, emptyLabel]);
 
   return <canvas ref={ref} className="fused-chart" aria-label="Price chart" />;
 }

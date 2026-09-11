@@ -84,7 +84,15 @@ export type DatabaseClient = {
     priceX18: string;
     venue: string;
   }): Promise<Result<true>>;
-  applyTransfer(row: { chainId: number; token: HexAddress; from: HexAddress; to: HexAddress; value: string }): Promise<Result<true>>;
+  applyTransfer(row: {
+    chainId: number;
+    token: HexAddress;
+    from: HexAddress;
+    to: HexAddress;
+    value: string;
+    txHash?: `0x${string}`;
+    logIndex?: number;
+  }): Promise<Result<true>>;
   listTrades(chainId: number, token: string, limit?: number): Promise<Result<Record<string, unknown>[]>>;
   listCandles(chainId: number, token: string, intervalSec: number, limit?: number): Promise<Result<Record<string, unknown>[]>>;
   tokenStats(chainId: number, token: string): Promise<Result<{ volumeTotal: string; volume24h: string; tradeCount: number; holderCount: number }>>;
@@ -322,6 +330,15 @@ export function createDatabaseClient(env: FusedEnv): DatabaseClient {
       if (!client) return fail(a);
       const zero = "0x0000000000000000000000000000000000000000";
       try {
+        if (row.txHash && row.logIndex != null) {
+          const claimed = await client`
+            INSERT INTO fused_transfer_logs (chain_id, tx_hash, log_index)
+            VALUES (${row.chainId}, ${row.txHash}, ${row.logIndex})
+            ON CONFLICT (chain_id, tx_hash, log_index) DO NOTHING
+            RETURNING tx_hash
+          `;
+          if (claimed.length === 0) return ok(true);
+        }
         if (row.from.toLowerCase() !== zero) {
           await client`
             INSERT INTO fused_holders (chain_id, token, holder, balance)

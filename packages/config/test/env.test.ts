@@ -49,6 +49,7 @@ test("address and indexer aliases are accepted", () => {
   assert.equal(cfg.uniswap.poolManager, "0x1111111111111111111111111111111111111111");
   assert.equal(cfg.indexer.startBlock, 42);
   assert.equal(cfg.indexer.intervalMs, 9000);
+  assert.equal(cfg.indexer.maxRangeBlocks, 2000);
 });
 
 test("invalid values are listed without inventing working config", () => {

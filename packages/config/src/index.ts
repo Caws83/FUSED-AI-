@@ -70,3 +70,4 @@ export {
   readPublicChainConfiguredFlag,
   readPublicLaunchEnabledFlag,
 } from "./features.ts";
+export { indexerFreshnessFromParts, type IndexerFreshness } from "./indexer-lag.ts";

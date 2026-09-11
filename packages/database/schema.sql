@@ -157,3 +157,10 @@ CREATE TABLE IF NOT EXISTS fused_holders (
   balance            numeric(78,0) NOT NULL DEFAULT 0,
   PRIMARY KEY (chain_id, token, holder)
 );
+
+CREATE TABLE IF NOT EXISTS fused_transfer_logs (
+  chain_id           integer NOT NULL,
+  tx_hash            text NOT NULL,
+  log_index          integer NOT NULL,
+  PRIMARY KEY (chain_id, tx_hash, log_index)
+);

@@ -23,11 +23,13 @@ export function TradePanel({
   token,
   symbol,
   graduated,
+  onTraded,
 }: {
   factory: `0x${string}`;
   token: `0x${string}`;
   symbol: string;
   graduated: boolean;
+  onTraded?: () => void;
 }) {
   const { address, isConnected, connector } = useAccount();
   const chainId = useChainId();
@@ -184,6 +186,7 @@ export function TradePanel({
         setTxHash(hash);
         const receipt = await writePublic.waitForTransactionReceipt({ hash });
         if (receipt.status !== "success") setError("The transaction did not succeed.");
+        else onTraded?.();
       } else {
         const amt = parseEther(tokenIn || "0");
         const allowance = await writePublic.readContract({
@@ -218,6 +221,7 @@ export function TradePanel({
         setTxHash(hash);
         const receipt = await writePublic.waitForTransactionReceipt({ hash });
         if (receipt.status !== "success") setError("The transaction did not succeed.");
+        else onTraded?.();
       }
     } catch (caught) {
       setError(humanError(caught));

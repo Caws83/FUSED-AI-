@@ -22,10 +22,11 @@ test("schema declares social posts and application token metadata", () => {
   assert.match(schema, /source_post_url/);
 });
 
-test("schema declares trades, candles, and holders", () => {
+test("schema declares trades, candles, holders, and transfer log dedup", () => {
   assert.match(schema, /CREATE TABLE IF NOT EXISTS fused_trades/);
   assert.match(schema, /CREATE TABLE IF NOT EXISTS fused_candles/);
   assert.match(schema, /CREATE TABLE IF NOT EXISTS fused_holders/);
+  assert.match(schema, /CREATE TABLE IF NOT EXISTS fused_transfer_logs/);
   assert.match(schema, /lifecycle_state/);
 });
 
@@ -85,3 +86,9 @@ test("token metadata persists and joins onto launches when DATABASE_URL is set",
   assert.equal(loaded.value.sourceAuthor, "example");
   await db.close();
 });
+
+test("listLaunches filters by chain_id", () => {
+  const src = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "src", "client.ts"), "utf8");
+  assert.match(src, /WHERE l.chain_id = \$\{chainId\}/);
+});
+

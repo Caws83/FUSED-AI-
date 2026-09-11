@@ -2,7 +2,7 @@ import { EmptyState, FusedLogo, PostCard, SectionHeader } from "@fused-ai/ui";
 import { formatEngagement } from "@fused-ai/social";
 import { QuickFuse } from "../components/QuickFuse.tsx";
 import { loadRuntime } from "../lib/runtime.ts";
-import { loadIndexedLaunches } from "../lib/launches.ts";
+import { boardEmptyCopy, loadIndexedLaunches, loadIndexerFreshness } from "../lib/launches.ts";
 import { loadTrendingPosts } from "../lib/social.ts";
 import { LaunchGrid, splitBoards } from "../lib/boards.tsx";
 
@@ -18,8 +18,10 @@ const PIPELINE = [
 export default async function HomePage() {
   const { status } = await loadRuntime();
   const launches = await loadIndexedLaunches();
+  const freshness = await loadIndexerFreshness(launches.length);
   const posts = await loadTrendingPosts();
   const boards = splitBoards(launches);
+  const emptyAll = launches.length === 0 && freshness.indexing;
 
   return (
     <main>
@@ -81,11 +83,19 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {freshness.indexing ? (
+        <section className="fused-section" style={{ paddingBottom: 0 }}>
+          <div className="fused-wrap">
+            <p className="fused-support">Indexing… Live boards fill from Robinhood Testnet as the indexer catches up.</p>
+          </div>
+        </section>
+      ) : null}
+
       <section className="fused-section">
         <div className="fused-wrap">
           <SectionHeader kicker="Live tokens" title="On the bonding curve" />
           {boards.live.length === 0 ? (
-            <EmptyState title="No live curves yet." body="New tokens appear here after a wallet launch." />
+            <EmptyState {...boardEmptyCopy(emptyAll, "live")} />
           ) : (
             <LaunchGrid launches={boards.live} />
           )}
@@ -96,7 +106,7 @@ export default async function HomePage() {
         <div className="fused-wrap">
           <SectionHeader kicker="Newly created" title="Just launched" />
           {boards.newly.length === 0 ? (
-            <EmptyState title="No launches yet." body="The board fills as real launches land onchain." />
+            <EmptyState {...boardEmptyCopy(emptyAll, "newly")} />
           ) : (
             <LaunchGrid launches={boards.newly} />
           )}
@@ -107,7 +117,7 @@ export default async function HomePage() {
         <div className="fused-wrap">
           <SectionHeader kicker="Graduating" title="Close to Uniswap" />
           {boards.graduating.length === 0 ? (
-            <EmptyState title="Nothing graduating yet." body="Tokens near the on-chain target show up here." />
+            <EmptyState {...boardEmptyCopy(emptyAll, "graduating")} />
           ) : (
             <LaunchGrid launches={boards.graduating} />
           )}
@@ -118,7 +128,7 @@ export default async function HomePage() {
         <div className="fused-wrap">
           <SectionHeader kicker="Graduated" title="Trading on Uniswap" />
           {boards.graduated.length === 0 ? (
-            <EmptyState title="No graduates yet." body="When a curve hits its target, locked Uniswap liquidity appears here." />
+            <EmptyState {...boardEmptyCopy(emptyAll, "graduated")} />
           ) : (
             <LaunchGrid launches={boards.graduated} />
           )}

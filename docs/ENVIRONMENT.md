@@ -78,7 +78,8 @@ Aliases (either name works):
 | `INDEXER_INTERVAL_MS` | indexer | no | no | alias | Same as poll interval |
 | `INDEXER_OVERLAP_BLOCKS` | indexer | no | no | default 50 | Rescan overlap |
 | `INDEXER_LAG_ALERT_BLOCKS` | indexer | no | no | default 200 | Lag threshold |
-| `INDEXER_SYNC_LOOP` | indexer | no | no | 0 | `1` enables loop when implemented |
+| `INDEXER_MAX_RANGE_BLOCKS` | indexer | no | no | default 2000 | getLogs chunk size |
+| `INDEXER_SYNC_LOOP` | indexer | no | Railway worker | 0 | `1` keeps the worker polling |
 | `SOCIAL_PROVIDER` | social, web | no | before feed | empty | `x` / `twitter` / … |
 | `X_BEARER_TOKEN` | social | **yes** | before X API | empty | X app-only token |
 | `X_APP_ONLY_TOKEN` | social | **yes** | no | alias | Same as bearer |
@@ -101,7 +102,7 @@ Aliases (either name works):
 | `TOKENIZED_ASSET_REGISTRY_PATH` | blockchain, web | no | before reward assets | empty | Allowlist JSON |
 | `IMAGE_STORE` / `MEDIA_STORE` | media | no | local launches | `local` | `local` or `s3`/`r2` |
 | `MEDIA_LOCAL_PATH` | media | no | local launches | `.local-data/media` | Gitignored filesystem store |
-| `AWS_*` / `BUCKET_NAME` / `IMAGE_PUBLIC_BASE` | images | **yes** (keys) | if S3 | empty | Object storage (inactive without creds) |
+| `AWS_*` / `BUCKET_NAME` / `IMAGE_PUBLIC_BASE` | images | **yes** (keys) | if S3/R2 | empty | Object storage (`ObjectMediaStore`) |
 | `ADMIN_WALLETS` | ops later | no | no | empty | Not used for launch authority |
 | `PRESENCE_SALT` | ops later | **yes** | no | empty | Unused in Fused AI yet |
 
