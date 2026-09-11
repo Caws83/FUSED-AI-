@@ -1,5 +1,6 @@
 import { SectionHeader, Card } from "@fused-ai/ui";
 import { loadEnv, loadRepoEnv } from "@fused-ai/config";
+import { chainLabelFor } from "@fused-ai/config/public";
 import { ManualLaunch } from "../../components/ManualLaunch.tsx";
 import { loadSourcePost } from "../../lib/social.ts";
 
@@ -22,7 +23,7 @@ export default async function LaunchPage({ searchParams }: { searchParams: Promi
             factory={factory}
             locker={locker}
             chainId={env.public.chainId}
-            chainName={env.public.chainId === 31337 ? "Fused Local" : "Fused AI chain"}
+            chainName={chainLabelFor(env.public.chainId) ?? "Fused AI chain"}
             ready={ready}
             sourcePost={sourcePost}
           />

@@ -64,8 +64,13 @@ Do not set:
 - local Anvil factory `0x9fE467…` / locker `0x755378…`
 - `DATABASE_URL` pointing at Docker/localhost Postgres
 - `MEDIA_STORE=local`
+- `DEPLOYER_PRIVATE_KEY`
 
-Production rejects those.
+Production rejects local RPC, local Postgres, and Anvil CREATE addresses.
+
+For Robinhood **testnet** wallets, copy the public list from `npm run env:testnet` (chain id **46630**). Do not use mainnet 4663. Factory/locker stay unset until a real testnet deploy. Committed `deployments/*.json` overlays Uniswap v4 addresses so you should not paste a long address list.
+
+See `docs/ENV_QUICKSTART.md`.
 
 ## Env table
 
@@ -76,15 +81,15 @@ Production rejects those.
 | **Required when contracts are deployed** | | | | |
 | `PUBLIC_CHAIN_CONFIGURED` | then yes | Set `true` yourself | no | `true` |
 | `PUBLIC_LAUNCH_ENABLED` | then yes | Set `true` yourself after review | no | `true` |
-| `NEXT_PUBLIC_CHAIN_ID` | then yes | Public chain id (not 31337) | no | `4663` |
-| `NEXT_PUBLIC_RPC_URL` | then yes | Public RPC (not localhost) | no | `https://…` |
-| `CHAIN_ID` | then yes | Same as public chain | no | `4663` |
-| `RPC_URL` | then yes | Server RPC; keyed URL is a secret | if keyed | `https://…` |
-| `LAUNCH_FACTORY_ADDRESS` | then yes | **Our** FusedFactory after public deploy | no | `0x` + 40 hex |
-| `LAUNCH_LOCKER_ADDRESS` | then yes | **Our** locker after public deploy | no | `0x` + 40 hex |
-| `UNISWAP_POOL_MANAGER_ADDRESS` | then yes | Canonical Uniswap for that chain | no | `0x` + 40 hex |
-| `UNISWAP_POSITION_MANAGER_ADDRESS` | then yes | Canonical Uniswap for that chain | no | `0x` + 40 hex |
-| `UNISWAP_PERMIT2_ADDRESS` | usually | Canonical Permit2 | no | CREATE2 address |
+| `NEXT_PUBLIC_CHAIN_ID` | then yes | Public chain id (not 31337) | no | `46630` testnet / `4663` mainnet later |
+| `NEXT_PUBLIC_RPC_URL` | then yes | Public RPC (not localhost) | no | `https://rpc.testnet.chain.robinhood.com` |
+| `CHAIN_ID` | then yes | Same as public chain | no | `46630` |
+| `RPC_URL` | then yes | Server RPC; keyed URL is a secret | if keyed | same public RPC is fine |
+| `LAUNCH_FACTORY_ADDRESS` | after Fused deploy | Overlay from `deployments/robinhood-testnet-46630.json` | no | do not invent |
+| `LAUNCH_LOCKER_ADDRESS` | after Fused deploy | Same manifest | no | do not invent |
+| `UNISWAP_POOL_MANAGER_ADDRESS` | overlay | Testnet example JSON (bytecode-verified) | no | do not paste Anvil |
+| `UNISWAP_POSITION_MANAGER_ADDRESS` | overlay | Testnet example JSON | no | do not paste Anvil |
+| `UNISWAP_PERMIT2_ADDRESS` | overlay | Canonical Permit2 | no | CREATE2 address |
 | **Required for DB / indexer** | | | | |
 | `DATABASE_URL` | for live tokens | Managed Postgres (Neon, Supabase, RDS, …) | **yes** | `postgres://user:***@host/db` |
 | `INDEXER_START_BLOCK` | for indexer | Factory deploy block | no | integer |

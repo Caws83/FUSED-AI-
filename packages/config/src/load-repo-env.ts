@@ -1,7 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-function findRepoRoot(start = process.cwd()): string {
+function walkToRepoRoot(start: string): string | null {
   let dir = start;
   for (let i = 0; i < 8; i += 1) {
     if (existsSync(path.join(dir, ".env.example")) && existsSync(path.join(dir, "package.json"))) {
@@ -11,7 +12,15 @@ function findRepoRoot(start = process.cwd()): string {
     if (parent === dir) break;
     dir = parent;
   }
-  return start;
+  return null;
+}
+
+function findRepoRoot(start = process.cwd()): string {
+  return (
+    walkToRepoRoot(start) ??
+    walkToRepoRoot(path.dirname(fileURLToPath(import.meta.url))) ??
+    start
+  );
 }
 
 function parseEnvFile(filePath: string): Record<string, string> {

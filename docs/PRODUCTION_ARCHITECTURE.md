@@ -54,7 +54,8 @@ Production rejects localhost / `127.0.0.1` database URLs.
 | Network | Manifest | Status in this checkout |
 |---------|----------|-------------------------|
 | Local Anvil 31337 | `deployments/local-31337.json` (gitignored, written by `npm run contracts:deploy:local`) | Real local addresses |
-| Robinhood 4663 | `deployments/robinhood-4663.json` when you deploy; example is `robinhood-4663.example.json` | **NOT DEPLOYED** |
+| Robinhood testnet 46630 | `deployments/robinhood-testnet-46630.json` when you deploy; example is `robinhood-testnet-46630.example.json` | **NOT DEPLOYED** (Uniswap v4 bytecode verified; Fused factory/locker unset) |
+| Robinhood mainnet 4663 | `deployments/robinhood-4663.json` when you deploy; example is `robinhood-4663.example.json` | **NOT DEPLOYED** — do not deploy here yet |
 
 Do not copy Anvil addresses (`0x9fE467…`, `0x755378…`, `0x5FbDB2…`, `0xe7f172…`) onto a public chain. Production config rejects them when `NODE_ENV=production` or the chain id is not 31337.
 
@@ -70,7 +71,15 @@ Local Anvil (test only):
 - feeBps = 0
 - lpFee = 10000
 
-Product intent for public Fused tokens: about **USD $50,000** at graduation.
+Robinhood testnet 46630 (TESTNET ONLY, explicit, not a fallback):
+
+- virtualQuote = 0.05 ETH
+- virtualToken = 1B tokens
+- graduationTarget = **0.01 ETH**
+- feeBps = 0
+- lpFee = 10000
+
+Product intent for **mainnet** Fused tokens: about **USD $50,000** at graduation. There is no ETH/USD oracle. Mainnet wei must be set explicitly at that deploy. Testnet 0.01 ETH is not used on 4663.
 
 The contract stores a **native quote amount** (wei). There is no ETH/USD oracle in this phase. A public deploy must set `FUSED_GRADUATION_TARGET_WEI` explicitly. Missing values do **not** fall back to 0.1 ETH.
 
@@ -106,11 +115,14 @@ header / launch / trade / status / indexer / scripts
 
 `.env.local` is generated from the same deploy for RPC, Postgres, and a copy of those addresses. Do not hand-edit 20 addresses. Do not put those addresses in `.env.example`.
 
-## Public source of truth (future)
+## Public source of truth
 
 ```
-deployments/robinhood-4663.json
+deployments/robinhood-testnet-46630.json   ← testnet, after npm run contracts:deploy:testnet
+deployments/robinhood-4663.json            ← mainnet, later
 status: DEPLOYED only after a real reviewed deploy
 ```
 
-Until that file exists with real addresses, production says **NOT DEPLOYED**.
+Until the matching file exists with real Fused addresses, production says **NOT DEPLOYED**. Example JSON may include bytecode-verified Uniswap v4 addresses so Vercel does not need them pasted by hand.
+
+See `docs/ENV_QUICKSTART.md`.

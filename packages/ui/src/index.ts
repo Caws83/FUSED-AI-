@@ -9,4 +9,5 @@ export { PostCard, type PostCardProps } from "./PostCard.tsx";
 export { LaunchCard, type LaunchCardProps } from "./LaunchCard.tsx";
 export { RewardAssetCard, type RewardAssetCardProps } from "./RewardAssetCard.tsx";
 export { WalletButton, type WalletButtonProps } from "./WalletButton.tsx";
+export { walletHeaderCopy } from "./walletHeader.ts";
 export { FusedLogo } from "./FusedLogo.tsx";

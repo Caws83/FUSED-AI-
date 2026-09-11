@@ -23,7 +23,9 @@ test("token terminal distinguishes native graduation target from USD display est
   assert.match(src, /not a live price/);
 });
 
-test("next config traces the monorepo root", () => {
+test("next config traces the monorepo root and public deployment manifests", () => {
   const src = readFileSync(join(root, "next.config.ts"), "utf8");
   assert.match(src, /outputFileTracingRoot/);
+  assert.match(src, /outputFileTracingIncludes/);
+  assert.match(src, /deployments/);
 });

@@ -1,5 +1,6 @@
 import { AVAILABILITY_STATUS, notConfigured, type Availability } from "@fused-ai/types";
 import { isProductionEnv, shouldRejectLocalhostUrl } from "./production-safety.ts";
+import { ROBINHOOD_TESTNET, ROBINHOOD_TESTNET_CHAIN_ID } from "./networks.ts";
 
 /**
  * Browser-safe env. Only NEXT_PUBLIC_* keys. Never read AI, X, database, or
@@ -31,10 +32,11 @@ export function loadPublicEnv(env: NodeJS.Dict<string> = process.env): PublicEnv
   if (shouldRejectLocalhostUrl(appUrl, env)) appUrl = null;
   if (!appUrl) appUrl = production ? "" : "http://localhost:3000";
 
+  const chainId = readInt("NEXT_PUBLIC_CHAIN_ID", env);
   let rpcUrl = read("NEXT_PUBLIC_RPC_URL", env);
   if (shouldRejectLocalhostUrl(rpcUrl, env)) rpcUrl = null;
+  if (!rpcUrl && chainId === ROBINHOOD_TESTNET_CHAIN_ID) rpcUrl = ROBINHOOD_TESTNET.rpcUrl;
 
-  const chainId = readInt("NEXT_PUBLIC_CHAIN_ID", env);
   if (production && chainId === 31337) {
     return {
       appUrl,
@@ -55,6 +57,12 @@ export function loadPublicEnv(env: NodeJS.Dict<string> = process.env): PublicEnv
 }
 
 export { isStatusPageEnabled } from "./features.ts";
+export {
+  chainLabelFor,
+  LOCAL_CHAIN_ID,
+  ROBINHOOD_MAINNET_CHAIN_ID,
+  ROBINHOOD_TESTNET_CHAIN_ID,
+} from "./networks.ts";
 
 export function publicWalletAvailability(pub: PublicEnv): Availability {
   const missing: string[] = [];

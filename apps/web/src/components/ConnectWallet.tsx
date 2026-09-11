@@ -16,20 +16,23 @@ export function ConnectWallet({
 }
 
 function LiveWalletButton({ expectedChainId }: { expectedChainId: number | null }) {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, status } = useAccount();
   const chainId = useChainId();
   const { connect, connectors, isPending } = useConnect();
   const { disconnect, isPending: disconnecting } = useDisconnect();
   const { switchChain, isPending: switching } = useSwitchChain();
-  const wrongNetwork = Boolean(isConnected && expectedChainId && chainId !== expectedChainId);
-  const chainLabel = chainLabelFor(isConnected ? chainId : expectedChainId);
+  const reconnecting = status === "reconnecting" || status === "connecting";
+  const pending = isPending || disconnecting || switching || reconnecting;
+  const connected = Boolean(address) || isConnected;
+  const wrongNetwork = Boolean(connected && expectedChainId && chainId !== expectedChainId);
+  const chainLabel = chainLabelFor(address || isConnected ? chainId : expectedChainId);
   const injected = connectors.find((c) => c.id === "injected") ?? connectors[0];
   return (
     <WalletButton
       configured
-      connected={isConnected}
+      connected={connected}
       address={address}
-      pending={isPending || disconnecting || switching}
+      pending={pending}
       wrongNetwork={wrongNetwork}
       chainLabel={chainLabel}
       connectors={connectors.map((connector) => ({

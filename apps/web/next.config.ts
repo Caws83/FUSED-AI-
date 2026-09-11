@@ -31,6 +31,13 @@ if (!process.env.VERCEL) {
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: repoRoot,
+  outputFileTracingIncludes: {
+    "/*": [
+      "../../deployments/**/*.json",
+      "../../deployments/**/*.example.json",
+      "../../.env.example",
+    ],
+  },
   transpilePackages: [
     "@fused-ai/ai",
     "@fused-ai/blockchain",

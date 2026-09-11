@@ -1,4 +1,5 @@
 import { Button } from "./Button.tsx";
+import { walletHeaderCopy } from "./walletHeader.ts";
 
 export type WalletConnectorChoice = {
   id: string;
@@ -19,6 +20,8 @@ export type WalletButtonProps = {
   onSwitchNetwork?: () => void;
 };
 
+export { walletHeaderCopy };
+
 function shortAddress(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
@@ -36,14 +39,15 @@ export function WalletButton({
   onSwitchNetwork,
 }: WalletButtonProps) {
   if (!configured) return null;
-  if (connected && wrongNetwork) {
+  const hasAccount = Boolean(address);
+  if ((connected || hasAccount) && wrongNetwork) {
     return (
       <Button type="button" variant="ghost" onClick={onSwitchNetwork} disabled={pending}>
         {pending ? "Switching…" : "Switch Network"}
       </Button>
     );
   }
-  if (connected && address) {
+  if (hasAccount && address) {
     return (
       <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
         <span className="fused-muted" style={{ fontSize: 13 }}>
@@ -67,9 +71,10 @@ export function WalletButton({
       </span>
     );
   }
+  const label = walletHeaderCopy({ connected, address, pending, wrongNetwork });
   return (
     <Button type="button" variant="secondary" onClick={onConnect} disabled={pending}>
-      {pending ? "Connecting…" : "Connect Wallet"}
+      {label === "Connecting…" ? "Connecting…" : "Connect Wallet"}
     </Button>
   );
 }

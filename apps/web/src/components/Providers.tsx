@@ -2,11 +2,11 @@
 
 import { type ReactNode, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider, createConfig, http } from "wagmi";
+import { WagmiProvider, createConfig, createStorage, http, noopStorage } from "wagmi";
 import { injected, walletConnect } from "wagmi/connectors";
 import { anvil } from "viem/chains";
 import { defineChain } from "viem";
-import { walletConnectorKinds } from "../lib/wallet.ts";
+import { chainLabelFor, walletConnectorKinds } from "../lib/wallet.ts";
 
 export type WalletRuntimeConfig = {
   chainId: number;
@@ -29,16 +29,17 @@ export function Providers({
 
   const config = useMemo(() => {
     if (chainId == null || !rpcUrl) return null;
+    const name = chainLabelFor(chainId) ?? "Fused AI chain";
     const chain =
       chainId === 31337
         ? {
             ...anvil,
-            name: "Fused Local",
+            name,
             rpcUrls: { default: { http: [rpcUrl] }, public: { http: [rpcUrl] } },
           }
         : defineChain({
             id: chainId,
-            name: "Fused AI chain",
+            name,
             nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
             rpcUrls: { default: { http: [rpcUrl] } },
           });
@@ -54,6 +55,9 @@ export function Providers({
       connectors,
       transports: { [chain.id]: http(rpcUrl) },
       ssr: true,
+      storage: createStorage({
+        storage: typeof window !== "undefined" && window.localStorage ? window.localStorage : noopStorage,
+      }),
     });
   }, [chainId, rpcUrl, walletConnectProjectId]);
 

@@ -1,7 +1,17 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { findRepoRoot } from "./load-repo-env.ts";
 import { isProductionEnv, LOCAL_CHAIN_ID } from "./production-safety.ts";
+import {
+  ROBINHOOD_MAINNET_CHAIN_ID,
+  ROBINHOOD_TESTNET_CHAIN_ID,
+  deploymentFileName,
+} from "./networks.ts";
+
+function repoRootFromConfigPackage(): string {
+  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+}
 
 export type DeploymentStatus = "DEPLOYED" | "NOT_DEPLOYED";
 
@@ -10,6 +20,9 @@ export type DeploymentManifest = {
   chainId: number;
   status: DeploymentStatus;
   rpcUrl?: string | null;
+  explorer?: string | null;
+  deployer?: string | null;
+  transactions?: { factory?: string | null };
   contracts: {
     launchFactory: string | null;
     launchLocker: string | null;
@@ -17,6 +30,8 @@ export type DeploymentManifest = {
     positionManager: string | null;
     universalRouter?: string | null;
     permit2: string | null;
+    stateView?: string | null;
+    quoter?: string | null;
   };
   curve?: {
     virtualQuoteWei?: string | null;
@@ -24,6 +39,7 @@ export type DeploymentManifest = {
     graduationTargetWei?: string | null;
     feeBps?: number | null;
     lpFee?: number | null;
+    note?: string | null;
   };
   deployBlock?: number | null;
 };
@@ -43,11 +59,23 @@ export function parseDeploymentManifest(raw: unknown): DeploymentManifest | null
   if (!Number.isInteger(chainId)) return null;
   const status = row.status === "DEPLOYED" ? "DEPLOYED" : "NOT_DEPLOYED";
   const contracts = (row.contracts ?? {}) as Record<string, unknown>;
+  const network =
+    typeof row.network === "string"
+      ? row.network
+      : chainId === LOCAL_CHAIN_ID
+        ? "local"
+        : chainId === ROBINHOOD_TESTNET_CHAIN_ID
+          ? "robinhood-testnet"
+          : chainId === ROBINHOOD_MAINNET_CHAIN_ID
+            ? "robinhood"
+            : "unknown";
   return {
-    network: typeof row.network === "string" ? row.network : chainId === LOCAL_CHAIN_ID ? "local" : "unknown",
+    network,
     chainId,
     status,
     rpcUrl: typeof row.rpcUrl === "string" ? row.rpcUrl : null,
+    explorer: typeof row.explorer === "string" ? row.explorer : null,
+    deployer: asAddress(row.deployer),
     contracts: {
       launchFactory: asAddress(contracts.launchFactory),
       launchLocker: asAddress(contracts.launchLocker),
@@ -55,6 +83,8 @@ export function parseDeploymentManifest(raw: unknown): DeploymentManifest | null
       positionManager: asAddress(contracts.positionManager),
       universalRouter: asAddress(contracts.universalRouter),
       permit2: asAddress(contracts.permit2),
+      stateView: asAddress(contracts.stateView),
+      quoter: asAddress(contracts.quoter),
     },
     curve: row.curve && typeof row.curve === "object" ? (row.curve as DeploymentManifest["curve"]) : undefined,
     deployBlock: Number.isInteger(Number(row.deployBlock)) ? Number(row.deployBlock) : null,
@@ -70,79 +100,102 @@ function readJsonFile(filePath: string): unknown | null {
   }
 }
 
-export function localDeploymentPath(root = findRepoRoot()): string {
-  return path.join(root, "deployments", `local-${LOCAL_CHAIN_ID}.json`);
+function resolveRepoRoot(root?: string): string {
+  if (root) return root;
+  const fromWalk = findRepoRoot();
+  if (existsSync(path.join(fromWalk, "deployments")) || existsSync(path.join(fromWalk, ".env.example"))) {
+    return fromWalk;
+  }
+  return repoRootFromConfigPackage();
 }
 
-export function publicDeploymentPath(chainId: number, root = findRepoRoot()): string {
-  if (chainId === 4663) return path.join(root, "deployments", "robinhood-4663.json");
-  return path.join(root, "deployments", `chain-${chainId}.json`);
+export function localDeploymentPath(root = resolveRepoRoot()): string {
+  return path.join(root, "deployments", deploymentFileName(LOCAL_CHAIN_ID));
+}
+
+export function publicDeploymentPath(chainId: number, root = resolveRepoRoot()): string {
+  return path.join(root, "deployments", deploymentFileName(chainId));
+}
+
+export function publicDeploymentExamplePath(chainId: number, root = resolveRepoRoot()): string {
+  const file = deploymentFileName(chainId);
+  return path.join(root, "deployments", file.replace(/\.json$/, ".example.json"));
 }
 
 /** Gitignored local Anvil manifest written by `npm run contracts:deploy:local`. */
-export function readLocalDeploymentManifest(root = findRepoRoot()): DeploymentManifest | null {
+export function readLocalDeploymentManifest(root = resolveRepoRoot()): DeploymentManifest | null {
   const parsed = parseDeploymentManifest(readJsonFile(localDeploymentPath(root)));
   if (!parsed) return null;
   if (parsed.chainId !== LOCAL_CHAIN_ID) return null;
   return { ...parsed, network: "local", status: parsed.contracts.launchFactory ? "DEPLOYED" : "NOT_DEPLOYED" };
 }
 
-/**
- * Public/Robinhood manifest. Missing file or example-only checkout → NOT_DEPLOYED.
- * Never invents addresses. Never reads local-31337.json for a public chain.
- */
-export function readPublicDeploymentManifest(chainId: number, root = findRepoRoot()): DeploymentManifest {
-  if (chainId === LOCAL_CHAIN_ID) {
-    return {
-      network: "local",
-      chainId,
-      status: "NOT_DEPLOYED",
-      contracts: {
-        launchFactory: null,
-        launchLocker: null,
-        poolManager: null,
-        positionManager: null,
-        permit2: null,
-      },
-    };
-  }
-  const parsed = parseDeploymentManifest(readJsonFile(publicDeploymentPath(chainId, root)));
-  if (!parsed || parsed.chainId !== chainId) {
-    return {
-      network: chainId === 4663 ? "robinhood" : `chain-${chainId}`,
-      chainId,
-      status: "NOT_DEPLOYED",
-      contracts: {
-        launchFactory: null,
-        launchLocker: null,
-        poolManager: null,
-        positionManager: null,
-        permit2: null,
-      },
-    };
-  }
-  const deployed = Boolean(parsed.contracts.launchFactory && parsed.contracts.launchLocker && parsed.status === "DEPLOYED");
-  return { ...parsed, status: deployed ? "DEPLOYED" : "NOT_DEPLOYED" };
+function emptyManifest(chainId: number): DeploymentManifest {
+  const network =
+    chainId === ROBINHOOD_TESTNET_CHAIN_ID
+      ? "robinhood-testnet"
+      : chainId === ROBINHOOD_MAINNET_CHAIN_ID
+        ? "robinhood"
+        : `chain-${chainId}`;
+  return {
+    network,
+    chainId,
+    status: "NOT_DEPLOYED",
+    contracts: {
+      launchFactory: null,
+      launchLocker: null,
+      poolManager: null,
+      positionManager: null,
+      permit2: null,
+    },
+  };
 }
 
 /**
- * Overlay local-31337.json contract addresses onto env for Anvil only.
- * Production / Vercel never reads this file. Explicit test dicts (`loadEnv({})`) skip disk.
+ * Public/Robinhood manifest. Missing file → example JSON if present, else NOT_DEPLOYED.
+ * Never invents Fused addresses. Never reads local-31337.json for a public chain.
  */
-export function mergeLocalDeployment(env: NodeJS.Dict<string>, root = findRepoRoot()): NodeJS.Dict<string> {
-  if (isProductionEnv(env)) return env;
-  const chainRaw = env.CHAIN_ID ?? env.NEXT_PUBLIC_CHAIN_ID;
-  const chainId = chainRaw ? Number(chainRaw) : LOCAL_CHAIN_ID;
-  if (chainId !== LOCAL_CHAIN_ID) return env;
-  const manifest = readLocalDeploymentManifest(root);
-  if (!manifest || manifest.status !== "DEPLOYED") return env;
+export function readPublicDeploymentManifest(chainId: number, root = resolveRepoRoot()): DeploymentManifest {
+  if (chainId === LOCAL_CHAIN_ID) return emptyManifest(chainId);
+  const parsed =
+    parseDeploymentManifest(readJsonFile(publicDeploymentPath(chainId, root))) ??
+    parseDeploymentManifest(readJsonFile(publicDeploymentExamplePath(chainId, root)));
+  if (!parsed || parsed.chainId !== chainId) return emptyManifest(chainId);
+  const deployed = Boolean(
+    parsed.contracts.launchFactory && parsed.contracts.launchLocker && parsed.status === "DEPLOYED",
+  );
+  return { ...parsed, status: deployed ? "DEPLOYED" : "NOT_DEPLOYED" };
+}
+
+function fillIfEmpty(overlay: Record<string, string>, key: string, value: string | null | undefined): void {
+  if (!value) return;
+  if (!overlay[key]?.trim()) overlay[key] = value;
+}
+
+function applyManifest(env: NodeJS.Dict<string>, manifest: DeploymentManifest): NodeJS.Dict<string> {
+  const overlay: Record<string, string> = { ...(env as Record<string, string>) };
   const c = manifest.contracts;
-  const overlay: Record<string, string> = { ...env } as Record<string, string>;
-  if (c.launchFactory) overlay.LAUNCH_FACTORY_ADDRESS = c.launchFactory;
-  if (c.launchLocker) overlay.LAUNCH_LOCKER_ADDRESS = c.launchLocker;
+  fillIfEmpty(overlay, "RPC_URL", manifest.rpcUrl);
+  fillIfEmpty(overlay, "NEXT_PUBLIC_RPC_URL", manifest.rpcUrl);
+  fillIfEmpty(overlay, "CHAIN_ID", String(manifest.chainId));
+  fillIfEmpty(overlay, "NEXT_PUBLIC_CHAIN_ID", String(manifest.chainId));
+  if (manifest.status !== "DEPLOYED") {
+    fillIfEmpty(overlay, "UNISWAP_POOL_MANAGER_ADDRESS", c.poolManager);
+    fillIfEmpty(overlay, "UNISWAP_POSITION_MANAGER_ADDRESS", c.positionManager);
+    fillIfEmpty(overlay, "UNISWAP_PERMIT2_ADDRESS", c.permit2);
+    fillIfEmpty(overlay, "UNISWAP_STATE_VIEW", c.stateView);
+    fillIfEmpty(overlay, "UNISWAP_QUOTER", c.quoter);
+    fillIfEmpty(overlay, "UNISWAP_UNIVERSAL_ROUTER_ADDRESS", c.universalRouter);
+    return overlay;
+  }
   if (c.poolManager) overlay.UNISWAP_POOL_MANAGER_ADDRESS = c.poolManager;
   if (c.positionManager) overlay.UNISWAP_POSITION_MANAGER_ADDRESS = c.positionManager;
   if (c.permit2) overlay.UNISWAP_PERMIT2_ADDRESS = c.permit2;
+  if (c.stateView) overlay.UNISWAP_STATE_VIEW = c.stateView;
+  if (c.quoter) overlay.UNISWAP_QUOTER = c.quoter;
+  if (c.universalRouter) overlay.UNISWAP_UNIVERSAL_ROUTER_ADDRESS = c.universalRouter;
+  if (c.launchFactory) overlay.LAUNCH_FACTORY_ADDRESS = c.launchFactory;
+  if (c.launchLocker) overlay.LAUNCH_LOCKER_ADDRESS = c.launchLocker;
   if (manifest.deployBlock != null) {
     overlay.LAUNCH_DEPLOY_BLOCK = String(manifest.deployBlock);
     overlay.INDEXER_START_BLOCK = overlay.INDEXER_START_BLOCK || String(manifest.deployBlock);
@@ -155,3 +208,27 @@ export function mergeLocalDeployment(env: NodeJS.Dict<string>, root = findRepoRo
   if (curve?.lpFee != null) overlay.FUSED_LP_FEE = String(curve.lpFee);
   return overlay;
 }
+
+/**
+ * Overlay deployment JSON onto env.
+ * Local 31337: gitignored local-31337.json, never in production.
+ * Public chains: committed robinhood-testnet-46630.json / robinhood-4663.json when DEPLOYED.
+ */
+export function mergeLocalDeployment(env: NodeJS.Dict<string>, root = resolveRepoRoot()): NodeJS.Dict<string> {
+  return mergeChainDeployment(env, root);
+}
+
+export function mergeChainDeployment(env: NodeJS.Dict<string>, root = resolveRepoRoot()): NodeJS.Dict<string> {
+  const chainRaw = env.CHAIN_ID ?? env.NEXT_PUBLIC_CHAIN_ID;
+  const chainId = chainRaw ? Number(chainRaw) : LOCAL_CHAIN_ID;
+  if (!Number.isInteger(chainId)) return env;
+  if (chainId === LOCAL_CHAIN_ID) {
+    if (isProductionEnv(env)) return env;
+    const manifest = readLocalDeploymentManifest(root);
+    if (!manifest) return env;
+    return applyManifest(env, manifest);
+  }
+  return applyManifest(env, readPublicDeploymentManifest(chainId, root));
+}
+
+export { ROBINHOOD_TESTNET_CHAIN_ID, ROBINHOOD_MAINNET_CHAIN_ID };

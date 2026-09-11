@@ -19,6 +19,12 @@ test("systemStatus never marks launch contracts OK without addresses", () => {
   assert.equal(status.tokenizedAssetRegistry.status, "NOT_CONFIGURED");
 });
 
+test("loadPublicEnv fills the public Robinhood testnet RPC when chain id is 46630", () => {
+  const pub = loadPublicEnv({ NEXT_PUBLIC_CHAIN_ID: "46630" });
+  assert.equal(pub.chainId, 46630);
+  assert.equal(pub.rpcUrl, "https://rpc.testnet.chain.robinhood.com");
+});
+
 test("loadPublicEnv never copies server secrets", () => {
   const pub = loadPublicEnv({
     AI_API_KEY: "sk-secret",

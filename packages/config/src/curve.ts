@@ -4,6 +4,8 @@
  * Do not fall back from Robinhood (or any public chain) to local defaults.
  */
 
+import { ROBINHOOD_TESTNET_CHAIN_ID, ROBINHOOD_TESTNET_CURVE } from "./networks.ts";
+
 export const LOCAL_CURVE = {
   network: "local" as const,
   chainId: 31337,
@@ -87,11 +89,32 @@ export function requirePublicCurveParams(env: NodeJS.Dict<string>): PublicCurveR
       reason: "Public curve configuration cannot target the local Anvil chain.",
     };
   }
+  if (chainId === ROBINHOOD_TESTNET_CHAIN_ID && network !== "robinhood-testnet") {
+    return {
+      ok: false,
+      missing: ["FUSED_PUBLIC_NETWORK"],
+      reason: "Chain 46630 requires FUSED_PUBLIC_NETWORK=robinhood-testnet.",
+    };
+  }
+  if (chainId === 4663 && network === "robinhood-testnet") {
+    return {
+      ok: false,
+      missing: ["FUSED_PUBLIC_NETWORK"],
+      reason: "Robinhood mainnet 4663 is not the testnet network name.",
+    };
+  }
   if (graduationTargetWei === LOCAL_CURVE.graduationTargetWei) {
     return {
       ok: false,
       missing: ["FUSED_GRADUATION_TARGET_WEI"],
       reason: "Refusing the local 0.1 ETH graduation target on a public network.",
+    };
+  }
+  if (chainId === 4663 && graduationTargetWei === ROBINHOOD_TESTNET_CURVE.graduationTargetWei) {
+    return {
+      ok: false,
+      missing: ["FUSED_GRADUATION_TARGET_WEI"],
+      reason: "Refusing the testnet 0.01 ETH graduation target on Robinhood mainnet.",
     };
   }
   const feeBps = Number(feeRaw);

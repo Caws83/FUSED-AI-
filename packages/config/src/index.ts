@@ -44,14 +44,25 @@ export {
 } from "./curve.ts";
 export {
   localDeploymentPath,
+  mergeChainDeployment,
   mergeLocalDeployment,
   parseDeploymentManifest,
+  publicDeploymentExamplePath,
   publicDeploymentPath,
   readLocalDeploymentManifest,
   readPublicDeploymentManifest,
   type DeploymentManifest,
   type DeploymentStatus,
 } from "./deployment.ts";
+export {
+  chainLabelFor,
+  deploymentFileName,
+  ROBINHOOD_MAINNET_CHAIN_ID,
+  ROBINHOOD_TESTNET,
+  ROBINHOOD_TESTNET_CHAIN_ID,
+  ROBINHOOD_TESTNET_CURVE,
+  ROBINHOOD_TESTNET_V4,
+} from "./networks.ts";
 export {
   isPublicChainConfigured,
   isPublicLaunchEnabled,
