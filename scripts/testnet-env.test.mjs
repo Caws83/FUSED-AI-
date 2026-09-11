@@ -37,13 +37,13 @@ test("env:testnet prints public Vercel vars and no secrets", () => {
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /NEXT_PUBLIC_CHAIN_ID=46630/);
   assert.match(result.stdout, /NEXT_PUBLIC_RPC_URL=https:\/\/rpc\.testnet\.chain\.robinhood\.com/);
-  assert.match(result.stdout, /PUBLIC_LAUNCH_ENABLED=false/);
-  assert.match(result.stdout, /NOT_DEPLOYED|unset/);
+  assert.match(result.stdout, /PUBLIC_LAUNCH_ENABLED=true/);
+  assert.match(result.stdout, /LAUNCH_FACTORY_ADDRESS=0x42654079a991EE21e2d2f7Eed0A77bf6a0082208/);
+  assert.match(result.stdout, /LAUNCH_LOCKER_ADDRESS=0x68000CD8F3AFE93BB87BeEDc9f2daBbf39E0836b/);
   assert.equal(result.stdout.includes("DEPLOYER_PRIVATE_KEY="), false);
   assert.equal(result.stdout.includes("AI_API_KEY="), false);
   assert.equal(result.stdout.includes("X_BEARER_TOKEN="), false);
   assert.equal(result.stdout.includes("DATABASE_URL="), false);
   assert.equal(result.stdout.includes("AWS_SECRET_ACCESS_KEY="), false);
-  assert.equal(result.stdout.includes("LAUNCH_FACTORY_ADDRESS="), false);
-  assert.equal(result.stdout.includes("INDEXER_START_BLOCK="), false);
+  assert.equal(result.stdout.toLowerCase().includes("ac0974bec39a17d36e8e7151ddb29e79448baab2"), false);
 });

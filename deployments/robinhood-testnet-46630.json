@@ -1,0 +1,31 @@
+{
+  "network": "robinhood-testnet",
+  "chainId": 46630,
+  "status": "DEPLOYED",
+  "rpcUrl": "https://rpc.testnet.chain.robinhood.com",
+  "explorer": "https://explorer.testnet.chain.robinhood.com",
+  "deployer": "0xf5fDA9015e0DA7eD406C4c329AB041C2ca6a92EE",
+  "contracts": {
+    "launchFactory": "0x42654079a991EE21e2d2f7Eed0A77bf6a0082208",
+    "launchLocker": "0x68000CD8F3AFE93BB87BeEDc9f2daBbf39E0836b",
+    "poolManager": "0x8366a39CC670B4001A1121B8F6A443A643e40951",
+    "positionManager": "0x58daec3116aae6D93017bAAea7749052E8a04fA7",
+    "universalRouter": "0x8876789976decbfcbbbe364623c63652db8c0904",
+    "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+    "stateView": "0xf3334192d15450cdd385c8b70e03f9a6bd9e673b",
+    "quoter": "0x8dc178efb8111bb0973dd9d722ebeff267c98f94"
+  },
+  "curve": {
+    "virtualQuoteWei": "50000000000000000",
+    "virtualToken": "1000000000000000000000000000",
+    "graduationTargetWei": "10000000000000000",
+    "feeBps": 0,
+    "lpFee": 10000,
+    "note": "TESTNET ONLY. Explicit low target for faucet ETH. Not 0.1 local. Not $50,000 mainnet."
+  },
+  "deployBlock": 117433209,
+  "transactions": {
+    "factory": "0x06ea36afad21556c9910c9c60dcff8358512d21cb8a957a3075ae7e3c9b80482",
+    "locker": "0x06ea36afad21556c9910c9c60dcff8358512d21cb8a957a3075ae7e3c9b80482"
+  }
+}

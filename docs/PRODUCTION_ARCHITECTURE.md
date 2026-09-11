@@ -54,7 +54,7 @@ Production rejects localhost / `127.0.0.1` database URLs.
 | Network | Manifest | Status in this checkout |
 |---------|----------|-------------------------|
 | Local Anvil 31337 | `deployments/local-31337.json` (gitignored, written by `npm run contracts:deploy:local`) | Real local addresses |
-| Robinhood testnet 46630 | `deployments/robinhood-testnet-46630.json` when you deploy; example is `robinhood-testnet-46630.example.json` | **NOT DEPLOYED** (Uniswap v4 bytecode verified; Fused factory/locker unset) |
+| Robinhood testnet 46630 | `deployments/robinhood-testnet-46630.json` | **DEPLOYED** |
 | Robinhood mainnet 4663 | `deployments/robinhood-4663.json` when you deploy; example is `robinhood-4663.example.json` | **NOT DEPLOYED** — do not deploy here yet |
 
 Do not copy Anvil addresses (`0x9fE467…`, `0x755378…`, `0x5FbDB2…`, `0xe7f172…`) onto a public chain. Production config rejects them when `NODE_ENV=production` or the chain id is not 31337.

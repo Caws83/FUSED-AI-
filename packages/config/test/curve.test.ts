@@ -79,14 +79,21 @@ test("Robinhood testnet accepts explicit 0.01 ETH and refuses local 0.1 ETH", ()
   assert.equal(testnetOnMainnet.ok, false);
 });
 
-test("Robinhood testnet example overlay fills Uniswap v4 but not Fused factory", () => {
+test("Robinhood testnet live overlay uses the deployed factory, not Anvil", () => {
   const row = readPublicDeploymentManifest(46630);
-  assert.equal(row.status, "NOT_DEPLOYED");
-  assert.equal(row.contracts.launchFactory, null);
-  assert.equal(row.contracts.launchLocker, null);
-  assert.equal(row.contracts.poolManager?.toLowerCase(), ROBINHOOD_TESTNET_V4.poolManager.toLowerCase());
-  const merged = mergeChainDeployment({ CHAIN_ID: "46630", NEXT_PUBLIC_CHAIN_ID: "46630" });
-  assert.equal(merged.LAUNCH_FACTORY_ADDRESS, undefined);
+  assert.equal(row.status, "DEPLOYED");
+  assert.equal(row.chainId, 46630);
+  assert.match(row.contracts.launchFactory ?? "", /^0x[a-fA-F0-9]{40}$/);
+  assert.match(row.contracts.launchLocker ?? "", /^0x[a-fA-F0-9]{40}$/);
+  assert.notEqual(row.contracts.launchFactory?.toLowerCase(), "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0");
+  assert.notEqual(row.contracts.launchLocker?.toLowerCase(), "0x75537828f2ce51be7289709686a69cbfdbb714f1");
+  const merged = mergeChainDeployment({
+    NODE_ENV: "production",
+    CHAIN_ID: "46630",
+    NEXT_PUBLIC_CHAIN_ID: "46630",
+  });
+  assert.equal(merged.LAUNCH_FACTORY_ADDRESS, row.contracts.launchFactory);
+  assert.equal(merged.LAUNCH_LOCKER_ADDRESS, row.contracts.launchLocker);
   assert.equal(merged.UNISWAP_POOL_MANAGER_ADDRESS?.toLowerCase(), ROBINHOOD_TESTNET_V4.poolManager.toLowerCase());
   assert.equal(merged.NEXT_PUBLIC_RPC_URL, "https://rpc.testnet.chain.robinhood.com");
 });
