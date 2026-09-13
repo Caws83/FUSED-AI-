@@ -56,3 +56,4 @@ deployments/*.json
 !deployments/*.example.json
 !deployments/robinhood-testnet-46630.json
 
+.vercel

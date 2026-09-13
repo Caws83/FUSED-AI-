@@ -1,11 +1,11 @@
-import type { Availability, LaunchDraft, SocialPost, ValidatedLaunchDraft } from "@fused-ai/types";
+import type { Availability, FusePostDraft, LaunchDraft, LaunchDraftValidationIssue, SocialPost, ValidatedLaunchDraft } from "@fused-ai/types";
 import { providerUnavailable } from "@fused-ai/types";
-import { err, fail, ok, type Result } from "@fused-ai/shared";
+import { clampText, err, fail, ok, type Result } from "@fused-ai/shared";
 import type { FusedEnv } from "@fused-ai/config";
 import { aiAvailability } from "@fused-ai/config";
-import { detectPromptInjection, parseLaunchDraft } from "@fused-ai/validation";
+import { detectPromptInjection, FUSE_POST_TEXT_MAX, parseFusePostDraft, parseLaunchDraft } from "@fused-ai/validation";
 import type { AIProvider } from "./provider.ts";
-import { buildLaunchPrompt } from "./prompt.ts";
+import { buildFusePostPrompt, buildLaunchPrompt } from "./prompt.ts";
 import { extractJsonObject } from "./json.ts";
 
 export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
@@ -15,9 +15,9 @@ function chatUrl(env: FusedEnv): string {
   return `${base}/chat/completions`;
 }
 
-function issuesFromFlags(flags: readonly string[]) {
+function issuesFromFlags(flags: readonly string[], path = "sourcePost.text") {
   return flags.map((code) => ({
-    path: "sourcePost.text",
+    path,
     code: `injection_${code}`,
     message: "Untrusted post text contained instruction-like language. It was treated as data only.",
   }));
@@ -85,6 +85,34 @@ export class EnvAIProvider implements AIProvider {
     return ok({ draft: parsed.draft, issues: [...parsed.issues, ...issuesFromFlags(flags)] });
   }
 
+  async generateLaunchFromPastedText(
+    text: string,
+  ): Promise<Result<{ draft: FusePostDraft; issues: readonly LaunchDraftValidationIssue[] }>> {
+    const ready = this.availability();
+    if (ready.status !== "OK") return fail(ready);
+    const clipped = clampText(text, FUSE_POST_TEXT_MAX);
+    if (clipped.length < 8) {
+      return err({ status: "NOT_CONFIGURED", reason: "Paste a post with at least 8 characters." });
+    }
+    const flags = detectPromptInjection(clipped);
+    const prompt = buildFusePostPrompt(clipped, flags);
+    const raw = await this.complete(prompt.system, prompt.user, Math.min(this.env.ai.maxOutputTokens, 400));
+    if (!raw.ok) return raw;
+
+    let parsedJson: unknown;
+    try {
+      parsedJson = extractJsonObject(raw.value);
+    } catch {
+      return err(providerUnavailable("AI draft was not valid JSON."));
+    }
+
+    const parsed = parseFusePostDraft(parsedJson);
+    if (!parsed.draft) {
+      return err(providerUnavailable("AI draft failed schema validation."));
+    }
+    return ok({ draft: parsed.draft, issues: issuesFromFlags(flags, "untrustedPostText") });
+  }
+
   async generateTokenMetadata(draft: LaunchDraft): Promise<Result<{ description: string; imageConcept: string }>> {
     const ready = this.availability();
     if (ready.status !== "OK") return fail(ready);
@@ -120,7 +148,7 @@ export class EnvAIProvider implements AIProvider {
     return ok(parsed.draft);
   }
 
-  private async complete(system: string, user: string): Promise<Result<string>> {
+  private async complete(system: string, user: string, maxTokens = this.env.ai.maxOutputTokens): Promise<Result<string>> {
     const key = this.env.ai.apiKey;
     const model = this.env.ai.model;
     if (!key || !model) return fail(this.availability());
@@ -136,7 +164,7 @@ export class EnvAIProvider implements AIProvider {
         body: JSON.stringify({
           model,
           temperature: 0.4,
-          max_tokens: this.env.ai.maxOutputTokens,
+          max_tokens: maxTokens,
           response_format: { type: "json_object" },
           messages: [
             { role: "system", content: system },
@@ -153,12 +181,19 @@ export class EnvAIProvider implements AIProvider {
       if (!content) return err(providerUnavailable("AI provider returned an empty completion."));
       return ok(content);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "AI request failed.";
-      return err(providerUnavailable(message));
+      return err(providerUnavailable(safeAiError(error)));
     } finally {
       clearTimeout(timer);
     }
   }
+}
+
+function safeAiError(error: unknown): string {
+  const text = error instanceof Error ? error.message : "AI request failed.";
+  if (error instanceof Error && error.name === "AbortError") return "AI draft timed out.";
+  if (/aborted|timeout|TimeoutError/i.test(text)) return "AI draft timed out.";
+  if (/sk-|api[_-]?key|bearer\s+[a-z0-9._-]+/i.test(text)) return "AI draft failed.";
+  return text.slice(0, 180);
 }
 
 export function createAIProvider(env: FusedEnv, fetchImpl?: FetchLike): AIProvider {

@@ -23,6 +23,7 @@ export type {
 } from "./social.ts";
 
 export type {
+  FusePostDraft,
   LaunchCategory,
   LaunchDraft,
   LaunchDraftValidationIssue,

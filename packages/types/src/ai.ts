@@ -42,3 +42,11 @@ export type ValidatedLaunchDraft = {
   draft: LaunchDraft;
   issues: readonly LaunchDraftValidationIssue[];
 };
+
+/** V1 pasted-text fuse result. No source URL or X post id. */
+export type FusePostDraft = {
+  name: string;
+  ticker: string;
+  description: string;
+  logoPrompt: string;
+};

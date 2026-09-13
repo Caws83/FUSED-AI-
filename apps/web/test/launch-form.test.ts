@@ -24,9 +24,22 @@ test("manual launch does not require AI or X and resolves wallet clients at clic
   assert.match(manual, /FusedFactory.create/);
   assert.match(manual, /useState\(""\)/);
   assert.match(manual, /same bonding curve/);
+  assert.match(manual, /\/api\/media\/upload/);
+  assert.match(manual, /\/api\/ai\/image/);
+  assert.match(manual, /FusePost/);
+  assert.match(manual, /applyFusedDraft/);
+  assert.match(manual, /setName\(draft\.name\)/);
+  assert.match(manual, /setSymbol\(draft\.ticker\)/);
+  assert.match(manual, /setDescription\(draft\.description\)/);
+  assert.match(manual, /logoError/);
+  assert.match(manual, /Generating…/);
+  assert.match(manual, /imagePrompt/);
+  assert.match(manual, /Logo theme/);
   assert.equal(manual.includes("0.5"), false);
   assert.equal(manual.includes("X_BEARER_TOKEN"), false);
   assert.equal(manual.includes("AI_PROVIDER"), false);
+  assert.equal(manual.includes("NEXT_PUBLIC_AI"), false);
+  assert.match(manual, /LAUNCH TOKEN/);
 });
 
 test("token and explore pages do not hardcode fake market data", () => {

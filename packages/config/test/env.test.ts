@@ -70,6 +70,20 @@ test("WalletConnect and AI image stay unavailable without ids", () => {
   assert.equal(status.media.status, "OK");
 });
 
+test("AI image uses existing env names and a dedicated timeout", () => {
+  const cfg = loadEnv({
+    AI_IMAGE_PROVIDER: "openai",
+    AI_IMAGE_API_KEY: "sk-test",
+    AI_IMAGE_MODEL: "dall-e-3",
+    AI_IMAGE_TIMEOUT_MS: "45000",
+  });
+  assert.equal(cfg.aiImage.provider, "openai");
+  assert.equal(cfg.aiImage.apiKey, "sk-test");
+  assert.equal(cfg.aiImage.model, "dall-e-3");
+  assert.equal(cfg.aiImage.timeoutMs, 45000);
+  assert.equal(systemStatus(cfg).aiImage.status, "OK");
+});
+
 test("production rejects local media, localhost RPC/DB, and Anvil factory addresses", () => {
   const status = systemStatus(
     loadEnv({

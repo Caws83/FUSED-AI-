@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { loadEnv, loadRepoEnv } from "@fused-ai/config";
-import { createAIImageProvider, createMediaStore, validateImage } from "@fused-ai/media";
+import { aiImageRouteError, createMediaStore, generateAndStoreTokenLogo } from "@fused-ai/media";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   loadRepoEnv();
@@ -13,32 +15,27 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ ok: false, error: "Invalid request." }, { status: 400 });
   }
-  if (!body.name || !body.symbol) {
+  if (!body.name?.trim() || !body.symbol?.trim()) {
     return NextResponse.json({ ok: false, error: "Name and ticker are required." }, { status: 400 });
   }
 
-  const provider = createAIImageProvider(env);
-  const generated = await provider.generateTokenImage({
-    name: body.name,
-    symbol: body.symbol,
-    description: body.description,
-    imagePrompt: body.imagePrompt,
-  });
-  if (!generated.ok) {
-    return NextResponse.json({ ok: false, error: "AI artwork is temporarily unavailable." }, { status: 503 });
-  }
-  const checked = validateImage(generated.value.bytes, generated.value.mime);
-  if (!checked.ok) {
-    return NextResponse.json({ ok: false, error: checked.reason }, { status: 400 });
-  }
-  const store = createMediaStore(env);
-  const saved = await store.uploadTokenImage(checked.value);
-  if (!saved.ok) {
-    return NextResponse.json({ ok: false, error: "Upload is temporarily unavailable." }, { status: 503 });
+  const result = await generateAndStoreTokenLogo(
+    env,
+    {
+      name: body.name,
+      symbol: body.symbol,
+      description: body.description,
+      imagePrompt: body.imagePrompt,
+    },
+    { store: createMediaStore(env) },
+  );
+  if (!result.ok) {
+    const status = result.error.reason === "Name and ticker are required." ? 400 : 503;
+    return NextResponse.json({ ok: false, error: aiImageRouteError(result.error) }, { status });
   }
   return NextResponse.json({
     ok: true,
-    id: saved.value.id,
-    url: store.getPublicUrl(saved.value.id),
+    id: result.value.id,
+    url: result.value.url,
   });
 }

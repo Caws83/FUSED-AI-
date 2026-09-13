@@ -9,7 +9,17 @@ export type { MediaStore, StoredImage } from "./store.ts";
 export { validateImage, MAX_IMAGE_BYTES, type ImageKind, type ValidatedImage } from "./validate.ts";
 export { assertPublicMediaUrl, isLocalChain } from "./urls.ts";
 export { objectPublicUrl, ObjectMediaStore } from "./object-store.ts";
-export { createAIImageProvider, UnavailableAIImageProvider, type AIImageInput, type AIImageProvider } from "./ai-image.ts";
+export { LocalMediaStore } from "./local.ts";
+export {
+  aiImageRouteError,
+  createAIImageProvider,
+  generateAndStoreTokenLogo,
+  normalizeAIImageInput,
+  UnavailableAIImageProvider,
+  type AIImageInput,
+  type AIImageProvider,
+  type GeneratedLogo,
+} from "./ai-image.ts";
 
 export function createMediaStore(env: FusedEnv): MediaStore {
   const kind = (env.media.store || "").toLowerCase();

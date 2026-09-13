@@ -62,6 +62,7 @@ export type FusedEnv = {
     apiKey: string | null;
     apiBaseUrl: string | null;
     model: string | null;
+    timeoutMs: number;
   };
   ai: {
     provider: string | null;
@@ -341,6 +342,7 @@ export function loadEnv(env: NodeJS.Dict<string> = process.env): FusedEnv {
       apiKey: first(source, "AI_IMAGE_API_KEY", "AI_API_KEY"),
       apiBaseUrl: first(source, "AI_IMAGE_API_BASE_URL", "AI_API_BASE_URL"),
       model: first(source, "AI_IMAGE_MODEL"),
+      timeoutMs: firstInt(source, "AI_IMAGE_TIMEOUT_MS", "AI_TIMEOUT_MS") ?? 60_000,
     },
     ai: {
       provider: read("AI_PROVIDER", source),

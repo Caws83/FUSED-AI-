@@ -137,17 +137,19 @@ function parseSuggestedConfig(
 export function detectPromptInjection(text: string): string[] {
   const hits: string[] = [];
   const patterns: Array<[RegExp, string]> = [
-    [/ignore (all|any|previous|prior) (instructions|prompts)/i, "ignore_instructions"],
+    [/ignore.{0,40}(instructions|prompts)/i, "ignore_instructions"],
     [/system\s*prompt/i, "system_prompt"],
     [/you are now /i, "role_override"],
     [/<\/?system>/i, "system_tag"],
     [/\bdo not validate\b/i, "bypass_validation"],
-    [/reveal.{0,40}(api key|secret|token)/i, "reveal_secret"],
+    [/reveal.{0,40}(api key|secret|token|private key)/i, "reveal_secret"],
+    [/output.{0,40}(api key|secret|token|private key)/i, "reveal_secret"],
+    [/\bprivate key\b/i, "reveal_secret"],
     [/change.{0,40}contract address/i, "change_contract"],
     [/\bsend (all )?(funds|eth|tokens)\b/i, "send_funds"],
   ];
   for (const [re, code] of patterns) {
     if (re.test(text)) hits.push(code);
   }
-  return hits;
+  return [...new Set(hits)];
 }

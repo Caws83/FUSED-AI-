@@ -655,6 +655,44 @@ textarea {
   gap: 8px;
 }
 
+.fused-fuse-panel {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin: 0 0 18px;
+  padding: 0 0 18px;
+  border-bottom: 1px solid var(--fused-line);
+}
+
+.fused-fuse-panel textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 120px;
+  resize: vertical;
+}
+
+.fused-fuse-panel .fused-btn {
+  width: 100%;
+}
+
+.fused-token-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.fused-logo-preview {
+  width: 72px;
+  height: 72px;
+  max-width: 100%;
+  aspect-ratio: 1;
+  border-radius: 16px;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+
 .fused-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -760,5 +798,28 @@ textarea {
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+
+  .fused-fuse-panel,
+  .fused-fuse-panel textarea,
+  .fused-fuse-panel .fused-btn {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .fused-launch-media-row {
+    flex-direction: column;
+  }
+
+  .fused-launch-media-row .fused-btn,
+  .fused-launch-media-row label,
+  .fused-launch-media-row input {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .fused-logo-preview {
+    width: 72px;
+    height: 72px;
   }
 }

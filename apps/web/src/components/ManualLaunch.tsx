@@ -13,6 +13,7 @@ import { validateLaunchForm } from "@fused-ai/blockchain/abi";
 import type { SocialPost } from "@fused-ai/types";
 import { chainLabelFor, writeClientError } from "../lib/wallet.ts";
 import { resolveWriteClients } from "../lib/wallet-clients.ts";
+import { FusePost, type FusedDraft } from "./FusePost.tsx";
 
 type Step = "form" | "review" | "done";
 
@@ -46,6 +47,9 @@ export function ManualLaunch({
   const [step, setStep] = useState<Step>("form");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [generatingLogo, setGeneratingLogo] = useState(false);
+  const [fusingPost, setFusingPost] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<`0x${string}` | null>(null);
   const [token, setToken] = useState<`0x${string}` | null>(null);
 
@@ -62,8 +66,24 @@ export function ManualLaunch({
     );
   }
 
+  function applyFusedDraft(draft: FusedDraft) {
+    setName(draft.name);
+    setSymbol(draft.ticker);
+    setDescription(draft.description);
+    setImagePrompt(draft.logoPrompt);
+    setError(null);
+    if (draft.imageId && draft.imageUrl) {
+      setImageId(draft.imageId);
+      setImagePreview(draft.imageUrl);
+      setLogoError(null);
+    } else {
+      setLogoError(draft.imageError || "Logo generation failed. Upload a logo or retry.");
+    }
+  }
+
   async function onUpload(file: File | undefined) {
     setError(null);
+    setLogoError(null);
     if (!file) return;
     const body = new FormData();
     body.append("file", file);
@@ -108,8 +128,14 @@ export function ManualLaunch({
   }
 
   async function onAiImage() {
+    if (generatingLogo || pending || fusingPost) return;
     setError(null);
-    setPending(true);
+    setLogoError(null);
+    if (!name.trim() || !symbol.trim()) {
+      setError("Name and ticker are required.");
+      return;
+    }
+    setGeneratingLogo(true);
     try {
       const res = await fetch("/api/ai/image", {
         method: "POST",
@@ -118,15 +144,15 @@ export function ManualLaunch({
       });
       const json = (await res.json()) as { ok?: boolean; id?: string; url?: string; error?: string };
       if (!json.ok || !json.id || !json.url) {
-        setError(json.error || "AI artwork is temporarily unavailable.");
+        setLogoError(json.error || "AI logo generation is not configured.");
         return;
       }
       setImageId(json.id);
       setImagePreview(json.url);
     } catch {
-      setError("AI artwork is temporarily unavailable.");
+      setLogoError("AI logo generation failed.");
     } finally {
-      setPending(false);
+      setGeneratingLogo(false);
     }
   }
 
@@ -245,7 +271,7 @@ export function ManualLaunch({
           Confirm launch
         </h2>
         {imagePreview ? (
-          <img src={imagePreview} alt="" width={72} height={72} style={{ borderRadius: 16, objectFit: "cover" }} />
+          <img src={imagePreview} alt="" width={72} height={72} className="fused-logo-preview" />
         ) : null}
         <dl className="fused-review">
           <div>
@@ -321,6 +347,7 @@ export function ManualLaunch({
   return (
     <Card>
       {sourcePost ? <SourcePost post={sourcePost} /> : null}
+      <FusePost disabled={pending} onBusy={setFusingPost} onFused={applyFusedDraft} />
       <p style={{ marginTop: 0, color: "var(--fused-muted)" }}>
         Set the name and ticker. You review everything before your wallet signs. AI never signs.
       </p>
@@ -349,6 +376,16 @@ export function ManualLaunch({
           />
         </label>
         <label>
+          Logo theme (optional)
+          <input
+            value={imagePrompt}
+            onChange={(e) => setImagePrompt(e.target.value)}
+            placeholder="Optional art direction for Generate AI logo"
+            className="fused-input"
+            maxLength={400}
+          />
+        </label>
+        <label>
           Creator buy (ETH, optional)
           <input
             value={creatorBuy}
@@ -361,7 +398,7 @@ export function ManualLaunch({
           Defaults to 0. Any amount is spent through the same bonding curve as every other buy — not a premine.
           It counts toward graduation. A buy large enough to hit the target graduates in this same transaction.
         </p>
-        <div className="fused-quick-row">
+        <div className="fused-quick-row fused-launch-media-row">
           <label style={{ flex: 1 }}>
             Upload logo
             <input
@@ -369,15 +406,21 @@ export function ManualLaunch({
               accept="image/png,image/jpeg,image/webp"
               className="fused-input"
               onChange={(e) => void onUpload(e.target.files?.[0])}
+              disabled={generatingLogo || pending || fusingPost}
             />
           </label>
-          <Button type="button" variant="ghost" onClick={() => void onAiImage()} disabled={pending || !name || !symbol}>
-            Generate AI logo
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => void onAiImage()}
+            disabled={generatingLogo || pending || fusingPost || !name.trim() || !symbol.trim()}
+          >
+            {generatingLogo ? "Generating…" : "Generate AI logo"}
           </Button>
         </div>
         {imagePreview ? (
-          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <img src={imagePreview} alt="" width={64} height={64} style={{ borderRadius: 16, objectFit: "cover" }} />
+          <div className="fused-token-preview">
+            <img src={imagePreview} alt="" width={72} height={72} className="fused-logo-preview" />
             <Button
               type="button"
               variant="ghost"
@@ -393,8 +436,9 @@ export function ManualLaunch({
           <p style={{ margin: 0, color: "var(--fused-muted)", fontSize: 13 }}>No logo selected.</p>
         )}
         {wrongNetwork ? <p className="fused-form-error">Switch to {chainName} to launch.</p> : null}
+        {logoError ? <p className="fused-form-error">{logoError}</p> : null}
         {error ? <p className="fused-form-error">{error}</p> : null}
-        <Button type="button" variant="lime" onClick={() => void onReview()}>
+        <Button type="button" variant="lime" onClick={() => void onReview()} disabled={pending || fusingPost}>
           Review launch
         </Button>
       </div>

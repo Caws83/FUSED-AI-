@@ -17,6 +17,7 @@ const PUBLIC_PAGES = [
   "src/components/ConnectWallet.tsx",
   "src/components/SiteHeader.tsx",
   "src/components/ManualLaunch.tsx",
+  "src/components/FusePost.tsx",
   "src/components/TokenTerminal.tsx",
   "src/lib/boards.tsx",
 ];
