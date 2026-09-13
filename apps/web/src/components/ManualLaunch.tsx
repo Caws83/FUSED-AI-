@@ -52,6 +52,10 @@ export function ManualLaunch({
   const [logoError, setLogoError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<`0x${string}` | null>(null);
   const [token, setToken] = useState<`0x${string}` | null>(null);
+  const [sourcePostId, setSourcePostId] = useState<string | null>(sourcePost?.postId ?? null);
+  const [sourceAuthor, setSourceAuthor] = useState<string | null>(sourcePost?.authorUsername ?? null);
+  const [sourcePostUrl, setSourcePostUrl] = useState<string | null>(sourcePost?.url ?? null);
+  const [sourceExcerpt, setSourceExcerpt] = useState<string | null>(sourcePost?.text.slice(0, 240) ?? null);
 
   const wrongNetwork = Boolean(isConnected && chainId && walletChainId !== chainId);
   const params = useMemo(() => {
@@ -79,6 +83,10 @@ export function ManualLaunch({
     } else {
       setLogoError(draft.imageError || "Logo generation failed. Upload a logo or retry.");
     }
+    setSourcePostId(draft.sourcePostId);
+    setSourceAuthor(draft.sourceAuthor);
+    setSourcePostUrl(draft.sourcePostUrl);
+    setSourceExcerpt(draft.sourceExcerpt);
   }
 
   async function onUpload(file: File | undefined) {
@@ -234,7 +242,10 @@ export function ManualLaunch({
         body: JSON.stringify({
           imageId,
           imageUrl: imagePreview,
-          sourcePostId: sourcePost?.postId,
+          sourcePostId: sourcePostId ?? sourcePost?.postId,
+          sourceAuthor,
+          sourcePostUrl,
+          sourceExcerpt,
           description,
         }),
       });
@@ -266,74 +277,66 @@ export function ManualLaunch({
 
   if (step === "review" && params && address) {
     return (
-      <Card>
-        <p className="fused-kicker">Review</p>
-        <h2 className="fused-h2" style={{ fontSize: 28 }}>
-          Confirm launch
-        </h2>
-        {imagePreview ? (
-          <img src={imagePreview} alt="" width={72} height={72} className="fused-logo-preview" />
-        ) : null}
+      <Card className="fused-review-card">
+        <div className="fused-review-hero">
+          {imagePreview ? (
+            <img src={imagePreview} alt="" width={88} height={88} className="fused-review-logo" />
+          ) : (
+            <div className="fused-review-logo fused-review-logo-empty" aria-hidden="true">
+              {params.symbol.slice(0, 2).toUpperCase()}
+            </div>
+          )}
+          <div className="fused-review-hero-copy">
+            <p className="fused-kicker">Review fuse</p>
+            <h2 className="fused-h2">{params.name}</h2>
+            <div className="fused-review-tags">
+              <span className="fused-badge fused-badge-lime">${params.symbol}</span>
+              <span className="fused-badge fused-badge-navy">ETH curve</span>
+            </div>
+          </div>
+        </div>
+        {description.trim() ? <p className="fused-review-blurb">{description.trim()}</p> : null}
         <dl className="fused-review">
           <div>
-            <dt>Token name</dt>
-            <dd>{params.name}</dd>
-          </div>
-          <div>
-            <dt>Ticker</dt>
-            <dd>{params.symbol}</dd>
-          </div>
-          <div>
             <dt>Wallet</dt>
-            <dd>
+            <dd className="fused-review-mono">
               {address.slice(0, 6)}…{address.slice(-4)}
             </dd>
           </div>
           <div>
             <dt>Chain</dt>
             <dd>
-              {chainLabelFor(walletChainId) ?? chainName} ({walletChainId || chainId})
+              {chainLabelFor(walletChainId) ?? chainName}
             </dd>
-          </div>
-          <div>
-            <dt>Factory</dt>
-            <dd style={{ wordBreak: "break-all" }}>{factory}</dd>
-          </div>
-          {locker ? (
-            <div>
-              <dt>Locker</dt>
-              <dd style={{ wordBreak: "break-all" }}>{locker}</dd>
-            </div>
-          ) : null}
-          <div>
-            <dt>Quote</dt>
-            <dd>ETH</dd>
-          </div>
-          <div>
-            <dt>Lifecycle</dt>
-            <dd>Bonding curve, then Uniswap at graduation</dd>
           </div>
           <div>
             <dt>Creator buy</dt>
-            <dd>
-              {creatorBuy.trim()
-                ? `${creatorBuy} ETH through the same bonding curve`
-                : "0 ETH — no creator buy. The curve starts with virtual reserves only."}
-            </dd>
+            <dd>{creatorBuy.trim() ? `${creatorBuy} ETH` : "None"}</dd>
+          </div>
+          <div>
+            <dt>After launch</dt>
+            <dd>Bonding curve, then Uniswap</dd>
           </div>
           {sourcePost ? (
-            <div>
-              <dt>Origin post</dt>
+            <div className="fused-review-wide">
+              <dt>Origin</dt>
               <dd>@{sourcePost.authorUsername}</dd>
             </div>
           ) : null}
-          <div>
-            <dt>Action</dt>
-            <dd>FusedFactory.create</dd>
+          <div className="fused-review-wide">
+            <dt>Factory</dt>
+            <dd className="fused-review-mono">{factory}</dd>
           </div>
+          {locker ? (
+            <div className="fused-review-wide">
+              <dt>Locker</dt>
+              <dd className="fused-review-mono">{locker}</dd>
+            </div>
+          ) : null}
         </dl>
+        <p className="fused-review-note">Your wallet will sign FusedFactory.create. Nothing launches until you confirm.</p>
         {error ? <p className="fused-form-error">{error}</p> : null}
-        <div className="fused-cta-row">
+        <div className="fused-cta-row fused-review-actions">
           <Button type="button" variant="ghost" onClick={() => setStep("form")} disabled={pending}>
             Back
           </Button>
@@ -348,7 +351,7 @@ export function ManualLaunch({
   return (
     <Card>
       {sourcePost ? <SourcePost post={sourcePost} /> : null}
-      <FusePost disabled={pending} onBusy={setFusingPost} onFused={applyFusedDraft} />
+      <FusePost disabled={pending} onBusy={setFusingPost} onFused={applyFusedDraft} onReview={() => void onReview()} />
       <p style={{ marginTop: 0, color: "var(--fused-muted)" }}>
         Set the name and ticker. You review everything before your wallet signs. AI never signs.
       </p>
@@ -440,7 +443,7 @@ export function ManualLaunch({
         {logoError ? <p className="fused-form-error">{logoError}</p> : null}
         {error ? <p className="fused-form-error">{error}</p> : null}
         <Button type="button" variant="lime" onClick={() => void onReview()} disabled={pending || fusingPost}>
-          Review launch
+          Review fuse
         </Button>
       </div>
     </Card>

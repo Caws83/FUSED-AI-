@@ -4,6 +4,7 @@ import { loadEnv, loadRepoEnv } from "@fused-ai/config";
 import { createDatabaseClient } from "@fused-ai/database";
 import { FUSED_FACTORY_ABI, LAUNCH_FACTORY_ABI, LAUNCH_TOKEN_ABI, STATE_LABEL, ZERO_ADDRESS } from "@fused-ai/blockchain";
 import { createMediaStore, readLaunchSyncImage, resolvePersistedLaunchImage } from "@fused-ai/media";
+import { launchSourceFromPayload } from "../../../../lib/launch-source.ts";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -52,13 +53,7 @@ export async function POST(request: Request) {
     chainId: env.chainId,
     publicUrlForId: (id) => store.getPublicUrl(id),
   });
-  let source = {
-    sourcePlatform: null as string | null,
-    sourcePostId: null as string | null,
-    sourceAuthor: null as string | null,
-    sourcePostUrl: null as string | null,
-    sourceExcerpt: null as string | null,
-  };
+  let source = launchSourceFromPayload(extra);
   const sourcePostId = typeof extra.sourcePostId === "string" ? extra.sourcePostId : "";
   if (sourcePostId) {
     const post = await db.getSocialPost("x", sourcePostId);

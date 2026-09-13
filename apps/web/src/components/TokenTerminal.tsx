@@ -118,6 +118,14 @@ export function TokenTerminal({
                 <span style={{ color: "var(--fused-muted)", fontSize: 13 }}>{chainLabelFor(chainId) ?? `Chain ${chainId}`}</span>
                 <span style={{ color: "var(--fused-muted)", fontSize: 13, wordBreak: "break-all" }}>{launch.token}</span>
               </div>
+              {launch.sourcePostUrl ? (
+                <p className="fused-token-origin">
+                  Created from X post{" "}
+                  <a href={launch.sourcePostUrl} target="_blank" rel="noreferrer">
+                    @{launch.sourceAuthor || "post"}
+                  </a>
+                </p>
+              ) : null}
             </div>
           </div>
           <div className="fused-stats" style={{ marginTop: 16 }}>
@@ -221,18 +229,11 @@ export function TokenTerminal({
           )}
         </Card>
 
-        {launch.sourcePostUrl ? (
+        {launch.sourcePostUrl && launch.sourceExcerpt ? (
           <Card>
             <p className="fused-kicker">Origin post</p>
-            <p style={{ marginTop: 0 }}>
-              Fused from a public post. The token creator is the wallet that signed — not necessarily the original
-              author.
-            </p>
             {launch.sourceAuthor ? <strong>@{launch.sourceAuthor}</strong> : null}
-            {launch.sourceExcerpt ? <p style={{ whiteSpace: "pre-wrap" }}>{launch.sourceExcerpt}</p> : null}
-            <a href={launch.sourcePostUrl} target="_blank" rel="noreferrer">
-              View original post
-            </a>
+            <p style={{ whiteSpace: "pre-wrap", marginBottom: 0 }}>{launch.sourceExcerpt}</p>
           </Card>
         ) : null}
       </div>

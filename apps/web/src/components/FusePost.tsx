@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@fused-ai/ui";
 import { takeFuseHandoff } from "../lib/fuse-handoff.ts";
+import { launchSourceFromText } from "../lib/launch-source.ts";
 
 export type FusedDraft = {
   name: string;
@@ -12,25 +13,34 @@ export type FusedDraft = {
   imageId: string | null;
   imageUrl: string | null;
   imageError: string | null;
+  sourcePostId: string | null;
+  sourceAuthor: string | null;
+  sourcePostUrl: string | null;
+  sourceExcerpt: string | null;
 };
 
 export function FusePost({
   disabled = false,
   onBusy,
   onFused,
+  onReview,
 }: {
   disabled?: boolean;
   onBusy?: (busy: boolean) => void;
   onFused: (draft: FusedDraft) => void;
+  onReview?: () => void;
 }) {
   const [text, setText] = useState("");
   const [fusing, setFusing] = useState(false);
+  const [fused, setFused] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fusingRef = useRef(false);
   const onBusyRef = useRef(onBusy);
   const onFusedRef = useRef(onFused);
+  const onReviewRef = useRef(onReview);
   onBusyRef.current = onBusy;
   onFusedRef.current = onFused;
+  onReviewRef.current = onReview;
 
   async function fuseWithText(raw: string) {
     if (fusingRef.current || disabled) return;
@@ -58,8 +68,11 @@ export function FusePost({
       };
       if (!json.ok || !json.draft) {
         setError(json.error || "AI draft is not configured.");
+        setFused(false);
         return;
       }
+      setFused(true);
+      const source = launchSourceFromText(pasted);
       onFusedRef.current({
         name: json.draft.name,
         ticker: json.draft.ticker,
@@ -68,6 +81,7 @@ export function FusePost({
         imageId: json.image?.id ?? null,
         imageUrl: json.image?.url ?? null,
         imageError: json.imageError ?? null,
+        ...source,
       });
     } catch {
       setError("AI draft failed.");
@@ -87,6 +101,10 @@ export function FusePost({
 
   async function onFuse() {
     if (fusingRef.current || disabled) return;
+    if (fused) {
+      onReviewRef.current?.();
+      return;
+    }
     await fuseWithText(text);
   }
 
@@ -106,14 +124,17 @@ export function FusePost({
           className="fused-input"
           rows={5}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            if (fused) setFused(false);
+          }}
           placeholder="Paste a tweet or post here"
           disabled={fusing || disabled}
           maxLength={2000}
         />
       </label>
       <Button type="button" variant="lime" onClick={() => void onFuse()} disabled={fusing || disabled}>
-        {fusing ? "Fusing..." : "FUSE IT"}
+        {fusing ? "Fusing..." : fused ? "Review fuse" : "FUSE IT"}
       </Button>
       {error ? <p className="fused-form-error">{error}</p> : null}
     </section>

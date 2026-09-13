@@ -56,6 +56,8 @@ test("launch form posts imageId and imageUrl after a successful create", () => {
   const sync = readFileSync(join(root, "src/app/api/launch/sync/route.ts"), "utf8");
   assert.match(manual, /imageId,/);
   assert.match(manual, /imageUrl: imagePreview/);
+  assert.match(manual, /sourcePostUrl/);
   assert.match(sync, /readLaunchSyncImage/);
   assert.match(sync, /upsertTokenMetadata/);
+  assert.match(sync, /launchSourceFromPayload/);
 });

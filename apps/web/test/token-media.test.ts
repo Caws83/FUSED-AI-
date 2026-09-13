@@ -11,5 +11,7 @@ test("explore and token pages use real imageUrl or the Fused fallback mark", () 
   assert.ok(boards.includes("tokenImageSrc"));
   assert.ok(terminal.includes("tokenImageSrc"));
   assert.ok(terminal.includes("Origin post"));
+  assert.ok(terminal.includes("Created from X post"));
   assert.ok(terminal.includes("sourcePostUrl"));
+  assert.ok(terminal.includes("sourceAuthor"));
 });

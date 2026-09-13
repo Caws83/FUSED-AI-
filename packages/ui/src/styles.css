@@ -497,28 +497,116 @@ textarea {
   font-size: 14px;
 }
 
+.fused-review-card {
+  display: grid;
+  gap: 18px;
+}
+
+.fused-review-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.fused-review-logo {
+  width: 88px;
+  height: 88px;
+  border-radius: 22px;
+  object-fit: cover;
+  flex: none;
+  background: var(--fused-paper);
+  border: 1px solid var(--fused-line);
+}
+
+.fused-review-logo-empty {
+  display: grid;
+  place-items: center;
+  font-family: var(--fused-display);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--fused-navy);
+  background: linear-gradient(180deg, rgba(200, 245, 74, 0.35), var(--fused-paper));
+}
+
+.fused-review-hero-copy {
+  min-width: 0;
+}
+
+.fused-review-hero-copy .fused-h2 {
+  font-size: clamp(26px, 4vw, 34px);
+  margin: 0 0 10px;
+}
+
+.fused-review-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fused-review-blurb {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--fused-paper);
+  color: var(--fused-navy-2);
+  line-height: 1.45;
+}
+
 .fused-review {
   display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
-  margin: 0 0 18px;
+  margin: 0;
 }
 
 .fused-review div {
   display: grid;
-  gap: 2px;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--fused-paper);
+  border: 1px solid var(--fused-line);
+}
+
+.fused-review-wide {
+  grid-column: 1 / -1;
 }
 
 .fused-review dt {
   color: var(--fused-muted);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .fused-review dd {
   margin: 0;
   font-weight: 650;
+  color: var(--fused-ink);
+  line-height: 1.35;
+}
+
+.fused-review-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.fused-review-note {
+  margin: 0;
+  color: var(--fused-muted);
+  font-size: 13px;
+}
+
+.fused-review-actions {
+  margin-top: 4px;
+}
+
+.fused-review-actions .fused-btn-lime {
+  flex: 1;
 }
 
 .fused-pipeline {
@@ -796,6 +884,21 @@ textarea {
 .fused-buy { color: #15803d; font-weight: 700; }
 .fused-sell { color: var(--fused-danger); font-weight: 700; }
 
+.fused-token-origin {
+  margin: 8px 0 0;
+  color: var(--fused-muted);
+  font-size: 14px;
+}
+
+.fused-token-origin a {
+  color: var(--fused-ink);
+  font-weight: 700;
+}
+
+.fused-token-origin a:hover {
+  color: var(--fused-blue);
+}
+
 .fused-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -904,5 +1007,13 @@ textarea {
   .fused-logo-preview {
     width: 72px;
     height: 72px;
+  }
+
+  .fused-review {
+    grid-template-columns: 1fr;
+  }
+
+  .fused-review-hero {
+    align-items: flex-start;
   }
 }

@@ -128,12 +128,16 @@ test("Fuse UI populates the form, locks double clicks, and stays mobile-safe", (
   const css = readFileSync(join(root, "../../packages/ui/src/styles.css"), "utf8");
   assert.match(fuse, /FUSE IT/);
   assert.match(fuse, /Fusing\.\.\./);
+  assert.match(fuse, /Review fuse/);
+  assert.match(fuse, /onReview/);
   assert.match(fuse, /if \(fusingRef\.current \|\| disabled\) return/);
   assert.match(fuse, /takeFuseHandoff/);
   assert.match(fuse, /\/api\/ai\/fuse/);
   assert.equal(fuse.includes("writeContract"), false);
+  assert.match(fuse, /launchSourceFromText/);
   assert.match(manual, /applyFusedDraft/);
   assert.match(manual, /setName\(draft\.name\)/);
+  assert.match(manual, /sourcePostUrl/);
   assert.match(manual, /setLogoError/);
   assert.match(manual, /\/api\/media\/upload/);
   assert.match(css, /\.fused-fuse-panel/);
