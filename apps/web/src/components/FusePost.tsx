@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@fused-ai/ui";
+import { takeFuseHandoff } from "../lib/fuse-handoff.ts";
 
 export type FusedDraft = {
   name: string;
@@ -25,17 +26,23 @@ export function FusePost({
   const [text, setText] = useState("");
   const [fusing, setFusing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fusingRef = useRef(false);
+  const onBusyRef = useRef(onBusy);
+  const onFusedRef = useRef(onFused);
+  onBusyRef.current = onBusy;
+  onFusedRef.current = onFused;
 
-  async function onFuse() {
-    if (fusing || disabled) return;
+  async function fuseWithText(raw: string) {
+    if (fusingRef.current || disabled) return;
     setError(null);
-    const pasted = text.trim();
+    const pasted = raw.trim();
     if (pasted.length < 8) {
       setError("Paste a post with at least 8 characters.");
       return;
     }
+    fusingRef.current = true;
     setFusing(true);
-    onBusy?.(true);
+    onBusyRef.current?.(true);
     try {
       const res = await fetch("/api/ai/fuse", {
         method: "POST",
@@ -53,7 +60,7 @@ export function FusePost({
         setError(json.error || "AI draft is not configured.");
         return;
       }
-      onFused({
+      onFusedRef.current({
         name: json.draft.name,
         ticker: json.draft.ticker,
         description: json.draft.description,
@@ -65,9 +72,22 @@ export function FusePost({
     } catch {
       setError("AI draft failed.");
     } finally {
+      fusingRef.current = false;
       setFusing(false);
-      onBusy?.(false);
+      onBusyRef.current?.(false);
     }
+  }
+
+  useEffect(() => {
+    const handed = takeFuseHandoff();
+    if (!handed) return;
+    setText(handed);
+    void fuseWithText(handed);
+  }, []);
+
+  async function onFuse() {
+    if (fusingRef.current || disabled) return;
+    await fuseWithText(text);
   }
 
   return (

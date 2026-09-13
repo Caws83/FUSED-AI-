@@ -538,13 +538,20 @@ textarea {
   box-shadow: var(--fused-shadow);
 }
 
-.fused-fuse-box input {
+.fused-fuse-box input,
+.fused-fuse-box textarea {
   border: 0;
   outline: 0;
   min-height: 52px;
-  padding: 0 16px;
+  padding: 12px 16px;
   background: transparent;
   width: 100%;
+  min-width: 0;
+}
+
+.fused-fuse-box textarea {
+  min-height: 88px;
+  resize: vertical;
 }
 
 .fused-fuse-box .fused-btn {
@@ -802,7 +809,11 @@ textarea {
 
   .fused-fuse-panel,
   .fused-fuse-panel textarea,
-  .fused-fuse-panel .fused-btn {
+  .fused-fuse-panel .fused-btn,
+  .fused-fuse-stack,
+  .fused-fuse-box,
+  .fused-fuse-box textarea,
+  .fused-fuse-box .fused-btn {
     width: 100%;
     max-width: 100%;
   }

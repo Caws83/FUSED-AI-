@@ -1,61 +1,47 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@fused-ai/ui";
+import { FUSE_HANDOFF_MIN, writeFuseHandoff } from "../lib/fuse-handoff.ts";
 
-export function QuickFuse({ ready }: { ready: boolean }) {
-  const [url, setUrl] = useState("");
+export function QuickFuse() {
+  const router = useRouter();
+  const [text, setText] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setNotice(null);
-    if (!ready) {
-      setNotice("Launch from a post is temporarily unavailable.");
+    const pasted = text.trim();
+    if (pasted.length < FUSE_HANDOFF_MIN) {
+      setNotice("Paste a post with at least 8 characters.");
       return;
     }
-    setPending(true);
-    try {
-      const res = await fetch("/api/social/fuse", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
-      const json = (await res.json()) as { ok?: boolean; postId?: string; error?: string };
-      if (!json.ok || !json.postId) {
-        setNotice(json.error || "This post is not available right now.");
-        return;
-      }
-      window.location.href = `/launch?post=${encodeURIComponent(json.postId)}`;
-    } catch {
-      setNotice("This post is not available right now.");
-    } finally {
-      setPending(false);
+    if (!writeFuseHandoff(pasted)) {
+      setNotice("Paste a post with at least 8 characters.");
+      return;
     }
+    router.push("/launch");
   }
 
   return (
-    <form onSubmit={(e) => void onSubmit(e)} className="fused-fuse-stack">
+    <form onSubmit={onSubmit} className="fused-fuse-stack">
       <div className="fused-fuse-box">
-        <input
-          type="url"
-          name="postUrl"
-          placeholder="Paste an X post URL"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          required
-          aria-label="Paste an X post URL"
+        <textarea
+          name="postText"
+          rows={4}
+          placeholder="Paste a tweet or post here"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          maxLength={2000}
+          aria-label="Paste a tweet or post here"
         />
-        <Button type="submit" variant="lime" size="lg" disabled={pending}>
-          {pending ? "Checking…" : "FUSE IT"}
+        <Button type="submit" variant="lime" size="lg">
+          FUSE IT
         </Button>
       </div>
-      {notice ? (
-        <p role="status" style={{ margin: 0, color: "var(--fused-muted)" }}>
-          {notice}
-        </p>
-      ) : null}
+      {notice ? <p className="fused-form-error">{notice}</p> : null}
     </form>
   );
 }

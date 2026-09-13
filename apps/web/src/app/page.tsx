@@ -1,7 +1,6 @@
 import { EmptyState, FusedLogo, PostCard, SectionHeader } from "@fused-ai/ui";
 import { formatEngagement } from "@fused-ai/social";
 import { QuickFuse } from "../components/QuickFuse.tsx";
-import { loadRuntime } from "../lib/runtime.ts";
 import { boardEmptyCopy, loadIndexedLaunches, loadIndexerFreshness } from "../lib/launches.ts";
 import { loadTrendingPosts } from "../lib/social.ts";
 import { LaunchGrid, splitBoards } from "../lib/boards.tsx";
@@ -17,7 +16,6 @@ const PIPELINE = [
 ] as const;
 
 export default async function HomePage() {
-  const { status } = await loadRuntime();
   const launches = await loadIndexedLaunches();
   const freshness = await loadIndexerFreshness(launches.length);
   const posts = await loadTrendingPosts();
@@ -36,7 +34,7 @@ export default async function HomePage() {
               from a post.
             </h1>
             <p className="fused-support">One post. One click. One token.</p>
-            <QuickFuse ready={status.social.status === "OK"} />
+            <QuickFuse />
             <div className="fused-cta-row">
               <a href="/launch" className="fused-btn fused-btn-ghost">
                 Create manually
