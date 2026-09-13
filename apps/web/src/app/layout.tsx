@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { DM_Sans, Syne } from "next/font/google";
+import { DM_Sans, Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
 import { isStatusPageEnabled, loadPublicEnv, publicWalletAvailability } from "@fused-ai/config/public";
 import { SiteHeader } from "../components/SiteHeader.tsx";
 import { Providers } from "../components/Providers.tsx";
@@ -10,10 +10,18 @@ const dmSans = DM_Sans({
   display: "swap",
 });
 
-const syne = Syne({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   display: "swap",
   variable: "--fused-display",
+  weight: ["500", "600", "700", "800"],
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--fused-logo",
+  weight: ["500", "700"],
 });
 
 export const dynamic = "force-dynamic";
@@ -39,7 +47,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
   return (
     <html lang="en">
-      <body className={`${dmSans.className} ${syne.variable} fused-shell`}>
+      <body className={`${dmSans.className} ${plusJakarta.variable} ${spaceGrotesk.variable} fused-shell`}>
         <Providers wallet={wallet}>
           <SiteHeader walletConfigured={walletConfigured} expectedChainId={pub.chainId} />
           {children}

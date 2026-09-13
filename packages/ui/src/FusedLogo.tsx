@@ -1,7 +1,22 @@
+"use client";
+
 import { useId } from "react";
 
 type Tone = "dark" | "light";
 type Variant = "mark" | "wordmark" | "horizontal";
+
+function WingedMark() {
+  return (
+    <img
+      src="/brand/fused-ai-logo.png"
+      alt=""
+      aria-hidden="true"
+      className="fused-logo-mark-image"
+      width={1520}
+      height={998}
+    />
+  );
+}
 
 function Mark({ uid }: { uid: string }) {
   return (
@@ -108,7 +123,7 @@ export function FusedLogo({
   const uid = `fa${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   return (
     <span className={`fused-brand fused-brand-${variant} ${className}`.trim()} data-tone={tone}>
-      {variant !== "wordmark" ? <Mark uid={uid} /> : null}
+      {variant !== "wordmark" ? variant === "mark" ? <WingedMark /> : <Mark uid={uid} /> : null}
       {variant !== "mark" ? (
         <span className="fused-brand-word">
           <span className="fused-brand-fused">FUSED</span>

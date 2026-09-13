@@ -26,13 +26,11 @@ export default async function HomePage() {
     <main>
       <section className="fused-hero">
         <div className="fused-wrap fused-hero-grid">
-          <div>
+          <div className="fused-hero-banner">
             <FusedLogo variant="mark" tone="dark" />
-            <h1>
-              Launch a token
-              <br />
-              from a post.
-            </h1>
+            <h1>Launch a token from a post.</h1>
+          </div>
+          <div className="fused-hero-copy">
             <p className="fused-support">One post. One click. One token.</p>
             <QuickFuse />
             <div className="fused-cta-row">

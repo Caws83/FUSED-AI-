@@ -20,7 +20,8 @@
   --fused-radius-sm: 14px;
   --fused-radius-pill: 999px;
   --fused-font: "DM Sans", ui-sans-serif, system-ui, sans-serif;
-  --fused-display: "Syne", ui-sans-serif, system-ui, sans-serif;
+  --fused-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --fused-logo: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
 }
 
 *,
@@ -209,6 +210,35 @@ textarea {
   gap: 10px;
 }
 
+.fused-logo-image {
+  height: 30px;
+  width: auto;
+  display: block;
+  flex: none;
+}
+
+.fused-logo .fused-brand-word {
+  font-family: var(--fused-logo);
+  font-size: 24px;
+  gap: 0.22em;
+}
+
+.fused-logo .fused-brand-fused,
+.fused-logo .fused-brand-ai {
+  letter-spacing: 2px;
+}
+
+.fused-logo .fused-brand-fused {
+  background: none;
+  color: #000;
+  font-weight: 700;
+}
+
+.fused-logo .fused-brand-ai {
+  color: #000;
+  font-weight: 500;
+}
+
 .fused-brand {
   display: inline-flex;
   align-items: center;
@@ -222,9 +252,16 @@ textarea {
   flex: none;
 }
 
-.fused-hero .fused-logo-mark {
-  width: 64px;
-  height: 64px;
+.fused-logo-mark-image {
+  width: auto;
+  height: auto;
+  display: block;
+  flex: none;
+}
+
+.fused-hero .fused-logo-mark-image {
+  height: 96px;
+  width: auto;
 }
 
 .fused-brand-word {
@@ -312,9 +349,10 @@ textarea {
 .fused-h2 {
   margin: 0;
   font-family: var(--fused-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
   font-size: clamp(28px, 4vw, 40px);
   line-height: 1.05;
-  letter-spacing: -0.04em;
 }
 
 .fused-empty {
@@ -390,12 +428,34 @@ textarea {
   align-items: center;
 }
 
-.fused-hero h1 {
-  margin: 10px 0 12px;
+.fused-hero-banner {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 3vw, 36px);
+  width: 100%;
+}
+
+.fused-hero-banner .fused-brand-mark {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.fused-hero-banner h1 {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
   font-family: var(--fused-display);
-  font-size: clamp(42px, 7vw, 76px);
-  line-height: 0.92;
-  letter-spacing: -0.05em;
+  font-size: clamp(28px, 5.2vw, 72px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+
+.fused-hero-copy {
+  min-width: 0;
 }
 
 .fused-support {
@@ -768,6 +828,18 @@ textarea {
 @media (max-width: 860px) {
   .fused-hero {
     padding-top: 32px;
+  }
+
+  .fused-hero-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .fused-hero-banner h1 {
+    white-space: normal;
+    font-size: clamp(32px, 9vw, 48px);
+    line-height: 0.95;
   }
 
   .fused-hero-grid,
