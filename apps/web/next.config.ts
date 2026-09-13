@@ -36,6 +36,7 @@ const nextConfig: NextConfig = {
       "../../deployments/**/*.json",
       "../../deployments/**/*.example.json",
       "../../.env.example",
+      "../../packages/database/schema.sql",
     ],
   },
   transpilePackages: [

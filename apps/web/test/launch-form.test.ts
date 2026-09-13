@@ -40,6 +40,8 @@ test("manual launch does not require AI or X and resolves wallet clients at clic
   assert.equal(manual.includes("AI_PROVIDER"), false);
   assert.equal(manual.includes("NEXT_PUBLIC_AI"), false);
   assert.match(manual, /LAUNCH TOKEN/);
+  assert.match(manual, /imageUrl: imagePreview/);
+  assert.match(manual, /\/api\/launch\/sync/);
 });
 
 test("token and explore pages do not hardcode fake market data", () => {

@@ -1,4 +1,5 @@
 import { LaunchCard } from "@fused-ai/ui";
+import { tokenImageSrc } from "@fused-ai/media/token-image";
 import type { IndexedLaunch } from "@fused-ai/types";
 import { fdvWei, marketCapWei } from "@fused-ai/blockchain/fused";
 import { formatAge, formatEth, progressFromLaunch, shortAddr, stateBadge } from "./format.ts";
@@ -9,7 +10,7 @@ export function launchCardProps(launch: IndexedLaunch) {
   const circ = BigInt(launch.circulating ?? "0");
   const mc = price > 0n && circ > 0n ? marketCapWei(price, circ) : 0n;
   return {
-    imageUrl: launch.imageUrl || "/brand/fused-token.svg",
+    imageUrl: tokenImageSrc(launch.imageUrl, launch.chainId),
     name: launch.name || "Token",
     symbol: launch.symbol || "—",
     creator: shortAddr(launch.launcher),

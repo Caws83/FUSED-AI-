@@ -40,6 +40,7 @@ test("next config traces the monorepo root and public deployment manifests", () 
   assert.match(src, /outputFileTracingRoot/);
   assert.match(src, /outputFileTracingIncludes/);
   assert.match(src, /deployments/);
+  assert.match(src, /packages\/database\/schema\.sql/);
   assert.match(src, /serverExternalPackages/);
   assert.match(src, /postgres/);
 });
@@ -50,9 +51,14 @@ test("token page can render from onchain when the indexer is delayed", () => {
   assert.match(src, /indexing=\{!loaded.indexed\}/);
 });
 
-test("launch sync keeps the onchain token if metadata write throws", () => {
+test("launch sync persists validated image metadata without requiring migrate", () => {
   const src = readFileSync(join(root, "src/app/api/launch/sync/route.ts"), "utf8");
   assert.match(src, /upsertLaunch/);
+  assert.match(src, /upsertTokenMetadata/);
+  assert.match(src, /readLaunchSyncImage/);
+  assert.match(src, /resolvePersistedLaunchImage/);
   assert.match(src, /onchain launch row is already saved/);
+  assert.equal(src.includes("await db.migrate()"), false);
+  assert.match(src, /maxDuration = 60/);
 });
 

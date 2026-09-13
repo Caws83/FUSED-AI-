@@ -1,6 +1,7 @@
 import { createPublicClient, http, type Hex } from "viem";
 import { loadEnv, loadRepoEnv, indexerFreshnessFromParts, type FusedEnv, type IndexerFreshness } from "@fused-ai/config";
 import { createDatabaseClient } from "@fused-ai/database";
+import { createMediaStore, resolvePersistedLaunchImage } from "@fused-ai/media";
 import { FUSED_FACTORY_ABI, LAUNCH_TOKEN_ABI, STATE_LABEL, ZERO_ADDRESS } from "@fused-ai/blockchain";
 import type { IndexedLaunch } from "@fused-ai/types";
 
@@ -59,6 +60,7 @@ export function marketToIndexedLaunch(input: {
     factory: input.factory,
     locker: input.locker,
     dexVersion: graduated ? "uniswap_v4" : "curve",
+    imageId: null,
     imageUrl: null,
     appDescription: null,
     sourcePlatform: null,
@@ -115,6 +117,15 @@ export async function loadOnchainLaunch(token: string): Promise<IndexedLaunch | 
   }
 }
 
+export function hydrateLaunchImage(launch: IndexedLaunch, env: FusedEnv): IndexedLaunch {
+  const store = createMediaStore(env);
+  const resolved = resolvePersistedLaunchImage(
+    { imageId: launch.imageId, imageUrl: launch.imageUrl },
+    { chainId: env.chainId ?? launch.chainId, publicUrlForId: (id) => store.getPublicUrl(id) },
+  );
+  return { ...launch, imageId: resolved.imageId, imageUrl: resolved.imageUrl };
+}
+
 export async function loadIndexedLaunches(): Promise<IndexedLaunch[]> {
   try {
     loadRepoEnv();
@@ -123,7 +134,7 @@ export async function loadIndexedLaunches(): Promise<IndexedLaunch[]> {
     const db = createDatabaseClient(env);
     const result = await db.listLaunches(env.chainId);
     await db.close();
-    return result.ok ? result.value : [];
+    return result.ok ? result.value.map((launch) => hydrateLaunchImage(launch, env)) : [];
   } catch {
     return [];
   }
@@ -137,7 +148,8 @@ export async function loadIndexedLaunch(token: string): Promise<IndexedLaunch | 
     const db = createDatabaseClient(env);
     const result = await db.getLaunch(env.chainId, token);
     await db.close();
-    return result.ok ? result.value : null;
+    if (!result.ok || !result.value) return null;
+    return hydrateLaunchImage(result.value, env);
   } catch {
     return null;
   }

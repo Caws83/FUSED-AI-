@@ -125,6 +125,7 @@ function mapLaunch(row: Record<string, unknown>): IndexedLaunch {
     factory: row.factory ? (String(row.factory) as HexAddress) : null,
     locker: row.locker ? (String(row.locker) as HexAddress) : null,
     dexVersion: String(row.dex_version ?? "curve"),
+    imageId: row.image_id ? String(row.image_id) : null,
     imageUrl: row.image_url ? String(row.image_url) : null,
     appDescription: row.app_description != null ? String(row.app_description) : null,
     sourcePlatform: row.source_platform ? String(row.source_platform) : null,
@@ -439,7 +440,7 @@ export function createDatabaseClient(env: FusedEnv): DatabaseClient {
       if (!client) return fail(a);
       try {
         const rows = await client`
-          SELECT l.*, m.image_url, m.description AS app_description, m.source_platform,
+          SELECT l.*, m.image_id, m.image_url, m.description AS app_description, m.source_platform,
                  m.source_post_id, m.source_post_url, m.source_author, m.source_excerpt,
                  (SELECT COALESCE(SUM(quote_amount), 0) FROM fused_trades t WHERE t.chain_id = l.chain_id AND t.token = l.token) AS volume_quote,
                  (SELECT COUNT(*) FROM fused_holders h WHERE h.chain_id = l.chain_id AND h.token = l.token AND h.balance > 0
@@ -466,7 +467,7 @@ export function createDatabaseClient(env: FusedEnv): DatabaseClient {
       if (!client) return fail(a);
       try {
         const rows = await client`
-          SELECT l.*, m.image_url, m.description AS app_description, m.source_platform,
+          SELECT l.*, m.image_id, m.image_url, m.description AS app_description, m.source_platform,
                  m.source_post_id, m.source_post_url, m.source_author, m.source_excerpt,
                  (SELECT COALESCE(SUM(quote_amount), 0) FROM fused_trades t WHERE t.chain_id = l.chain_id AND t.token = l.token) AS volume_quote,
                  (SELECT COUNT(*) FROM fused_holders h WHERE h.chain_id = l.chain_id AND h.token = l.token AND h.balance > 0

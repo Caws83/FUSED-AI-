@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Badge, Card } from "@fused-ai/ui";
+import { tokenImageSrc } from "@fused-ai/media/token-image";
 import type { IndexedLaunch } from "@fused-ai/types";
 import { fdvWei, marketCapWei } from "@fused-ai/blockchain/fused";
 import { CandleChart, type Candle } from "./CandleChart.tsx";
@@ -98,7 +99,7 @@ export function TokenTerminal({
   const supply = BigInt(launch.supply ?? "0");
   const mc = price > 0n && circ > 0n ? marketCapWei(price, circ) : 0n;
   const fdv = price > 0n && supply > 0n ? fdvWei(price, supply) : 0n;
-  const image = launch.imageUrl || "/brand/fused-token.svg";
+  const image = tokenImageSrc(launch.imageUrl, launch.chainId ?? chainId);
 
   return (
     <div className="fused-terminal">

@@ -81,6 +81,7 @@ test("token metadata persists and joins onto launches when DATABASE_URL is set",
   const loaded = await db.getLaunch(env.chainId, token);
   assert.equal(loaded.ok, true);
   if (!loaded.ok || !loaded.value) throw new Error("expected launch");
+  assert.equal(loaded.value.imageId, "abc");
   assert.equal(loaded.value.imageUrl, "/api/media/fixture.png");
   assert.equal(loaded.value.sourcePostUrl, "https://x.com/example/status/1");
   assert.equal(loaded.value.sourceAuthor, "example");
@@ -90,6 +91,8 @@ test("token metadata persists and joins onto launches when DATABASE_URL is set",
 test("listLaunches filters by chain_id", () => {
   const src = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "src", "client.ts"), "utf8");
   assert.match(src, /WHERE l.chain_id = \$\{chainId\}/);
+  assert.match(src, /m\.image_id, m\.image_url/);
+  assert.match(src, /imageId: row\.image_id/);
 });
 
 test("client uses postgres connection options helper", () => {

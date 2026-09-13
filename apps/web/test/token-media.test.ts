@@ -8,8 +8,8 @@ test("explore and token pages use real imageUrl or the Fused fallback mark", () 
   const root = join(dirname(fileURLToPath(import.meta.url)), "..");
   const boards = readFileSync(join(root, "src/lib/boards.tsx"), "utf8");
   const terminal = readFileSync(join(root, "src/components/TokenTerminal.tsx"), "utf8");
-  assert.ok(boards.includes("fused-token.svg"));
-  assert.ok(terminal.includes("fused-token.svg"));
+  assert.ok(boards.includes("tokenImageSrc"));
+  assert.ok(terminal.includes("tokenImageSrc"));
   assert.ok(terminal.includes("Origin post"));
   assert.ok(terminal.includes("sourcePostUrl"));
 });

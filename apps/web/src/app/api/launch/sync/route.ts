@@ -3,25 +3,27 @@ import { createPublicClient, http, parseEventLogs, type Hex } from "viem";
 import { loadEnv, loadRepoEnv } from "@fused-ai/config";
 import { createDatabaseClient } from "@fused-ai/database";
 import { FUSED_FACTORY_ABI, LAUNCH_FACTORY_ABI, LAUNCH_TOKEN_ABI, STATE_LABEL, ZERO_ADDRESS } from "@fused-ai/blockchain";
-import { assertPublicMediaUrl, createMediaStore } from "@fused-ai/media";
+import { createMediaStore, readLaunchSyncImage, resolvePersistedLaunchImage } from "@fused-ai/media";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   try {
     loadRepoEnv();
     const env = loadEnv();
   const url = new URL(request.url);
-  let extra: { imageId?: string; sourcePostId?: string; description?: string; tx?: string } = {};
+  let extra: Record<string, unknown> = {};
   const contentType = request.headers.get("content-type") ?? "";
   if (contentType.includes("application/json")) {
     try {
-      extra = (await request.json()) as typeof extra;
+      extra = (await request.json()) as Record<string, unknown>;
     } catch {
       extra = {};
     }
   }
-  const tx = url.searchParams.get("tx") ?? extra.tx;
+  const tx = url.searchParams.get("tx") ?? (typeof extra.tx === "string" ? extra.tx : null);
   if (!tx || !tx.startsWith("0x") || !env.rpcUrl || !env.chainId || !env.launchFactory) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
@@ -42,6 +44,51 @@ export async function POST(request: Request) {
   const supply = created?.args.supply ?? launched?.args.supply;
   const metadataURI = created?.args.metadataURI ?? launched?.args.metadataURI ?? "";
   if (!token || !launcher) return NextResponse.json({ ok: false }, { status: 404 });
+
+  const db = createDatabaseClient(env);
+  try {
+  const store = createMediaStore(env);
+  const image = resolvePersistedLaunchImage(readLaunchSyncImage(extra), {
+    chainId: env.chainId,
+    publicUrlForId: (id) => store.getPublicUrl(id),
+  });
+  let source = {
+    sourcePlatform: null as string | null,
+    sourcePostId: null as string | null,
+    sourceAuthor: null as string | null,
+    sourcePostUrl: null as string | null,
+    sourceExcerpt: null as string | null,
+  };
+  const sourcePostId = typeof extra.sourcePostId === "string" ? extra.sourcePostId : "";
+  if (sourcePostId) {
+    const post = await db.getSocialPost("x", sourcePostId);
+    if (post.ok && post.value) {
+      source = {
+        sourcePlatform: post.value.platform,
+        sourcePostId: post.value.postId,
+        sourceAuthor: post.value.authorUsername,
+        sourcePostUrl: post.value.url,
+        sourceExcerpt: post.value.text.slice(0, 240),
+      };
+    }
+  }
+  const description = typeof extra.description === "string" ? extra.description : metadataURI;
+  try {
+    const metadata = await db.upsertTokenMetadata({
+      chainId: env.chainId,
+      token,
+      description,
+      imageId: image.imageId,
+      imageUrl: image.imageUrl,
+      ...source,
+    });
+    if (!metadata.ok) {
+      console.error("launch sync metadata write failed", metadata.error);
+    }
+  } catch (error) {
+    console.error("launch sync metadata write failed", error);
+    /* onchain launch row is already saved */
+  }
 
   const block = await client.getBlock({ blockNumber: receipt.blockNumber });
   let name = "";
@@ -83,12 +130,6 @@ export async function POST(request: Request) {
     /* OpenLaunch factory has no getMarket */
   }
 
-  const db = createDatabaseClient(env);
-  const migrated = await db.migrate();
-  if (!migrated.ok) {
-    await db.close();
-    return NextResponse.json({ ok: false }, { status: 503 });
-  }
   const saved = await db.upsertLaunch({
     chainId: env.chainId,
     token,
@@ -125,46 +166,10 @@ export async function POST(request: Request) {
       dexVersion,
     });
   }
-
-  let imageUrl: string | null = null;
-  if (extra.imageId) {
-    const store = createMediaStore(env);
-    const publicUrl = store.getPublicUrl(extra.imageId);
-    if (publicUrl && assertPublicMediaUrl(publicUrl, env.chainId).ok) imageUrl = publicUrl;
+  return NextResponse.json({ ok: saved.ok, token, imageUrl: image.imageUrl });
+  } finally {
+    await db.close();
   }
-  let source = {
-    sourcePlatform: null as string | null,
-    sourcePostId: null as string | null,
-    sourceAuthor: null as string | null,
-    sourcePostUrl: null as string | null,
-    sourceExcerpt: null as string | null,
-  };
-  if (extra.sourcePostId) {
-    const post = await db.getSocialPost("x", extra.sourcePostId);
-    if (post.ok && post.value) {
-      source = {
-        sourcePlatform: post.value.platform,
-        sourcePostId: post.value.postId,
-        sourceAuthor: post.value.authorUsername,
-        sourcePostUrl: post.value.url,
-        sourceExcerpt: post.value.text.slice(0, 240),
-      };
-    }
-  }
-  try {
-    await db.upsertTokenMetadata({
-      chainId: env.chainId,
-      token,
-      description: extra.description ?? metadataURI,
-      imageId: extra.imageId ?? null,
-      imageUrl,
-      ...source,
-    });
-  } catch {
-    /* onchain launch row is already saved */
-  }
-  await db.close();
-  return NextResponse.json({ ok: saved.ok, token });
   } catch {
     return NextResponse.json({ ok: false }, { status: 503 });
   }

@@ -3,7 +3,7 @@ import { createPublicClient, http, type Hex } from "viem";
 import { loadEnv, loadRepoEnv } from "@fused-ai/config";
 import { createDatabaseClient } from "@fused-ai/database";
 import { FUSED_FACTORY_ABI, STATE_LABEL } from "@fused-ai/blockchain";
-import { loadOnchainLaunch } from "../../../../../lib/launches.ts";
+import { hydrateLaunchImage, loadOnchainLaunch } from "../../../../../lib/launches.ts";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -66,12 +66,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ add
       await db.close();
 
       if (launch.ok && launch.value) {
+        const hydrated = hydrateLaunchImage(launch.value, env);
         return NextResponse.json({
           ok: true,
           indexing: false,
           launch: {
-            ...launch.value,
-            blockNumber: launch.value.blockNumber.toString(),
+            ...hydrated,
+            blockNumber: hydrated.blockNumber.toString(),
           },
           trades: trades.ok ? trades.value : [],
           candles: {

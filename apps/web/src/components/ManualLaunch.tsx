@@ -233,6 +233,7 @@ export function ManualLaunch({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           imageId,
+          imageUrl: imagePreview,
           sourcePostId: sourcePost?.postId,
           description,
         }),

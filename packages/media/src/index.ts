@@ -9,6 +9,13 @@ export type { MediaStore, StoredImage } from "./store.ts";
 export { validateImage, MAX_IMAGE_BYTES, type ImageKind, type ValidatedImage } from "./validate.ts";
 export { assertPublicMediaUrl, isLocalChain } from "./urls.ts";
 export { objectPublicUrl, ObjectMediaStore } from "./object-store.ts";
+export {
+  FUSED_TOKEN_IMAGE_FALLBACK,
+  readLaunchSyncImage,
+  resolvePersistedLaunchImage,
+  tokenImageSrc,
+  type LaunchImageInput,
+} from "./token-image.ts";
 export { LocalMediaStore } from "./local.ts";
 export {
   aiImageRouteError,
