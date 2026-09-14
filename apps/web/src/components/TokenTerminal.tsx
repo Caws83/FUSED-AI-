@@ -246,6 +246,7 @@ export function TokenTerminal({
               token={launch.token}
               symbol={launch.symbol || "TOKEN"}
               graduated={graduated}
+              expectedChainId={chainId}
               onTraded={() => setRefresh((n) => n + 1)}
             />
           ) : (

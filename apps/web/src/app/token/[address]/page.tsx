@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { SectionHeader } from "@fused-ai/ui";
 import { loadEnv, loadRepoEnv } from "@fused-ai/config";
-import { loadLaunchPage } from "../../../lib/launches.ts";
+import { loadLaunchPage, tradeFactoryAddress } from "../../../lib/launches.ts";
 import { TokenTerminal } from "../../../components/TokenTerminal.tsx";
 
 export const dynamic = "force-dynamic";
@@ -13,8 +13,7 @@ export default async function TokenPage({ params }: { params: Promise<{ address:
   const { address } = await params;
   const loaded = await loadLaunchPage(address);
   if (!loaded) notFound();
-  const factory =
-    env.publicLaunchEnabled && env.launchFactory?.startsWith("0x") ? (env.launchFactory as `0x${string}`) : null;
+  const factory = env.publicLaunchEnabled ? tradeFactoryAddress(loaded.launch, env) : null;
   return (
     <main className="fused-section">
       <div className="fused-wrap" style={{ maxWidth: 1180 }}>

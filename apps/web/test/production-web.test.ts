@@ -62,3 +62,10 @@ test("launch sync persists validated image metadata without requiring migrate", 
   assert.match(src, /maxDuration = 60/);
 });
 
+test("creator rewards API does not invent claimable amounts", () => {
+  const src = readFileSync(join(root, "src/app/api/rewards/creator/route.ts"), "utf8");
+  assert.match(src, /listLaunchesByLauncher/);
+  assert.equal(src.includes("claimable"), false);
+  assert.equal(src.includes("await db.migrate()"), false);
+});
+

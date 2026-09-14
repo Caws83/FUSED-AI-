@@ -1,5 +1,5 @@
 import { SectionHeader, Card } from "@fused-ai/ui";
-import { loadEnv, loadRepoEnv } from "@fused-ai/config";
+import { loadEnv, loadRepoEnv, defaultLaunchGeneration } from "@fused-ai/config";
 import { chainLabelFor } from "@fused-ai/config/public";
 import { ManualLaunch } from "../../components/ManualLaunch.tsx";
 import { loadSourcePost } from "../../lib/social.ts";
@@ -12,8 +12,9 @@ export default async function LaunchPage({ searchParams }: { searchParams: Promi
   const params = await searchParams;
   const sourcePost = await loadSourcePost(params.post);
   const ready = env.publicLaunchEnabled;
-  const factory = env.launchFactory && env.launchFactory.startsWith("0x") ? (env.launchFactory as `0x${string}`) : null;
-  const locker = env.launchLocker && env.launchLocker.startsWith("0x") ? (env.launchLocker as `0x${string}`) : null;
+  const gen = defaultLaunchGeneration(env.launch);
+  const factory = ready && gen?.factory.startsWith("0x") ? (gen.factory as `0x${string}`) : null;
+  const locker = gen?.locker && gen.locker.startsWith("0x") ? (gen.locker as `0x${string}`) : null;
   return (
     <main className="fused-section">
       <div className="fused-wrap" style={{ display: "grid", gap: 22, maxWidth: 720 }}>

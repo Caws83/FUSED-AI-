@@ -7,6 +7,7 @@ import {
   ROBINHOOD_MAINNET_CHAIN_ID,
   ROBINHOOD_TESTNET_CHAIN_ID,
   deploymentFileName,
+  v2DeploymentFileName,
 } from "./networks.ts";
 
 function repoRootFromConfigPackage(): string {
@@ -127,6 +128,25 @@ export function publicDeploymentExamplePath(chainId: number, root = resolveRepoR
   return path.join(root, "deployments", file.replace(/\.json$/, ".example.json"));
 }
 
+export function publicV2DeploymentPath(chainId: number, root = resolveRepoRoot()): string | null {
+  const file = v2DeploymentFileName(chainId);
+  if (!file) return null;
+  return path.join(root, "deployments", file);
+}
+
+/** V2 public manifest. Missing file → null. Never invents addresses. Never used for 4663. */
+export function readPublicV2DeploymentManifest(chainId: number, root = resolveRepoRoot()): DeploymentManifest | null {
+  if (chainId === LOCAL_CHAIN_ID || chainId === ROBINHOOD_MAINNET_CHAIN_ID) return null;
+  const filePath = publicV2DeploymentPath(chainId, root);
+  if (!filePath) return null;
+  const parsed = parseDeploymentManifest(readJsonFile(filePath));
+  if (!parsed || parsed.chainId !== chainId) return null;
+  const deployed = Boolean(
+    parsed.contracts.launchFactory && parsed.contracts.launchLocker && parsed.status === "DEPLOYED",
+  );
+  return { ...parsed, status: deployed ? "DEPLOYED" : "NOT_DEPLOYED" };
+}
+
 /** Gitignored local Anvil manifest written by `npm run contracts:deploy:local`. */
 export function readLocalDeploymentManifest(root = resolveRepoRoot()): DeploymentManifest | null {
   const parsed = parseDeploymentManifest(readJsonFile(localDeploymentPath(root)));
@@ -223,6 +243,31 @@ export function mergeLocalDeployment(env: NodeJS.Dict<string>, root = resolveRep
   return mergeChainDeployment(env, root);
 }
 
+function applyTestnetGenerations(env: NodeJS.Dict<string>, root: string): NodeJS.Dict<string> {
+  const v1 = readPublicDeploymentManifest(ROBINHOOD_TESTNET_CHAIN_ID, root);
+  const overlay = applyManifest(env, v1) as Record<string, string>;
+  if (v1.status === "DEPLOYED" && v1.contracts.launchFactory) {
+    fillIfEmpty(overlay, "LAUNCH_FACTORY_V1_ADDRESS", v1.contracts.launchFactory);
+    fillIfEmpty(overlay, "LAUNCH_LOCKER_V1_ADDRESS", v1.contracts.launchLocker);
+    if (v1.deployBlock != null) fillIfEmpty(overlay, "LAUNCH_V1_DEPLOY_BLOCK", String(v1.deployBlock));
+  }
+  const v2 = readPublicV2DeploymentManifest(ROBINHOOD_TESTNET_CHAIN_ID, root);
+  if (v2?.status === "DEPLOYED" && v2.contracts.launchFactory && v2.contracts.launchLocker) {
+    fillIfEmpty(overlay, "LAUNCH_FACTORY_V2_ADDRESS", v2.contracts.launchFactory);
+    fillIfEmpty(overlay, "LAUNCH_LOCKER_V2_ADDRESS", v2.contracts.launchLocker);
+    if (v2.deployBlock != null) fillIfEmpty(overlay, "LAUNCH_V2_DEPLOY_BLOCK", String(v2.deployBlock));
+    fillIfEmpty(overlay, "DEFAULT_LAUNCH_VERSION", "v2");
+    overlay.LAUNCH_FACTORY_ADDRESS = v2.contracts.launchFactory;
+    overlay.LAUNCH_LOCKER_ADDRESS = v2.contracts.launchLocker;
+    if (v2.curve?.feeBps != null) overlay.FUSED_FEE_BPS = String(v2.curve.feeBps);
+    if (v1.deployBlock != null) {
+      overlay.LAUNCH_DEPLOY_BLOCK = String(v1.deployBlock);
+      overlay.INDEXER_START_BLOCK = overlay.INDEXER_START_BLOCK || String(v1.deployBlock);
+    }
+  }
+  return overlay;
+}
+
 export function mergeChainDeployment(env: NodeJS.Dict<string>, root = resolveRepoRoot()): NodeJS.Dict<string> {
   const chainRaw = env.CHAIN_ID ?? env.NEXT_PUBLIC_CHAIN_ID;
   const chainId = chainRaw ? Number(chainRaw) : LOCAL_CHAIN_ID;
@@ -232,6 +277,9 @@ export function mergeChainDeployment(env: NodeJS.Dict<string>, root = resolveRep
     const manifest = readLocalDeploymentManifest(root);
     if (!manifest) return env;
     return applyManifest(env, manifest);
+  }
+  if (chainId === ROBINHOOD_TESTNET_CHAIN_ID) {
+    return applyTestnetGenerations(env, root);
   }
   return applyManifest(env, readPublicDeploymentManifest(chainId, root));
 }

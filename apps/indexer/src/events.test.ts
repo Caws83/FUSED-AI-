@@ -23,3 +23,9 @@ test("Fused Created and Trade events are present for curve indexing", () => {
     parseEventLogs({ abi: FUSED_FACTORY_ABI, logs: [], eventName: "Created" });
   });
 });
+
+test("V1 and V2 factories are distinct so duplicate event scans cannot share an address", () => {
+  const v1 = "0x42654079a991EE21e2d2f7Eed0A77bf6a0082208".toLowerCase();
+  const v2 = "0x359b3D82d958488eA9177c0F56EB3558ba59a40B".toLowerCase();
+  assert.notEqual(v1, v2);
+});

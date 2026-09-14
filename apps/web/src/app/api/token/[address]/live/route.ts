@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { createPublicClient, http, type Hex } from "viem";
+import type { Hex } from "viem";
 import { loadEnv, loadRepoEnv } from "@fused-ai/config";
 import { createDatabaseClient } from "@fused-ai/database";
-import { FUSED_FACTORY_ABI, STATE_LABEL } from "@fused-ai/blockchain";
-import { hydrateLaunchImage, loadOnchainLaunch } from "../../../../../lib/launches.ts";
+import { STATE_LABEL } from "@fused-ai/blockchain";
+import { createChainClient, hydrateLaunchImage, loadOnchainLaunch, readMarketOnFactories } from "../../../../../lib/launches.ts";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -20,36 +20,27 @@ export async function GET(_request: Request, { params }: { params: Promise<{ add
     if (env.databaseUrl) {
       const db = createDatabaseClient(env);
 
-      if (env.rpcUrl && env.launchFactory) {
+      if (env.rpcUrl) {
         try {
-          const client = createPublicClient({
-            chain: {
-              id: env.chainId,
-              name: "fused",
-              nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-              rpcUrls: { default: { http: [env.rpcUrl] } },
-            },
-            transport: http(env.rpcUrl),
-          });
-          const market = await client.readContract({
-            address: env.launchFactory as Hex,
-            abi: FUSED_FACTORY_ABI,
-            functionName: "getMarket",
-            args: [address as Hex],
-          });
-          if (market.state !== 0) {
-            const graduated = market.state === 2;
-            await db.updateMarket({
-              chainId: env.chainId,
-              token: address as Hex,
-              lifecycleState: STATE_LABEL[market.state] ?? "UNKNOWN",
-              realQuote: market.realQuote.toString(),
-              graduationTarget: market.graduationTarget.toString(),
-              circulating: market.circulating.toString(),
-              priceX18: market.priceX18.toString(),
-              tokenId: market.tokenId > 0n ? market.tokenId.toString() : null,
-              dexVersion: graduated ? "uniswap_v4" : "curve",
-            });
+          const client = createChainClient(env);
+          const existing = await db.getLaunch(env.chainId, address);
+          const preferred = existing.ok ? existing.value?.factory : null;
+          if (client) {
+            const found = await readMarketOnFactories(client, address as Hex, env, preferred);
+            if (found) {
+              const graduated = found.market.state === 2;
+              await db.updateMarket({
+                chainId: env.chainId,
+                token: address as Hex,
+                lifecycleState: STATE_LABEL[found.market.state] ?? "UNKNOWN",
+                realQuote: found.market.realQuote.toString(),
+                graduationTarget: found.market.graduationTarget.toString(),
+                circulating: found.market.circulating.toString(),
+                priceX18: found.market.priceX18.toString(),
+                tokenId: found.market.tokenId > 0n ? found.market.tokenId.toString() : null,
+                dexVersion: graduated ? "uniswap_v4" : "curve",
+              });
+            }
           }
         } catch {
           /* keep last indexed row */

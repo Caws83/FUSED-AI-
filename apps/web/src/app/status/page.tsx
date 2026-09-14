@@ -114,8 +114,10 @@ export default async function StatusPage() {
             </thead>
             <tbody>
               {[
-                { label: "Fused Curve Factory", value: env.launchFactory },
-                { label: "Fused Curve Locker", value: env.launchLocker },
+                { label: "Fused Factory V2 (default)", value: env.launch.v2?.factory ?? env.launchFactory },
+                { label: "Fused Locker V2", value: env.launch.v2?.locker ?? env.launchLocker },
+                { label: "Fused Factory V1 (legacy)", value: env.launch.v1?.factory },
+                { label: "Fused Locker V1", value: env.launch.v1?.locker },
                 { label: "PoolManager", value: env.uniswap.poolManager },
                 { label: "PositionManager", value: env.uniswap.positionManager },
                 { label: "Permit2", value: env.uniswap.permit2 },
@@ -130,8 +132,8 @@ export default async function StatusPage() {
             </tbody>
           </table>
           <p style={{ color: "var(--fused-muted)", fontSize: 14 }}>
-            Manual create calls FusedFactory.create at the factory address above. OpenLaunch LaunchFactory.launch is
-            not the Phase 5 create path. Local Anvil addresses are rejected on public chains.
+            New launches call FusedFactoryV2.create at the V2 factory. Legacy V1 tokens still trade on V1.
+            OpenLaunch LaunchFactory.launch is not the create path. Local Anvil addresses are rejected on public chains.
           </p>
         </div>
         <div style={{ marginTop: 28 }}>
