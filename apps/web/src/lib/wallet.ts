@@ -1,6 +1,17 @@
 export type WriteClientReason = "account" | "rpc" | "wallet" | "chain";
 
-export { chainLabelFor, nativeCurrencyFor } from "@fused-ai/config/public";
+export {
+  chainLabelFor,
+  isWalletSelectorChain,
+  launchContractsForChain,
+  nativeCurrencyFor,
+  newLaunchForWallet,
+} from "@fused-ai/config/public";
+
+export function asLaunchAddress(value: string | null | undefined): `0x${string}` | null {
+  if (!value || !/^0x[a-fA-F0-9]{40}$/.test(value)) return null;
+  return value as `0x${string}`;
+}
 
 export function walletConnectorKinds(projectId: string | null | undefined): ("injected" | "walletConnect")[] {
   if (projectId && projectId.trim()) return ["injected", "walletConnect"];

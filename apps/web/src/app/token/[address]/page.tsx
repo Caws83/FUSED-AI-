@@ -1,17 +1,24 @@
 import { notFound } from "next/navigation";
 import { SectionHeader } from "@fused-ai/ui";
-import { loadEnv, loadRepoEnv } from "@fused-ai/config";
+import { loadEnv, loadRepoEnv, parseSupportedChainId } from "@fused-ai/config";
 import { loadLaunchPage, tradeFactoryAddress } from "../../../lib/launches.ts";
 import { TokenTerminal } from "../../../components/TokenTerminal.tsx";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export default async function TokenPage({ params }: { params: Promise<{ address: string }> }) {
+export default async function TokenPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ address: string }>;
+  searchParams: Promise<{ chainId?: string }>;
+}) {
   loadRepoEnv();
   const env = loadEnv();
   const { address } = await params;
-  const loaded = await loadLaunchPage(address);
+  const query = await searchParams;
+  const loaded = await loadLaunchPage(address, parseSupportedChainId(query.chainId));
   if (!loaded) notFound();
   const factory = env.publicLaunchEnabled ? tradeFactoryAddress(loaded.launch, env) : null;
   return (

@@ -204,6 +204,21 @@ export const FUSED_FACTORY_CLAIM_ABI = [
 
 export const FUSED_FACTORY_V2_ABI = [...FUSED_FACTORY_ABI, ...FUSED_FACTORY_CLAIM_ABI] as const;
 
+/** Arc testnet emits this instead of Graduated. Do not treat it as a DEX graduation. */
+export const FUSED_FACTORY_ARC_EVENTS_ABI = [
+  {
+    type: "event",
+    name: "GraduationReady",
+    inputs: [
+      { name: "token", type: "address", indexed: true },
+      { name: "realQuote", type: "uint256", indexed: false },
+      { name: "quoteLiq6", type: "uint256", indexed: false },
+    ],
+  },
+] as const;
+
+export const FUSED_FACTORY_INDEXER_ABI = [...FUSED_FACTORY_V2_ABI, ...FUSED_FACTORY_ARC_EVENTS_ABI] as const;
+
 export const ERC20_ABI = [
   { type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ name: "", type: "uint256" }] },
   { type: "function", name: "allowance", stateMutability: "view", inputs: [{ name: "owner", type: "address" }, { name: "spender", type: "address" }], outputs: [{ name: "", type: "uint256" }] },

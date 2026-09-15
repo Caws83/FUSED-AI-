@@ -1,5 +1,5 @@
 import { Badge, Card, SectionHeader } from "@fused-ai/ui";
-import { loadEnv, loadRepoEnv, defaultLaunchGeneration } from "@fused-ai/config";
+import { loadRepoEnv } from "@fused-ai/config";
 import { loadRuntime } from "../../lib/runtime.ts";
 import { CreatorRewards } from "../../components/CreatorRewards.tsx";
 
@@ -9,22 +9,14 @@ const CATEGORIES = ["Creator Rewards", "Holder Rewards", "Referral Rewards", "Co
 
 export default async function RewardsPage() {
   loadRepoEnv();
-  const env = loadEnv();
   const { registry } = await loadRuntime();
   const assets = registry.ok ? registry.value.filter((asset) => asset.enabled) : [];
-  const gen = defaultLaunchGeneration(env.launch);
-  const factory =
-    (env.launch.v2?.factory && env.launch.v2.factory.startsWith("0x")
-      ? env.launch.v2.factory
-      : gen?.factory && gen.factory.startsWith("0x")
-        ? gen.factory
-        : null) as `0x${string}` | null;
 
   return (
     <main className="fused-section">
       <div className="fused-wrap" style={{ display: "grid", gap: 22 }}>
         <SectionHeader kicker="Tokenized Rewards" title="Launch memes. Reward with real-world assets." />
-        <CreatorRewards factory={factory} chainId={env.public.chainId} />
+        <CreatorRewards />
         <p style={{ color: "var(--fused-muted)", maxWidth: 680 }}>
           Fused AI is being designed so launches can distribute supported rewards using verified tokenized assets.
         </p>

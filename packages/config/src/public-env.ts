@@ -61,12 +61,23 @@ export { isStatusPageEnabled } from "./features.ts";
 export {
   chainLabelFor,
   explorerBaseFor,
+  isWalletSelectorChain,
+  launchContractsForChain,
   nativeCurrencyFor,
+  newLaunchForWallet,
+  parseSupportedChainId,
+  rpcUrlForChain,
+  INDEXED_BOARD_CHAIN_IDS,
+  ARC_TESTNET,
   LOCAL_CHAIN_ID,
   ARC_MAINNET_CHAIN_ID,
   ARC_TESTNET_CHAIN_ID,
   ROBINHOOD_MAINNET_CHAIN_ID,
+  ROBINHOOD_TESTNET,
   ROBINHOOD_TESTNET_CHAIN_ID,
+  WALLET_SELECTOR_CHAIN_IDS,
+  type ChainLaunchContracts,
+  type WalletLaunchContracts,
 } from "./networks.ts";
 
 export function publicWalletAvailability(pub: PublicEnv): Availability {

@@ -1,36 +1,55 @@
 import { NextResponse } from "next/server";
 import type { Hex } from "viem";
-import { loadEnv, loadRepoEnv } from "@fused-ai/config";
+import { loadEnv, loadRepoEnv, parseSupportedChainId } from "@fused-ai/config";
 import { createDatabaseClient } from "@fused-ai/database";
 import { STATE_LABEL } from "@fused-ai/blockchain";
-import { createChainClient, hydrateLaunchImage, loadOnchainLaunch, readMarketOnFactories } from "../../../../../lib/launches.ts";
+import {
+  createChainClientFor,
+  hydrateLaunchImage,
+  launchGenerationsForChain,
+  loadOnchainLaunch,
+  readMarketOnFactories,
+  resolveLaunchIdentity,
+  rpcUrlForLaunchChain,
+} from "../../../../../lib/launches.ts";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export async function GET(_request: Request, { params }: { params: Promise<{ address: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ address: string }> }) {
   try {
     loadRepoEnv();
     const env = loadEnv();
     const { address } = await params;
-    if (!env.chainId || !address?.startsWith("0x")) {
+    if (!address?.startsWith("0x")) {
       return NextResponse.json({ ok: false }, { status: 400 });
     }
+    const url = new URL(request.url);
+    const requestedChainId = parseSupportedChainId(url.searchParams.get("chainId"));
 
     if (env.databaseUrl) {
       const db = createDatabaseClient(env);
+      const listed = requestedChainId != null ? await db.getLaunch(requestedChainId, address) : await db.findLaunchesByToken(address);
+      const rows = listed.ok ? (Array.isArray(listed.value) ? listed.value : listed.value ? [listed.value] : []) : [];
+      const identity = resolveLaunchIdentity(rows, requestedChainId);
+      if (identity.status === "ambiguous") {
+        await db.close();
+        return NextResponse.json({ ok: false, reason: "ambiguous" }, { status: 409 });
+      }
+      const chainId = identity.status === "found" ? identity.launch.chainId : requestedChainId;
+      const preferred = identity.status === "found" ? identity.launch.factory : null;
 
-      if (env.rpcUrl) {
+      if (chainId && env.rpcUrl !== undefined) {
         try {
-          const client = createChainClient(env);
-          const existing = await db.getLaunch(env.chainId, address);
-          const preferred = existing.ok ? existing.value?.factory : null;
-          if (client) {
-            const found = await readMarketOnFactories(client, address as Hex, env, preferred);
+          const rpcUrl = rpcUrlForLaunchChain(chainId, env);
+          const gens = launchGenerationsForChain(chainId, env);
+          if (rpcUrl && gens.length > 0) {
+            const client = createChainClientFor(chainId, rpcUrl);
+            const found = await readMarketOnFactories(client, address as Hex, gens, preferred);
             if (found) {
               const graduated = found.market.state === 2;
               await db.updateMarket({
-                chainId: env.chainId,
+                chainId,
                 token: address as Hex,
                 lifecycleState: STATE_LABEL[found.market.state] ?? "UNKNOWN",
                 realQuote: found.market.realQuote.toString(),
@@ -47,13 +66,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ add
         }
       }
 
-      const launch = await db.getLaunch(env.chainId, address);
-      const trades = await db.listTrades(env.chainId, address, 40);
-      const candles1m = await db.listCandles(env.chainId, address, 60, 180);
-      const candles5m = await db.listCandles(env.chainId, address, 300, 180);
-      const candles15m = await db.listCandles(env.chainId, address, 900, 180);
-      const candles1h = await db.listCandles(env.chainId, address, 3600, 180);
-      const stats = await db.tokenStats(env.chainId, address);
+      const launch = chainId ? await db.getLaunch(chainId, address) : { ok: true as const, value: null };
+      const trades = chainId ? await db.listTrades(chainId, address, 40) : { ok: true as const, value: [] };
+      const candles1m = chainId ? await db.listCandles(chainId, address, 60, 180) : { ok: true as const, value: [] };
+      const candles5m = chainId ? await db.listCandles(chainId, address, 300, 180) : { ok: true as const, value: [] };
+      const candles15m = chainId ? await db.listCandles(chainId, address, 900, 180) : { ok: true as const, value: [] };
+      const candles1h = chainId ? await db.listCandles(chainId, address, 3600, 180) : { ok: true as const, value: [] };
+      const stats = chainId ? await db.tokenStats(chainId, address) : { ok: true as const, value: { volumeTotal: "0", volume24h: "0", tradeCount: 0, holderCount: 0 } };
       await db.close();
 
       if (launch.ok && launch.value) {
@@ -77,7 +96,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ add
       }
     }
 
-    const onchain = await loadOnchainLaunch(address);
+    const onchain = await loadOnchainLaunch(address, null, requestedChainId);
     if (!onchain) return NextResponse.json({ ok: false }, { status: 404 });
     return NextResponse.json({
       ok: true,

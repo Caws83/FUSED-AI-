@@ -5,7 +5,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider, createConfig, createStorage, http, noopStorage } from "wagmi";
 import { injected, walletConnect } from "wagmi/connectors";
 import { anvil } from "viem/chains";
-import { defineChain } from "viem";
+import { defineChain, type Chain } from "viem";
+import {
+  ARC_TESTNET,
+  ARC_TESTNET_CHAIN_ID,
+  ROBINHOOD_TESTNET,
+  ROBINHOOD_TESTNET_CHAIN_ID,
+} from "@fused-ai/config/public";
 import { chainLabelFor, nativeCurrencyFor, walletConnectorKinds } from "../lib/wallet.ts";
 
 export type WalletRuntimeConfig = {
@@ -15,6 +21,15 @@ export type WalletRuntimeConfig = {
 };
 
 const queryClient = new QueryClient();
+
+function fusedChain(chainId: number, rpcUrl: string): Chain {
+  return defineChain({
+    id: chainId,
+    name: chainLabelFor(chainId) ?? "Fused AI chain",
+    nativeCurrency: nativeCurrencyFor(chainId),
+    rpcUrls: { default: { http: [rpcUrl] } },
+  });
+}
 
 export function Providers({
   wallet,
@@ -29,20 +44,22 @@ export function Providers({
 
   const config = useMemo(() => {
     if (chainId == null || !rpcUrl) return null;
-    const name = chainLabelFor(chainId) ?? "Fused AI chain";
-    const chain =
+    const robinhoodRpc = chainId === ROBINHOOD_TESTNET_CHAIN_ID ? rpcUrl : ROBINHOOD_TESTNET.rpcUrl;
+    const arcRpc = chainId === ARC_TESTNET_CHAIN_ID ? rpcUrl : ARC_TESTNET.rpcUrl;
+    const robinhood = fusedChain(ROBINHOOD_TESTNET_CHAIN_ID, robinhoodRpc);
+    const arc = fusedChain(ARC_TESTNET_CHAIN_ID, arcRpc);
+    const chains: [Chain, ...Chain[]] =
       chainId === 31337
-        ? {
-            ...anvil,
-            name,
-            rpcUrls: { default: { http: [rpcUrl] }, public: { http: [rpcUrl] } },
-          }
-        : defineChain({
-            id: chainId,
-            name,
-            nativeCurrency: nativeCurrencyFor(chainId),
-            rpcUrls: { default: { http: [rpcUrl] } },
-          });
+        ? [
+            {
+              ...anvil,
+              name: chainLabelFor(31337) ?? "Fused Local",
+              rpcUrls: { default: { http: [rpcUrl] }, public: { http: [rpcUrl] } },
+            },
+            robinhood,
+            arc,
+          ]
+        : [robinhood, arc];
     const kinds = walletConnectorKinds(walletConnectProjectId);
     const connectors = [
       injected(),
@@ -50,10 +67,15 @@ export function Providers({
         ? [walletConnect({ projectId: walletConnectProjectId, showQrModal: true })]
         : []),
     ];
+    const transports: Record<number, ReturnType<typeof http>> = {
+      [ROBINHOOD_TESTNET_CHAIN_ID]: http(robinhoodRpc),
+      [ARC_TESTNET_CHAIN_ID]: http(arcRpc),
+    };
+    if (chainId === 31337) transports[31337] = http(rpcUrl);
     return createConfig({
-      chains: [chain],
+      chains,
       connectors,
-      transports: { [chain.id]: http(rpcUrl) },
+      transports,
       ssr: true,
       storage: createStorage({
         storage: typeof window !== "undefined" && window.localStorage ? window.localStorage : noopStorage,

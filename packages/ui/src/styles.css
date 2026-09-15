@@ -681,6 +681,35 @@ textarea {
   gap: 8px;
 }
 
+.fused-network-select-wrap {
+  display: inline-flex;
+}
+
+.fused-network-select {
+  appearance: none;
+  border: 1px solid var(--fused-line-strong);
+  background: var(--fused-white);
+  border-radius: 12px;
+  min-height: 40px;
+  padding: 0 28px 0 12px;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--fused-ink, #071422);
+  cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 14px) 17px, calc(100% - 9px) 17px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.fused-wallet-menu {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .fused-footer {
   padding: 28px 0 48px;
   color: var(--fused-muted);

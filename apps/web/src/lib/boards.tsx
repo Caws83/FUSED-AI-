@@ -31,7 +31,7 @@ export function LaunchGrid({ launches }: { launches: IndexedLaunch[] }) {
   return (
     <div className="fused-grid-3">
       {launches.map((launch) => (
-        <a key={launch.token} href={`/token/${launch.token}`} style={{ color: "inherit" }}>
+        <a key={`${launch.chainId}:${launch.token}`} href={`/token/${launch.token}?chainId=${launch.chainId}`} style={{ color: "inherit" }}>
           <LaunchCard {...launchCardProps(launch)} />
         </a>
       ))}

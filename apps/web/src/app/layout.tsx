@@ -49,7 +49,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body className={`${dmSans.className} ${plusJakarta.variable} ${spaceGrotesk.variable} fused-shell`}>
         <Providers wallet={wallet}>
-          <SiteHeader walletConfigured={walletConfigured} expectedChainId={pub.chainId} />
+          <SiteHeader walletConfigured={walletConfigured} />
           {children}
           <footer className="fused-footer">
             <div className="fused-wrap" style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>

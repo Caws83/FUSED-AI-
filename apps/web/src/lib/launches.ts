@@ -1,5 +1,22 @@
 import { createPublicClient, http, type Hex } from "viem";
-import { loadEnv, loadRepoEnv, indexerFreshnessFromParts, indexedLaunchFactories, tradeFactoryForLaunch, nativeCurrencyFor, type FusedEnv, type IndexerFreshness } from "@fused-ai/config";
+import {
+  loadEnv,
+  loadRepoEnv,
+  indexerFreshnessFromParts,
+  indexedLaunchFactories,
+  tradeFactoryForLaunch,
+  nativeCurrencyFor,
+  launchContractsForChain,
+  rpcUrlForChain,
+  parseSupportedChainId,
+  INDEXED_BOARD_CHAIN_IDS,
+  ARC_TESTNET_CHAIN_ID,
+  ARC_TESTNET_LAUNCH,
+  ROBINHOOD_TESTNET_CHAIN_ID,
+  type FusedEnv,
+  type IndexerFreshness,
+  type LaunchGeneration,
+} from "@fused-ai/config";
 import { createDatabaseClient } from "@fused-ai/database";
 import { createMediaStore, resolvePersistedLaunchImage } from "@fused-ai/media";
 import { FUSED_FACTORY_ABI, LAUNCH_TOKEN_ABI, STATE_LABEL, ZERO_ADDRESS } from "@fused-ai/blockchain";
@@ -7,17 +24,64 @@ import type { IndexedLaunch } from "@fused-ai/types";
 
 const ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000" as const;
 
-export function createChainClient(env: Pick<FusedEnv, "rpcUrl" | "chainId">) {
-  if (!env.rpcUrl || !env.chainId) return null;
+export type LaunchIdentity =
+  | { status: "found"; launch: IndexedLaunch }
+  | { status: "missing" }
+  | { status: "ambiguous"; chainIds: number[] };
+
+export function resolveLaunchIdentity(rows: IndexedLaunch[], requestedChainId: number | null): LaunchIdentity {
+  if (requestedChainId != null) {
+    const hit = rows.find((row) => row.chainId === requestedChainId);
+    return hit ? { status: "found", launch: hit } : { status: "missing" };
+  }
+  if (rows.length === 0) return { status: "missing" };
+  if (rows.length === 1) {
+    const only = rows[0];
+    if (!only) return { status: "missing" };
+    return { status: "found", launch: only };
+  }
+  return { status: "ambiguous", chainIds: rows.map((row) => row.chainId) };
+}
+
+export function rpcUrlForLaunchChain(chainId: number, env: Pick<FusedEnv, "chainId" | "rpcUrl">): string | null {
+  if (chainId === env.chainId && env.rpcUrl) return env.rpcUrl;
+  return rpcUrlForChain(chainId);
+}
+
+export function launchGenerationsForChain(chainId: number, env: FusedEnv): LaunchGeneration[] {
+  if (chainId === env.chainId && chainId !== ARC_TESTNET_CHAIN_ID) {
+    return indexedLaunchFactories(env.launch);
+  }
+  if (chainId === ROBINHOOD_TESTNET_CHAIN_ID && env.chainId === ROBINHOOD_TESTNET_CHAIN_ID) {
+    return indexedLaunchFactories(env.launch);
+  }
+  const mapped = launchContractsForChain(chainId);
+  if (!mapped?.deployed || !mapped.factory) return [];
+  return [
+    {
+      version: "v1",
+      factory: mapped.factory,
+      locker: mapped.locker,
+      deployBlock: chainId === ARC_TESTNET_CHAIN_ID ? ARC_TESTNET_LAUNCH.deployBlock : null,
+    },
+  ];
+}
+
+export function createChainClientFor(chainId: number, rpcUrl: string) {
   return createPublicClient({
     chain: {
-      id: env.chainId,
+      id: chainId,
       name: "fused",
-      nativeCurrency: nativeCurrencyFor(env.chainId),
-      rpcUrls: { default: { http: [env.rpcUrl] } },
+      nativeCurrency: nativeCurrencyFor(chainId),
+      rpcUrls: { default: { http: [rpcUrl] } },
     },
-    transport: http(env.rpcUrl, { timeout: 20_000 }),
+    transport: http(rpcUrl, { timeout: 20_000 }),
   });
+}
+
+export function createChainClient(env: Pick<FusedEnv, "rpcUrl" | "chainId">) {
+  if (!env.rpcUrl || !env.chainId) return null;
+  return createChainClientFor(env.chainId, env.rpcUrl);
 }
 
 export function marketToIndexedLaunch(input: {
@@ -81,10 +145,9 @@ export function marketToIndexedLaunch(input: {
 export async function readMarketOnFactories(
   client: NonNullable<ReturnType<typeof createChainClient>>,
   token: Hex,
-  env: FusedEnv,
+  gens: LaunchGeneration[],
   preferredFactory?: string | null,
 ): Promise<{ factory: Hex; locker: Hex | null; market: Parameters<typeof marketToIndexedLaunch>[0]["market"] } | null> {
-  const gens = indexedLaunchFactories(env.launch);
   const ordered = [
     ...gens.filter((g) => preferredFactory && g.factory.toLowerCase() === preferredFactory.toLowerCase()),
     ...gens.filter((g) => !preferredFactory || g.factory.toLowerCase() !== preferredFactory.toLowerCase()),
@@ -110,16 +173,23 @@ export async function readMarketOnFactories(
   return null;
 }
 
-export async function loadOnchainLaunch(token: string, preferredFactory?: string | null): Promise<IndexedLaunch | null> {
+export async function loadOnchainLaunch(
+  token: string,
+  preferredFactory?: string | null,
+  chainId?: number | null,
+): Promise<IndexedLaunch | null> {
   try {
     loadRepoEnv();
     const env = loadEnv();
-    if (!env.rpcUrl || !env.chainId || !token?.startsWith("0x")) return null;
-    if (indexedLaunchFactories(env.launch).length === 0) return null;
-    const client = createChainClient(env);
-    if (!client) return null;
+    const resolvedChain = chainId ?? env.chainId;
+    if (!resolvedChain || !token?.startsWith("0x")) return null;
+    const rpcUrl = rpcUrlForLaunchChain(resolvedChain, env);
+    if (!rpcUrl) return null;
+    const gens = launchGenerationsForChain(resolvedChain, env);
+    if (gens.length === 0) return null;
+    const client = createChainClientFor(resolvedChain, rpcUrl);
     const address = token as Hex;
-    const found = await readMarketOnFactories(client, address, env, preferredFactory);
+    const found = await readMarketOnFactories(client, address, gens, preferredFactory);
     if (!found) return null;
     let name = "";
     let symbol = "";
@@ -132,7 +202,7 @@ export async function loadOnchainLaunch(token: string, preferredFactory?: string
       /* keep empty rather than invent */
     }
     return marketToIndexedLaunch({
-      chainId: env.chainId,
+      chainId: resolvedChain,
       token: address,
       name,
       symbol,
@@ -145,16 +215,27 @@ export async function loadOnchainLaunch(token: string, preferredFactory?: string
   }
 }
 
-export function tradeFactoryAddress(launch: Pick<IndexedLaunch, "factory">, env: FusedEnv): `0x${string}` | null {
-  const resolved = tradeFactoryForLaunch(launch.factory, env.launch);
-  return resolved?.startsWith("0x") ? (resolved as `0x${string}`) : null;
+export function tradeFactoryAddress(
+  launch: Pick<IndexedLaunch, "factory" | "chainId">,
+  env: FusedEnv,
+): `0x${string}` | null {
+  const chainId = launch.chainId;
+  if (!chainId || !launch.factory) return null;
+  if (chainId === ROBINHOOD_TESTNET_CHAIN_ID) {
+    const resolved = tradeFactoryForLaunch(launch.factory, env.launch);
+    return resolved?.startsWith("0x") ? (resolved as `0x${string}`) : null;
+  }
+  const mapped = launchContractsForChain(chainId);
+  if (!mapped?.deployed || !mapped.factory) return null;
+  if (mapped.factory.toLowerCase() !== launch.factory.toLowerCase()) return null;
+  return mapped.factory.startsWith("0x") ? (mapped.factory as `0x${string}`) : null;
 }
 
 export function hydrateLaunchImage(launch: IndexedLaunch, env: FusedEnv): IndexedLaunch {
   const store = createMediaStore(env);
   const resolved = resolvePersistedLaunchImage(
     { imageId: launch.imageId, imageUrl: launch.imageUrl },
-    { chainId: env.chainId ?? launch.chainId, publicUrlForId: (id) => store.getPublicUrl(id) },
+    { chainId: launch.chainId, publicUrlForId: (id) => store.getPublicUrl(id) },
   );
   return { ...launch, imageId: resolved.imageId, imageUrl: resolved.imageUrl };
 }
@@ -163,9 +244,9 @@ export async function loadIndexedLaunches(): Promise<IndexedLaunch[]> {
   try {
     loadRepoEnv();
     const env = loadEnv();
-    if (!env.databaseUrl || !env.chainId) return [];
+    if (!env.databaseUrl) return [];
     const db = createDatabaseClient(env);
-    const result = await db.listLaunches(env.chainId);
+    const result = await db.listLaunchesForChains([...INDEXED_BOARD_CHAIN_IDS]);
     await db.close();
     return result.ok ? result.value.map((launch) => hydrateLaunchImage(launch, env)) : [];
   } catch {
@@ -173,32 +254,45 @@ export async function loadIndexedLaunches(): Promise<IndexedLaunch[]> {
   }
 }
 
-export async function loadIndexedLaunch(token: string): Promise<IndexedLaunch | null> {
+export async function loadIndexedLaunch(token: string, chainId?: number | null): Promise<LaunchIdentity> {
   try {
     loadRepoEnv();
     const env = loadEnv();
-    if (!env.databaseUrl || !env.chainId) return null;
+    if (!env.databaseUrl || !token?.startsWith("0x")) return { status: "missing" };
     const db = createDatabaseClient(env);
-    const result = await db.getLaunch(env.chainId, token);
+    const result = chainId != null ? await db.getLaunch(chainId, token) : await db.findLaunchesByToken(token);
     await db.close();
-    if (!result.ok || !result.value) return null;
-    return hydrateLaunchImage(result.value, env);
+    if (!result.ok) return { status: "missing" };
+    const rows = Array.isArray(result.value) ? result.value : result.value ? [result.value] : [];
+    const identity = resolveLaunchIdentity(rows, chainId ?? null);
+    if (identity.status !== "found") return identity;
+    return { status: "found", launch: hydrateLaunchImage(identity.launch, env) };
   } catch {
-    return null;
+    return { status: "missing" };
   }
 }
 
-export async function loadLaunchPage(token: string): Promise<{ launch: IndexedLaunch; indexed: boolean } | null> {
-  const indexed = await loadIndexedLaunch(token);
-  if (indexed) {
-    if (indexed.factory) return { launch: indexed, indexed: true };
-    const onchain = await loadOnchainLaunch(token);
+export async function loadLaunchPage(
+  token: string,
+  chainId?: number | null,
+): Promise<{ launch: IndexedLaunch; indexed: boolean } | null> {
+  const requested = chainId ?? null;
+  const indexed = await loadIndexedLaunch(token, requested);
+  if (indexed.status === "ambiguous") return null;
+  if (indexed.status === "found") {
+    if (indexed.launch.factory) return { launch: indexed.launch, indexed: true };
+    const onchain = await loadOnchainLaunch(token, indexed.launch.factory, indexed.launch.chainId);
     if (onchain?.factory) {
-      return { launch: { ...indexed, factory: onchain.factory, locker: onchain.locker ?? indexed.locker }, indexed: true };
+      return { launch: { ...indexed.launch, factory: onchain.factory, locker: onchain.locker ?? indexed.launch.locker }, indexed: true };
     }
-    return { launch: indexed, indexed: true };
+    return { launch: indexed.launch, indexed: true };
   }
-  const onchain = await loadOnchainLaunch(token);
+  if (requested == null) {
+    const onchain = await loadOnchainLaunch(token);
+    if (onchain) return { launch: onchain, indexed: false };
+    return null;
+  }
+  const onchain = await loadOnchainLaunch(token, null, requested);
   if (onchain) return { launch: onchain, indexed: false };
   return null;
 }
@@ -243,7 +337,7 @@ export function boardEmptyCopy(
   if (indexing) {
     return {
       title: "Indexing…",
-      body: "On-chain launches are being read from Robinhood Testnet. Tokens do not disappear — they appear here when the indexer catches up.",
+      body: "On-chain launches are being read from Robinhood Testnet and Arc Testnet. Tokens do not disappear — they appear here when the indexer catches up.",
     };
   }
   if (kind === "live") return { title: "No live curves yet.", body: "New tokens appear here after a wallet launch." };
@@ -251,3 +345,5 @@ export function boardEmptyCopy(
   if (kind === "graduating") return { title: "Nothing graduating yet.", body: "Tokens near the on-chain target show up here." };
   return { title: "No graduates yet.", body: "When a curve hits its target, locked Uniswap liquidity appears here." };
 }
+
+export { parseSupportedChainId };

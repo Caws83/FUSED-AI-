@@ -6,7 +6,7 @@ import {
   indexedLaunchFactories,
   launchVersionOf,
 } from "../src/launch.ts";
-import { ROBINHOOD_TESTNET_LAUNCH_V1, ROBINHOOD_TESTNET_LAUNCH_V2 } from "../src/networks.ts";
+import { ROBINHOOD_TESTNET_LAUNCH_V1, ROBINHOOD_TESTNET_LAUNCH_V2, ARC_TESTNET_LAUNCH } from "../src/networks.ts";
 
 test("new launches default to v2 when both generations are configured", () => {
   const routing = parseLaunchRouting({
@@ -67,4 +67,24 @@ test("mainnet 4663 never picks up a v2 factory", () => {
   assert.equal(routing.defaultVersion, "v1");
   assert.equal(routing.v2, null);
   assert.equal(routing.v1?.factory, ROBINHOOD_TESTNET_LAUNCH_V1.factory);
+});
+
+test("Arc factory uses LAUNCH_DEPLOY_BLOCK as its indexer start", () => {
+  const routing = parseLaunchRouting({
+    chainId: 5042002,
+    defaultFactory: ARC_TESTNET_LAUNCH.factory,
+    defaultLocker: ARC_TESTNET_LAUNCH.locker,
+    defaultVersionRaw: null,
+    v1Factory: null,
+    v1Locker: null,
+    v1DeployBlock: ARC_TESTNET_LAUNCH.deployBlock,
+    v2Factory: null,
+    v2Locker: null,
+    v2DeployBlock: null,
+  });
+  assert.equal(routing.defaultVersion, "v1");
+  assert.equal(routing.v1?.factory, ARC_TESTNET_LAUNCH.factory);
+  assert.equal(routing.v1?.deployBlock, 62246396);
+  assert.equal(routing.v2, null);
+  assert.equal(indexedLaunchFactories(routing).length, 1);
 });

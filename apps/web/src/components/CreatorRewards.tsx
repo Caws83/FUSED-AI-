@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAccount, useChainId, useConfig, usePublicClient } from "wagmi";
+import { useAccount, useConfig, usePublicClient } from "wagmi";
 import { Button, Card } from "@fused-ai/ui";
 import { FUSED_ERROR_MESSAGES, FUSED_FACTORY_CLAIM_ABI } from "@fused-ai/blockchain/fused";
 import { formatNative } from "../lib/format.ts";
-import { nativeCurrencyFor, writeClientError } from "../lib/wallet.ts";
+import { asLaunchAddress, chainLabelFor, isWalletSelectorChain, nativeCurrencyFor, newLaunchForWallet, writeClientError } from "../lib/wallet.ts";
 import { resolveWriteClients } from "../lib/wallet-clients.ts";
 
 type EligibleLaunch = {
@@ -16,16 +16,12 @@ type EligibleLaunch = {
   factory: string | null;
 };
 
-export function CreatorRewards({
-  factory,
-  chainId,
-}: {
-  factory: `0x${string}` | null;
-  chainId: number | null;
-}) {
-  const { address, isConnected, connector } = useAccount();
-  const walletChainId = useChainId();
+export function CreatorRewards() {
+  const { address, isConnected, connector, chainId: walletChainId } = useAccount();
   const config = useConfig();
+  const launch = isConnected ? newLaunchForWallet(walletChainId) : null;
+  const factory = asLaunchAddress(launch?.factory ?? null);
+  const chainId = launch?.chainId ?? null;
   const publicClient = usePublicClient({ chainId: chainId ?? undefined });
   const [claimable, setClaimable] = useState<bigint | null>(null);
   const [launches, setLaunches] = useState<EligibleLaunch[]>([]);
@@ -34,14 +30,15 @@ export function CreatorRewards({
   const [txHash, setTxHash] = useState<string | null>(null);
   const [refresh, setRefresh] = useState(0);
 
-  const wrongNetwork = Boolean(isConnected && chainId && walletChainId !== chainId);
   const quoteSymbol = nativeCurrencyFor(chainId).symbol;
+  const chainName = chainLabelFor(chainId) ?? (walletChainId ? `Chain ${walletChainId}` : "this network");
+  const canListIndexed = isWalletSelectorChain(chainId);
 
   useEffect(() => {
     let stop = false;
     async function load() {
       setError(null);
-      if (!factory || !chainId || !address || wrongNetwork || !publicClient) {
+      if (!factory || !chainId || !address || !publicClient) {
         setClaimable(null);
         setLaunches([]);
         return;
@@ -54,10 +51,13 @@ export function CreatorRewards({
             functionName: "claimable",
             args: [address],
           }),
-          fetch(`/api/rewards/creator?address=${address}`, { cache: "no-store" }).then(async (res) => {
-            const json = (await res.json()) as { ok?: boolean; launches?: EligibleLaunch[] };
-            return json.ok && Array.isArray(json.launches) ? json.launches : [];
-          }),
+          canListIndexed
+            ? fetch(`/api/rewards/creator?address=${address}&chainId=${chainId}`, { cache: "no-store" }).then(async (res) => {
+                const json = (await res.json()) as { ok?: boolean; chainId?: number; launches?: EligibleLaunch[] };
+                if (!json.ok || json.chainId !== chainId || !Array.isArray(json.launches)) return [];
+                return json.launches.filter((row) => row.chainId === chainId);
+              })
+            : Promise.resolve([]),
         ]);
         if (!stop) {
           setClaimable(amount);
@@ -74,7 +74,7 @@ export function CreatorRewards({
     return () => {
       stop = true;
     };
-  }, [factory, chainId, address, wrongNetwork, publicClient, refresh]);
+  }, [factory, chainId, address, publicClient, refresh, canListIndexed]);
 
   async function onClaim() {
     setError(null);
@@ -83,21 +83,23 @@ export function CreatorRewards({
       setError(writeClientError("account"));
       return;
     }
-    if (!factory || !chainId || wrongNetwork) {
+    const live = newLaunchForWallet(walletChainId);
+    const liveFactory = asLaunchAddress(live?.factory ?? null);
+    if (!live || !liveFactory) {
       setError(writeClientError("chain"));
       return;
     }
     if (claimable == null || claimable === 0n) return;
     setPending(true);
     try {
-      const resolved = await resolveWriteClients(config, { chainId, account: address, connector });
+      const resolved = await resolveWriteClients(config, { chainId: live.chainId, account: address, connector });
       if (!resolved.ok) {
         setError(writeClientError(resolved.reason));
         return;
       }
       const { publicClient: writePublic, walletClient } = resolved;
       const { request } = await writePublic.simulateContract({
-        address: factory,
+        address: liveFactory,
         abi: FUSED_FACTORY_CLAIM_ABI,
         functionName: "claim",
         args: [],
@@ -129,22 +131,29 @@ export function CreatorRewards({
       <h2 className="fused-h2" style={{ fontSize: 28, marginTop: 0 }}>
         Available Curve Rewards
       </h2>
-      {!factory || !chainId ? (
-        <p style={{ color: "var(--fused-muted)", marginBottom: 0 }}>Creator rewards are not live on this network.</p>
-      ) : !isConnected || !address ? (
+      {!isConnected || !address ? (
         <p style={{ color: "var(--fused-muted)", marginBottom: 0 }}>Connect a wallet to view claimable curve rewards.</p>
-      ) : wrongNetwork ? (
-        <p style={{ color: "var(--fused-muted)", marginBottom: 0 }}>Switch your wallet to this network.</p>
+      ) : !factory || !chainId ? (
+        <p style={{ color: "var(--fused-muted)", marginBottom: 0 }}>
+          Creator rewards are not live on this network. Switch to Robinhood Testnet or Arc Testnet.
+        </p>
       ) : (
         <div style={{ display: "grid", gap: 14 }}>
           <div>
-            <div style={{ color: "var(--fused-muted)", fontSize: 13 }}>Available Curve Rewards</div>
+            <div style={{ color: "var(--fused-muted)", fontSize: 13 }}>
+              {chainName} · {quoteSymbol}
+            </div>
             <strong style={{ fontSize: 28 }}>{claimable == null ? "—" : formatNative(claimable.toString(), quoteSymbol, 8)}</strong>
           </div>
           <div>
-            <div style={{ color: "var(--fused-muted)", fontSize: 13, marginBottom: 8 }}>Eligible V2 launches</div>
-            {launches.length === 0 ? (
-              <p style={{ color: "var(--fused-muted)", margin: 0 }}>No V2 launches from this wallet yet.</p>
+            <div style={{ color: "var(--fused-muted)", fontSize: 13, marginBottom: 8 }}>Eligible launches on {chainName}</div>
+            {!canListIndexed ? (
+              <p style={{ color: "var(--fused-muted)", margin: 0 }}>
+                Launch history for this chain is not indexed on this app instance. On-chain claimable above is still for{" "}
+                {chainName} only.
+              </p>
+            ) : launches.length === 0 ? (
+              <p style={{ color: "var(--fused-muted)", margin: 0 }}>No launches from this wallet on this chain yet.</p>
             ) : (
               <ul style={{ margin: 0, paddingLeft: 18 }}>
                 {launches.map((row) => (
@@ -164,7 +173,8 @@ export function CreatorRewards({
           ) : null}
           {error ? <p style={{ color: "var(--fused-danger, #c44)", margin: 0 }}>{error}</p> : null}
           <p style={{ color: "var(--fused-muted)", fontSize: 13, margin: 0 }}>
-            Shows on-chain claimable curve fees only. Graduated Uniswap V4 creator fees paid during collect are not listed here.
+            Shows on-chain claimable curve fees for the connected chain only. Rewards on other chains are not added
+            together. Graduated Uniswap V4 creator fees paid during collect are not listed here.
           </p>
         </div>
       )}

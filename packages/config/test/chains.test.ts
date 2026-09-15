@@ -8,6 +8,10 @@ import {
   ROBINHOOD_TESTNET_LAUNCH_V2,
   launchContractsForChain,
   nativeCurrencyFor,
+  newLaunchForWallet,
+  parseSupportedChainId,
+  rpcUrlForChain,
+  WALLET_SELECTOR_CHAIN_IDS,
 } from "../src/networks.ts";
 import { requirePublicCurveParams } from "../src/curve.ts";
 import { mergeChainDeployment, readPublicDeploymentManifest } from "../src/deployment.ts";
@@ -34,6 +38,19 @@ test("wallet chainId never falls back across Arc and Robinhood", () => {
   assert.equal(launchContractsForChain(1), null);
   assert.equal(launchContractsForChain(8453), null);
   assert.equal(launchContractsForChain(null), null);
+});
+
+test("newLaunchForWallet maps supported wallets and fail-closes otherwise", () => {
+  const rh = newLaunchForWallet(46630);
+  const arc = newLaunchForWallet(5042002);
+  assert.equal(rh?.factory, ROBINHOOD_TESTNET_LAUNCH_V2.factory);
+  assert.equal(arc?.factory, ARC_TESTNET_LAUNCH.factory);
+  assert.notEqual(rh?.factory, arc?.factory);
+  assert.equal(newLaunchForWallet(1), null);
+  assert.equal(newLaunchForWallet(4663), null);
+  assert.equal(newLaunchForWallet(5042), null);
+  assert.equal(newLaunchForWallet(null), null);
+  assert.deepEqual([...WALLET_SELECTOR_CHAIN_IDS], [46630, 5042002]);
 });
 
 test("Arc curve config refuses Robinhood network names and vice versa", () => {
@@ -90,4 +107,26 @@ test("CHAIN_ID 46630 overlay is unchanged and does not read Arc factory", () => 
   const arc = readPublicDeploymentManifest(5042002);
   assert.equal(arc.chainId, 5042002);
   assert.notEqual(arc.contracts.launchFactory, ROBINHOOD_TESTNET_LAUNCH_V2.factory);
+});
+
+test("CHAIN_ID 5042002 overlay uses Arc factory and deploy block 62246396", () => {
+  const merged = mergeChainDeployment({
+    CHAIN_ID: "5042002",
+    NEXT_PUBLIC_CHAIN_ID: "5042002",
+  });
+  assert.equal(merged.LAUNCH_FACTORY_ADDRESS, ARC_TESTNET_LAUNCH.factory);
+  assert.equal(merged.LAUNCH_LOCKER_ADDRESS, ARC_TESTNET_LAUNCH.locker);
+  assert.equal(merged.INDEXER_START_BLOCK, "62246396");
+  assert.equal(merged.LAUNCH_DEPLOY_BLOCK, "62246396");
+  assert.notEqual(merged.LAUNCH_FACTORY_ADDRESS, ROBINHOOD_TESTNET_LAUNCH_V2.factory);
+});
+
+test("unsupported selector chain ids fail closed", () => {
+  assert.equal(parseSupportedChainId("1"), null);
+  assert.equal(parseSupportedChainId("4663"), null);
+  assert.equal(parseSupportedChainId("5042"), null);
+  assert.equal(parseSupportedChainId(46630), 46630);
+  assert.equal(parseSupportedChainId(5042002), 5042002);
+  assert.equal(rpcUrlForChain(5042002), "https://rpc.testnet.arc.io");
+  assert.equal(rpcUrlForChain(1), null);
 });

@@ -15,6 +15,8 @@ export type WalletButtonProps = {
   wrongNetwork?: boolean;
   chainLabel?: string;
   connectors?: WalletConnectorChoice[];
+  connectorMenuOpen?: boolean;
+  onToggleConnectorMenu?: () => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
   onSwitchNetwork?: () => void;
@@ -34,6 +36,8 @@ export function WalletButton({
   wrongNetwork = false,
   chainLabel,
   connectors,
+  connectorMenuOpen = false,
+  onToggleConnectorMenu,
   onConnect,
   onDisconnect,
   onSwitchNetwork,
@@ -60,9 +64,9 @@ export function WalletButton({
       </span>
     );
   }
-  if (connectors && connectors.length > 1) {
+  if (connectors && connectors.length > 0 && connectorMenuOpen) {
     return (
-      <span style={{ display: "inline-flex", gap: 8 }}>
+      <span className="fused-wallet-menu">
         {connectors.map((item) => (
           <Button key={item.id} type="button" variant="secondary" onClick={item.onClick} disabled={pending}>
             {pending ? "Connecting…" : item.name}
@@ -73,7 +77,18 @@ export function WalletButton({
   }
   const label = walletHeaderCopy({ connected, address, pending, wrongNetwork });
   return (
-    <Button type="button" variant="secondary" onClick={onConnect} disabled={pending}>
+    <Button
+      type="button"
+      variant="secondary"
+      onClick={() => {
+        if (connectors && connectors.length > 1 && onToggleConnectorMenu) {
+          onToggleConnectorMenu();
+          return;
+        }
+        onConnect?.();
+      }}
+      disabled={pending}
+    >
       {label === "Connecting…" ? "Connecting…" : "Connect Wallet"}
     </Button>
   );

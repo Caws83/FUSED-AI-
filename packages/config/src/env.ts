@@ -275,7 +275,7 @@ export function loadEnv(env: NodeJS.Dict<string> = process.env): FusedEnv {
     defaultVersionRaw: read("DEFAULT_LAUNCH_VERSION", source),
     v1Factory: launchFactoryV1,
     v1Locker: launchLockerV1,
-    v1DeployBlock: firstInt(source, "LAUNCH_V1_DEPLOY_BLOCK"),
+    v1DeployBlock: firstInt(source, "LAUNCH_V1_DEPLOY_BLOCK", "LAUNCH_DEPLOY_BLOCK"),
     v2Factory: launchFactoryV2,
     v2Locker: launchLockerV2,
     v2DeployBlock: firstInt(source, "LAUNCH_V2_DEPLOY_BLOCK"),

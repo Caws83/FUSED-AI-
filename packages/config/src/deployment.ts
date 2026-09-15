@@ -214,6 +214,7 @@ function applyManifest(env: NodeJS.Dict<string>, manifest: DeploymentManifest): 
   fillIfEmpty(overlay, "NEXT_PUBLIC_RPC_URL", manifest.rpcUrl);
   fillIfEmpty(overlay, "CHAIN_ID", String(manifest.chainId));
   fillIfEmpty(overlay, "NEXT_PUBLIC_CHAIN_ID", String(manifest.chainId));
+  fillIfEmpty(overlay, "FUSED_PUBLIC_NETWORK", manifest.network);
   if (manifest.status !== "DEPLOYED") {
     fillIfEmpty(overlay, "UNISWAP_POOL_MANAGER_ADDRESS", c.poolManager);
     fillIfEmpty(overlay, "UNISWAP_POSITION_MANAGER_ADDRESS", c.positionManager);

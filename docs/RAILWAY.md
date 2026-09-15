@@ -8,13 +8,13 @@ The public website stays on Vercel (`apps/web`). Railway runs **two** things:
 Do **not** deploy `apps/web` or `apps/api` to Railway. Do **not** run the indexer on Vercel.
 
 ```
-Vercel (apps/web)
+Vercel (apps/web, multi-chain)
       |
-Railway Postgres
+Railway Postgres (shared, chain_id isolated)
       |
-Railway indexer worker (apps/indexer)
-      |
-Robinhood Testnet RPC 46630
+Railway indexer worker (Robinhood 46630)     Railway indexer worker (Arc 5042002)
+      |                                              |
+Robinhood Testnet RPC 46630                  Arc Testnet RPC 5042002
 ```
 
 The indexer is **read-only**. It does not need `DEPLOYER_PRIVATE_KEY`.
@@ -144,4 +144,50 @@ Then open:
 - https://fused-ai-web.vercel.app/api/health → `{ "status": "ok", "service": "FUSED AI Web" }`
 - https://fused-ai-web.vercel.app/api/ready → `database: true`, `indexer.indexing: false` after catch-up, `chainId: 46630`
 
-Homepage boards then list real 46630 tokens only. Local Anvil (`31337`) uses Docker Postgres from `.env.local` and is not mixed in.
+Homepage boards list real **46630 and 5042002** tokens. Token identity is `(chain_id, token)`. Local Anvil (`31337`) uses Docker Postgres from `.env.local` and is not mixed in.
+
+## 7. Second worker: Arc Testnet (additive)
+
+Do **not** change the existing Robinhood worker `CHAIN_ID`, RPC, start block, or cursor. Create a **new** Railway service in the same project.
+
+Preferred name: **FUSED Arc Indexer**.
+
+Start command stays:
+
+```text
+npm run db:migrate && npm run indexer
+```
+
+`db.migrate()` is `CREATE TABLE IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS` only. It does not drop tables or reset `fused_sync_cursor` / `fused_factory_sync_cursor`.
+
+Public / safe variables on the **Arc** service only:
+
+```
+CHAIN_ID=5042002
+RPC_URL=https://rpc.testnet.arc.io
+INDEXER_START_BLOCK=62246396
+INDEXER_SYNC_LOOP=1
+INDEXER_CONFIRMATIONS=2
+INDEXER_POLL_INTERVAL=15000
+INDEXER_OVERLAP_BLOCKS=50
+INDEXER_LAG_ALERT_BLOCKS=200
+INDEXER_MAX_RANGE_BLOCKS=2000
+```
+
+Factory overlay also comes from `deployments/arc-testnet-5042002.json` when `CHAIN_ID=5042002`:
+
+- `LAUNCH_FACTORY_ADDRESS=0x98Cab6d3FaE4783A0D0cB13701d0e9772d6833E5`
+- `LAUNCH_LOCKER_ADDRESS=0xcb6eA43c418e91F54c4B1748C6626493bFdB9be2`
+- `LAUNCH_DEPLOY_BLOCK=62246396`
+
+Secret: **reference the same** `DATABASE_URL` as the Robinhood indexer. Do not print it.
+
+Do **not** set on this service:
+
+- `CHAIN_ID=46630`
+- Robinhood factory addresses
+- `INDEXER_START_BLOCK` at the current Arc head
+- `DEPLOYER_PRIVATE_KEY`
+
+Arc backfill starts at **62246396**. The 46630 cursor is a different `fused_sync_cursor` row and must stay untouched.
+

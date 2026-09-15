@@ -62,9 +62,15 @@ export {
   chainLabelFor,
   deploymentFileName,
   explorerBaseFor,
+  isWalletSelectorChain,
   launchContractsForChain,
   nativeCurrencyFor,
+  newLaunchForWallet,
+  parseSupportedChainId,
+  rpcUrlForChain,
   v2DeploymentFileName,
+  INDEXED_BOARD_CHAIN_IDS,
+  WALLET_SELECTOR_CHAIN_IDS,
   ARC_MAINNET,
   ARC_MAINNET_CHAIN_ID,
   ARC_MAINNET_V4,
@@ -84,6 +90,7 @@ export {
   ROBINHOOD_TESTNET_V4,
   type ChainLaunchContracts,
   type NativeCurrency,
+  type WalletLaunchContracts,
 } from "./networks.ts";
 export {
   defaultLaunchGeneration,

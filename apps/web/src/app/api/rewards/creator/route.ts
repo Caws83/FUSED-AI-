@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { loadEnv, loadRepoEnv } from "@fused-ai/config";
+import { loadEnv, loadRepoEnv, launchContractsForChain, parseSupportedChainId } from "@fused-ai/config";
 import { createDatabaseClient } from "@fused-ai/database";
 
 export const dynamic = "force-dynamic";
@@ -13,27 +13,26 @@ export async function GET(request: Request) {
     const env = loadEnv();
     const url = new URL(request.url);
     const address = url.searchParams.get("address")?.trim() ?? "";
-    if (!ADDRESS_RE.test(address)) {
+    const chainId = parseSupportedChainId(url.searchParams.get("chainId"));
+    if (!ADDRESS_RE.test(address) || chainId == null) {
       return NextResponse.json({ ok: false }, { status: 400 });
     }
-    if (!env.chainId || env.public.chainId !== env.chainId) {
-      return NextResponse.json({ ok: false, reason: "chain" }, { status: 400 });
-    }
-    const factory = env.launch.v2?.factory;
+    const mapped = launchContractsForChain(chainId);
+    const factory = mapped?.deployed ? mapped.factory : null;
     if (!factory) {
-      return NextResponse.json({ ok: false, reason: "v2" }, { status: 404 });
+      return NextResponse.json({ ok: false, reason: "factory" }, { status: 404 });
     }
     if (!env.databaseUrl) {
       return NextResponse.json({
         ok: true,
         factory,
-        chainId: env.chainId,
+        chainId,
         launches: [],
       });
     }
     const db = createDatabaseClient(env);
     try {
-      const rows = await db.listLaunchesByLauncher(env.chainId, address as `0x${string}`, factory as `0x${string}`);
+      const rows = await db.listLaunchesByLauncher(chainId, address as `0x${string}`, factory as `0x${string}`);
       const launches = rows.ok
         ? rows.value.map((row) => ({
             token: row.token,
@@ -43,7 +42,7 @@ export async function GET(request: Request) {
             factory: row.factory,
           }))
         : [];
-      return NextResponse.json({ ok: true, factory, chainId: env.chainId, launches });
+      return NextResponse.json({ ok: true, factory, chainId, launches });
     } finally {
       await db.close();
     }

@@ -1,6 +1,5 @@
 import { SectionHeader, Card } from "@fused-ai/ui";
-import { loadEnv, loadRepoEnv, defaultLaunchGeneration } from "@fused-ai/config";
-import { chainLabelFor } from "@fused-ai/config/public";
+import { loadEnv, loadRepoEnv } from "@fused-ai/config";
 import { ManualLaunch } from "../../components/ManualLaunch.tsx";
 import { loadSourcePost } from "../../lib/social.ts";
 
@@ -12,22 +11,12 @@ export default async function LaunchPage({ searchParams }: { searchParams: Promi
   const params = await searchParams;
   const sourcePost = await loadSourcePost(params.post);
   const ready = env.publicLaunchEnabled;
-  const gen = defaultLaunchGeneration(env.launch);
-  const factory = ready && gen?.factory.startsWith("0x") ? (gen.factory as `0x${string}`) : null;
-  const locker = gen?.locker && gen.locker.startsWith("0x") ? (gen.locker as `0x${string}`) : null;
   return (
     <main className="fused-section">
       <div className="fused-wrap" style={{ display: "grid", gap: 22, maxWidth: 720 }}>
         <SectionHeader kicker="Create Launch" title={sourcePost ? "Fuse this moment" : "Create manually"} />
-        {ready && factory ? (
-          <ManualLaunch
-            factory={factory}
-            locker={locker}
-            chainId={env.public.chainId}
-            chainName={chainLabelFor(env.public.chainId) ?? "Fused AI chain"}
-            ready={ready}
-            sourcePost={sourcePost}
-          />
+        {ready ? (
+          <ManualLaunch ready sourcePost={sourcePost} />
         ) : (
           <Card>
             <h2 className="fused-h2" style={{ fontSize: 28, marginTop: 0 }}>

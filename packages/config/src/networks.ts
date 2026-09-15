@@ -157,6 +157,45 @@ export function launchContractsForChain(chainId: number | null | undefined): Cha
   return null;
 }
 
+/** Header Network dropdown. Testnets only. Never 4663 or 5042 in this phase. */
+export const WALLET_SELECTOR_CHAIN_IDS = [ROBINHOOD_TESTNET_CHAIN_ID, ARC_TESTNET_CHAIN_ID] as const;
+
+export function isWalletSelectorChain(chainId: number | null | undefined): boolean {
+  return chainId === ROBINHOOD_TESTNET_CHAIN_ID || chainId === ARC_TESTNET_CHAIN_ID;
+}
+
+/** Boards and APIs list these chains. Production Vercel stays 46630 in env; Arc is additive. */
+export const INDEXED_BOARD_CHAIN_IDS = WALLET_SELECTOR_CHAIN_IDS;
+
+export function parseSupportedChainId(raw: string | number | null | undefined): number | null {
+  if (raw == null || raw === "") return null;
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isInteger(n) || !isWalletSelectorChain(n)) return null;
+  return n;
+}
+
+export function rpcUrlForChain(chainId: number | null | undefined): string | null {
+  if (chainId === ROBINHOOD_TESTNET_CHAIN_ID) return ROBINHOOD_TESTNET.rpcUrl;
+  if (chainId === ARC_TESTNET_CHAIN_ID) return ARC_TESTNET.rpcUrl;
+  return null;
+}
+
+export type WalletLaunchContracts = {
+  chainId: number;
+  factory: string;
+  locker: string | null;
+};
+
+/**
+ * New launches only. Requires a deployed mapping for the wallet chain.
+ * Unsupported, disconnected, or undeployed → null (fail closed). No cross-chain fallback.
+ */
+export function newLaunchForWallet(chainId: number | null | undefined): WalletLaunchContracts | null {
+  const row = launchContractsForChain(chainId);
+  if (!row?.deployed || !row.factory) return null;
+  return { chainId: row.chainId, factory: row.factory, locker: row.locker };
+}
+
 /** Immutable V2 treasury. Permissionless claimFor; no public UI. */
 export const FUSED_TREASURY = "0x6F88E279002051ceB09ead378081Df8Fc124AacD";
 

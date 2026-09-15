@@ -65,7 +65,7 @@ export function TokenTerminal({
     let stop = false;
     async function tick() {
       try {
-        const res = await fetch(`/api/token/${initial.token}/live`, { cache: "no-store" });
+        const res = await fetch(`/api/token/${initial.token}/live?chainId=${chainId}`, { cache: "no-store" });
         const json = (await res.json()) as LivePayload;
         if (!stop && json.ok) setLive(json);
       } catch {
@@ -78,7 +78,7 @@ export function TokenTerminal({
       stop = true;
       clearInterval(id);
     };
-  }, [initial.token, refresh]);
+  }, [initial.token, chainId, refresh]);
 
   const launch = live?.launch ?? {
     ...initial,

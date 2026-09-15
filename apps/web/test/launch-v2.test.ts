@@ -12,7 +12,9 @@ test("manual launch, Fuse-a-Post, and launch sync create through FusedFactoryV2"
   const manual = readFileSync(join(root, "src/components/ManualLaunch.tsx"), "utf8");
   const fuse = readFileSync(join(root, "src/components/FusePost.tsx"), "utf8");
   const sync = readFileSync(join(root, "src/app/api/launch/sync/route.ts"), "utf8");
-  assert.match(launchPage, /defaultLaunchGeneration/);
+  assert.match(launchPage, /ManualLaunch/);
+  assert.equal(launchPage.includes("defaultLaunchGeneration"), false);
+  assert.match(manual, /newLaunchForWallet/);
   assert.match(manual, /functionName:\s*"create"/);
   assert.match(manual, /FUSED_FACTORY_ABI/);
   assert.match(fuse, /applyFusedDraft|FusedDraft/);
@@ -32,10 +34,15 @@ test("buy and sell route to the token factory, not the default factory", () => {
   assert.match(trade, /functionName:\s*"buy"/);
   assert.match(trade, /functionName:\s*"sell"/);
   assert.match(trade, /expectedChainId/);
-  assert.match(trade, /writeClientError\("chain"\)/);
+  assert.match(trade, /tokenChainId/);
+  assert.match(trade, /Switch to \$\{tokenNetworkName\}/);
   assert.match(live, /readMarketOnFactories/);
+  assert.match(live, /parseSupportedChainId/);
+  assert.match(live, /ambiguous/);
   assert.match(launches, /tradeFactoryForLaunch/);
   assert.match(launches, /indexedLaunchFactories/);
+  assert.match(launches, /launchContractsForChain/);
+  assert.match(launches, /resolveLaunchIdentity/);
 });
 
 test("known testnet factory addresses stay split between v1 and v2", () => {

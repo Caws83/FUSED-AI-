@@ -83,7 +83,7 @@ export default async function HomePage() {
       {freshness.indexing ? (
         <section className="fused-section" style={{ paddingBottom: 0 }}>
           <div className="fused-wrap">
-            <p className="fused-support">Indexing… Live boards fill from Robinhood Testnet as the indexer catches up.</p>
+            <p className="fused-support">Indexing… Live boards fill from Robinhood Testnet and Arc Testnet as the indexer catches up.</p>
           </div>
         </section>
       ) : null}

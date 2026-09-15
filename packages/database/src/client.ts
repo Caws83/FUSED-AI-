@@ -50,7 +50,9 @@ export type DatabaseClient = {
   migrate(): Promise<Result<true>>;
   upsertLaunch(row: LaunchInsert): Promise<Result<true>>;
   listLaunches(chainId: number): Promise<Result<IndexedLaunch[]>>;
+  listLaunchesForChains(chainIds: number[]): Promise<Result<IndexedLaunch[]>>;
   getLaunch(chainId: number, token: string): Promise<Result<IndexedLaunch | null>>;
+  findLaunchesByToken(token: string): Promise<Result<IndexedLaunch[]>>;
   upsertTokenMetadata(row: TokenMetadataInput): Promise<Result<true>>;
   upsertSocialPost(post: SocialPost): Promise<Result<true>>;
   getSocialPost(platform: string, postId: string): Promise<Result<SocialPost | null>>;
@@ -463,6 +465,35 @@ export function createDatabaseClient(env: FusedEnv): DatabaseClient {
         return err(databaseUnavailable(error instanceof Error ? error.message : "list failed"));
       }
     },
+    listLaunchesForChains: async (chainIds) => {
+      const a = availability();
+      if (a.status !== "OK") return fail(a);
+      const client = conn();
+      if (!client) return fail(a);
+      const ids = [...new Set(chainIds.filter((id) => Number.isInteger(id)))];
+      if (ids.length === 0) return ok([]);
+      try {
+        const rows = await client`
+          SELECT l.*, m.image_id, m.image_url, m.description AS app_description, m.source_platform,
+                 m.source_post_id, m.source_post_url, m.source_author, m.source_excerpt,
+                 (SELECT COALESCE(SUM(quote_amount), 0) FROM fused_trades t WHERE t.chain_id = l.chain_id AND t.token = l.token) AS volume_quote,
+                 (SELECT COUNT(*) FROM fused_holders h WHERE h.chain_id = l.chain_id AND h.token = l.token AND h.balance > 0
+                    AND h.holder NOT IN (
+                      '0x0000000000000000000000000000000000000000',
+                      '0x000000000000000000000000000000000000dead',
+                      COALESCE(l.factory, ''),
+                      COALESCE(l.locker, '')
+                    )) AS holder_count
+          FROM fused_launches l
+          LEFT JOIN fused_token_metadata m ON m.chain_id = l.chain_id AND m.token = l.token
+          WHERE l.chain_id IN ${client(ids)}
+          ORDER BY l.block_number DESC
+        `;
+        return ok(rows.map((row) => mapLaunch(row as Record<string, unknown>)));
+      } catch (error) {
+        return err(databaseUnavailable(error instanceof Error ? error.message : "list chains failed"));
+      }
+    },
     listLaunchesByLauncher: async (chainId, launcher, factory) => {
       const a = availability();
       if (a.status !== "OK") return fail(a);
@@ -535,6 +566,33 @@ export function createDatabaseClient(env: FusedEnv): DatabaseClient {
         return ok(row ? mapLaunch(row as Record<string, unknown>) : null);
       } catch (error) {
         return err(databaseUnavailable(error instanceof Error ? error.message : "get failed"));
+      }
+    },
+    findLaunchesByToken: async (token) => {
+      const a = availability();
+      if (a.status !== "OK") return fail(a);
+      const client = conn();
+      if (!client) return fail(a);
+      try {
+        const rows = await client`
+          SELECT l.*, m.image_id, m.image_url, m.description AS app_description, m.source_platform,
+                 m.source_post_id, m.source_post_url, m.source_author, m.source_excerpt,
+                 (SELECT COALESCE(SUM(quote_amount), 0) FROM fused_trades t WHERE t.chain_id = l.chain_id AND t.token = l.token) AS volume_quote,
+                 (SELECT COUNT(*) FROM fused_holders h WHERE h.chain_id = l.chain_id AND h.token = l.token AND h.balance > 0
+                    AND h.holder NOT IN (
+                      '0x0000000000000000000000000000000000000000',
+                      '0x000000000000000000000000000000000000dead',
+                      COALESCE(l.factory, ''),
+                      COALESCE(l.locker, '')
+                    )) AS holder_count
+          FROM fused_launches l
+          LEFT JOIN fused_token_metadata m ON m.chain_id = l.chain_id AND m.token = l.token
+          WHERE l.token = ${token.toLowerCase()}
+          ORDER BY l.chain_id ASC
+        `;
+        return ok(rows.map((row) => mapLaunch(row as Record<string, unknown>)));
+      } catch (error) {
+        return err(databaseUnavailable(error instanceof Error ? error.message : "find by token failed"));
       }
     },
     upsertTokenMetadata: async (row) => {

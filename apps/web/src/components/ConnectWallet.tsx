@@ -1,52 +1,59 @@
 "use client";
 
+import { useState } from "react";
 import { WalletButton } from "@fused-ai/ui";
-import { useAccount, useChainId, useConnect, useDisconnect, useSwitchChain } from "wagmi";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { chainLabelFor } from "../lib/wallet.ts";
 
 export function ConnectWallet({
   configured,
-  expectedChainId,
+  preferredChainId,
 }: {
   configured: boolean;
-  expectedChainId: number | null;
+  preferredChainId: number;
 }) {
   if (!configured) return null;
-  return <LiveWalletButton expectedChainId={expectedChainId} />;
+  return <LiveWalletButton preferredChainId={preferredChainId} />;
 }
 
-function LiveWalletButton({ expectedChainId }: { expectedChainId: number | null }) {
-  const { address, isConnected, status } = useAccount();
-  const chainId = useChainId();
+function connectorLabel(connector: { id: string; name: string }): string {
+  if (connector.id === "walletConnect") return "WalletConnect";
+  if (connector.name === "Injected") return "Browser wallet";
+  return connector.name;
+}
+
+function LiveWalletButton({ preferredChainId }: { preferredChainId: number }) {
+  const { address, isConnected, status, chainId } = useAccount();
   const { connect, connectors, isPending } = useConnect();
   const { disconnect, isPending: disconnecting } = useDisconnect();
-  const { switchChain, isPending: switching } = useSwitchChain();
+  const [menuOpen, setMenuOpen] = useState(false);
   const reconnecting = status === "reconnecting" || status === "connecting";
-  const pending = isPending || disconnecting || switching || reconnecting;
+  const pending = isPending || disconnecting || reconnecting;
   const connected = Boolean(address) || isConnected;
-  const wrongNetwork = Boolean(connected && expectedChainId && chainId !== expectedChainId);
-  const chainLabel = chainLabelFor(address || isConnected ? chainId : expectedChainId);
-  const injected = connectors.find((c) => c.id === "injected") ?? connectors[0];
+  const chainLabel = chainLabelFor(address || isConnected ? chainId : preferredChainId);
+
   return (
     <WalletButton
       configured
       connected={connected}
       address={address}
       pending={pending}
-      wrongNetwork={wrongNetwork}
       chainLabel={chainLabel}
+      connectorMenuOpen={menuOpen}
+      onToggleConnectorMenu={() => setMenuOpen((open) => !open)}
       connectors={connectors.map((connector) => ({
         id: connector.id,
-        name: connector.id === "walletConnect" ? "WalletConnect" : connector.name === "Injected" ? "Browser wallet" : connector.name,
-        onClick: () => connect({ connector }),
+        name: connectorLabel(connector),
+        onClick: () => {
+          setMenuOpen(false);
+          connect({ connector, chainId: preferredChainId });
+        },
       }))}
       onConnect={() => {
-        if (injected) connect({ connector: injected });
+        const injected = connectors.find((c) => c.id === "injected") ?? connectors[0];
+        if (injected) connect({ connector: injected, chainId: preferredChainId });
       }}
       onDisconnect={() => disconnect()}
-      onSwitchNetwork={() => {
-        if (expectedChainId) switchChain({ chainId: expectedChainId });
-      }}
     />
   );
 }

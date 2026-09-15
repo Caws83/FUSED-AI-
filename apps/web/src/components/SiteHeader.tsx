@@ -5,16 +5,12 @@ import { usePathname } from "next/navigation";
 import { Navigation } from "@fused-ai/ui";
 import { navFor } from "../lib/nav.ts";
 import { ConnectWallet } from "./ConnectWallet.tsx";
+import { DEFAULT_PREFERRED_CHAIN_ID, NetworkSelector } from "./NetworkSelector.tsx";
 
-export function SiteHeader({
-  walletConfigured,
-  expectedChainId,
-}: {
-  walletConfigured: boolean;
-  expectedChainId: number | null;
-}) {
+export function SiteHeader({ walletConfigured }: { walletConfigured: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [preferredChainId, setPreferredChainId] = useState(DEFAULT_PREFERRED_CHAIN_ID);
   return (
     <header className="fused-nav">
       <div className="fused-wrap fused-nav-inner">
@@ -37,7 +33,10 @@ export function SiteHeader({
           <button type="button" className="fused-menu-toggle" onClick={() => setOpen((v) => !v)}>
             Menu
           </button>
-          <ConnectWallet configured={walletConfigured} expectedChainId={expectedChainId} />
+          {walletConfigured ? (
+            <NetworkSelector preferredChainId={preferredChainId} onPreferredChainId={setPreferredChainId} />
+          ) : null}
+          <ConnectWallet configured={walletConfigured} preferredChainId={preferredChainId} />
         </div>
       </div>
     </header>

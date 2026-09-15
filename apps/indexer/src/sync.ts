@@ -4,6 +4,8 @@ import {
   indexedLaunchFactories,
   sameAddress,
   nativeCurrencyFor,
+  ARC_TESTNET_CHAIN_ID,
+  ROBINHOOD_TESTNET_CHAIN_ID,
   type FusedEnv,
   type LaunchGeneration,
 } from "@fused-ai/config";
@@ -11,6 +13,7 @@ import { createDatabaseClient, type DatabaseClient, type LaunchInsert } from "@f
 import {
   ERC20_ABI,
   FUSED_FACTORY_ABI,
+  FUSED_FACTORY_INDEXER_ABI,
   LAUNCH_FACTORY_ABI,
   LAUNCH_TOKEN_ABI,
   STATE_LABEL,
@@ -248,13 +251,13 @@ export async function applyRange(
   const createdLogs = await withRpcRetry(() =>
     client.getLogs({
       address: factory,
-      event: FUSED_FACTORY_ABI.find((x) => x.type === "event" && x.name === "Created"),
+      event: FUSED_FACTORY_INDEXER_ABI.find((x) => x.type === "event" && x.name === "Created"),
       fromBlock,
       toBlock,
     }),
   );
   for (const log of createdLogs) {
-    const parsed = parseEventLogs({ abi: FUSED_FACTORY_ABI, logs: [log], eventName: "Created" })[0];
+    const parsed = parseEventLogs({ abi: FUSED_FACTORY_INDEXER_ABI, logs: [log], eventName: "Created" })[0];
     if (!parsed) continue;
     const logFactory = (log.address as Hex | undefined) ?? factory;
     const base = createdToInsert(env, log, parsed.args, await blockTimeOf(client, log), logFactory, locker);
@@ -285,13 +288,13 @@ export async function applyRange(
   const tradeLogs = await withRpcRetry(() =>
     client.getLogs({
       address: factory,
-      event: FUSED_FACTORY_ABI.find((x) => x.type === "event" && x.name === "Trade"),
+      event: FUSED_FACTORY_INDEXER_ABI.find((x) => x.type === "event" && x.name === "Trade"),
       fromBlock,
       toBlock,
     }),
   );
   for (const log of tradeLogs) {
-    const parsed = parseEventLogs({ abi: FUSED_FACTORY_ABI, logs: [log], eventName: "Trade" })[0];
+    const parsed = parseEventLogs({ abi: FUSED_FACTORY_INDEXER_ABI, logs: [log], eventName: "Trade" })[0];
     if (!parsed) continue;
     const args = parsed.args;
     let price = args.priceX18;
@@ -315,31 +318,80 @@ export async function applyRange(
     await refreshMarket(env, client, db, args.token, logFactory);
   }
 
-  const graduatedLogs = await withRpcRetry(() =>
+  // Arc testnet has no DEX. Never fabricate Graduated from GraduationReady.
+  if (env.chainId !== ARC_TESTNET_CHAIN_ID) {
+    const graduatedLogs = await withRpcRetry(() =>
+      client.getLogs({
+        address: factory,
+        event: FUSED_FACTORY_INDEXER_ABI.find((x) => x.type === "event" && x.name === "Graduated"),
+        fromBlock,
+        toBlock,
+      }),
+    );
+    for (const log of graduatedLogs) {
+      const parsed = parseEventLogs({ abi: FUSED_FACTORY_INDEXER_ABI, logs: [log], eventName: "Graduated" })[0];
+      if (!parsed) continue;
+      await db.updateMarket({
+        chainId: env.chainId,
+        token: parsed.args.token,
+        lifecycleState: "GRADUATED",
+        realQuote: "0",
+        graduationTarget: "0",
+        circulating: "0",
+        priceX18: "0",
+        tokenId: parsed.args.tokenId.toString(),
+        poolId: parsed.args.poolId,
+        dexVersion: "uniswap_v4",
+      });
+      const logFactory = (log.address as Hex | undefined) ?? factory;
+      await refreshMarket(env, client, db, parsed.args.token, logFactory);
+      count += 1;
+    }
+  }
+
+  const readyLogs = await withRpcRetry(() =>
     client.getLogs({
       address: factory,
-      event: FUSED_FACTORY_ABI.find((x) => x.type === "event" && x.name === "Graduated"),
+      event: FUSED_FACTORY_INDEXER_ABI.find((x) => x.type === "event" && x.name === "GraduationReady"),
       fromBlock,
       toBlock,
     }),
   );
-  for (const log of graduatedLogs) {
-    const parsed = parseEventLogs({ abi: FUSED_FACTORY_ABI, logs: [log], eventName: "Graduated" })[0];
+  for (const log of readyLogs) {
+    const parsed = parseEventLogs({ abi: FUSED_FACTORY_INDEXER_ABI, logs: [log], eventName: "GraduationReady" })[0];
     if (!parsed) continue;
-    await db.updateMarket({
-      chainId: env.chainId,
-      token: parsed.args.token,
-      lifecycleState: "GRADUATED",
-      realQuote: "0",
-      graduationTarget: "0",
-      circulating: "0",
-      priceX18: "0",
-      tokenId: parsed.args.tokenId.toString(),
-      poolId: parsed.args.poolId,
-      dexVersion: "uniswap_v4",
-    });
     const logFactory = (log.address as Hex | undefined) ?? factory;
     await refreshMarket(env, client, db, parsed.args.token, logFactory);
+    count += 1;
+  }
+
+  const feeLogs = await withRpcRetry(() =>
+    client.getLogs({
+      address: factory,
+      event: FUSED_FACTORY_INDEXER_ABI.find((x) => x.type === "event" && x.name === "FeeAccrued"),
+      fromBlock,
+      toBlock,
+    }),
+  );
+  for (const log of feeLogs) {
+    const parsed = parseEventLogs({ abi: FUSED_FACTORY_INDEXER_ABI, logs: [log], eventName: "FeeAccrued" })[0];
+    if (!parsed) continue;
+    const logFactory = (log.address as Hex | undefined) ?? factory;
+    await refreshMarket(env, client, db, parsed.args.token, logFactory);
+    count += 1;
+  }
+
+  const claimedLogs = await withRpcRetry(() =>
+    client.getLogs({
+      address: factory,
+      event: FUSED_FACTORY_INDEXER_ABI.find((x) => x.type === "event" && x.name === "Claimed"),
+      fromBlock,
+      toBlock,
+    }),
+  );
+  for (const log of claimedLogs) {
+    const parsed = parseEventLogs({ abi: FUSED_FACTORY_INDEXER_ABI, logs: [log], eventName: "Claimed" })[0];
+    if (!parsed) continue;
     count += 1;
   }
 
@@ -397,7 +449,7 @@ async function fromBlockForFactory(
         : 0n;
   const stored = env.chainId ? await db.getFactoryCursor(env.chainId, gen.factory as Hex) : { ok: true as const, value: null };
   let cursor = stored.ok ? stored.value : null;
-  if (cursor == null && gen.version === "v1") cursor = chainCursor;
+  if (cursor == null && gen.version === "v1" && env.chainId === ROBINHOOD_TESTNET_CHAIN_ID) cursor = chainCursor;
   return resumeFromBlock(start, cursor, BigInt(env.indexer.overlapBlocks));
 }
 

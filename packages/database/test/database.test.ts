@@ -95,10 +95,12 @@ test("listLaunches filters by chain_id", () => {
   assert.match(src, /imageId: row\.image_id/);
 });
 
-test("schema declares per-factory indexer cursors without dropping the chain cursor", () => {
-  assert.match(schema, /CREATE TABLE IF NOT EXISTS fused_factory_sync_cursor/);
-  assert.match(schema, /PRIMARY KEY \(chain_id, factory\)/);
+test("schema isolates launches, trades, and cursors by chain_id", () => {
+  assert.match(schema, /PRIMARY KEY \(chain_id, token\)/);
   assert.match(schema, /CREATE TABLE IF NOT EXISTS fused_sync_cursor/);
+  assert.match(schema, /chain_id           integer PRIMARY KEY/);
+  assert.match(schema, /PRIMARY KEY \(chain_id, factory\)/);
+  assert.match(schema, /PRIMARY KEY \(chain_id, tx_hash, log_index\)/);
 });
 
 test("client uses postgres connection options helper and per-factory cursors", () => {
@@ -107,6 +109,8 @@ test("client uses postgres connection options helper and per-factory cursors", (
   assert.match(src, /fused_sync_cursor/);
   assert.match(src, /fused_factory_sync_cursor/);
   assert.match(src, /listLaunchesByLauncher/);
+  assert.match(src, /listLaunchesForChains/);
+  assert.match(src, /findLaunchesByToken/);
 });
 
 test("public Postgres URLs require TLS; local and Railway private DNS do not", async () => {

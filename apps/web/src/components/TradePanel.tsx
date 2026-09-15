@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { parseEther, formatEther } from "viem";
-import { useAccount, useChainId, useConfig, usePublicClient } from "wagmi";
+import { useAccount, useConfig, usePublicClient, useSwitchChain } from "wagmi";
 import { Button } from "@fused-ai/ui";
 import {
   ERC20_ABI,
@@ -12,7 +12,7 @@ import {
   minOut,
 } from "@fused-ai/blockchain/fused";
 import { formatNative, formatToken } from "../lib/format.ts";
-import { nativeCurrencyFor, writeClientError } from "../lib/wallet.ts";
+import { chainLabelFor, nativeCurrencyFor, writeClientError } from "../lib/wallet.ts";
 import { resolveWriteClients } from "../lib/wallet-clients.ts";
 
 const QUICK_ETH = ["0.01", "0.05", "0.1", "0.5"] as const;
@@ -33,10 +33,11 @@ export function TradePanel({
   expectedChainId?: number | null;
   onTraded?: () => void;
 }) {
-  const { address, isConnected, connector } = useAccount();
-  const chainId = useChainId();
+  const { address, isConnected, connector, chainId: walletChainId } = useAccount();
+  const { switchChain, isPending: switching } = useSwitchChain();
   const config = useConfig();
-  const publicClient = usePublicClient({ chainId });
+  const tokenChainId = expectedChainId ?? null;
+  const publicClient = usePublicClient({ chainId: tokenChainId ?? undefined });
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [ethIn, setEthIn] = useState("0.05");
   const [tokenIn, setTokenIn] = useState("");
@@ -50,7 +51,9 @@ export function TradePanel({
   const [txHash, setTxHash] = useState<string | null>(null);
 
   const slippageBps = clampSlippageBps(Number(slippage) * 100);
-  const quoteSymbol = nativeCurrencyFor(expectedChainId ?? chainId).symbol;
+  const quoteSymbol = nativeCurrencyFor(tokenChainId).symbol;
+  const wrongNetwork = Boolean(isConnected && tokenChainId && walletChainId !== tokenChainId);
+  const tokenNetworkName = chainLabelFor(tokenChainId) ?? (tokenChainId ? `chain ${tokenChainId}` : "this network");
 
   useEffect(() => {
     if (!publicClient || !address) return;
@@ -166,13 +169,17 @@ export function TradePanel({
       setError(writeClientError("account"));
       return;
     }
-    if (expectedChainId && chainId !== expectedChainId) {
+    if (!tokenChainId) {
       setError(writeClientError("chain"));
+      return;
+    }
+    if (walletChainId !== tokenChainId) {
+      setError(`Switch to ${tokenNetworkName} to trade this token.`);
       return;
     }
     setPending(true);
     try {
-      const resolved = await resolveWriteClients(config, { chainId: expectedChainId ?? chainId, account: address, connector });
+      const resolved = await resolveWriteClients(config, { chainId: tokenChainId, account: address, connector });
       if (!resolved.ok) {
         setError(writeClientError(resolved.reason));
         return;
@@ -306,11 +313,24 @@ export function TradePanel({
         </div>
       </dl>
       {!isConnected ? <p style={{ color: "var(--fused-muted)" }}>Connect a wallet to trade.</p> : null}
+      {wrongNetwork && tokenChainId ? (
+        <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
+          <p className="fused-form-error">Switch to {tokenNetworkName} to trade this token.</p>
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={switching}
+            onClick={() => void switchChain({ chainId: tokenChainId })}
+          >
+            {switching ? "Switching…" : `Switch to ${tokenNetworkName}`}
+          </Button>
+        </div>
+      ) : null}
       {error ? <p className="fused-form-error">{error}</p> : null}
       {txHash ? (
         <p style={{ fontSize: 13, wordBreak: "break-all", color: "var(--fused-muted)" }}>{txHash}</p>
       ) : null}
-      <Button type="button" variant="lime" disabled={pending || !isConnected} onClick={() => void submit()}>
+      <Button type="button" variant="lime" disabled={pending || !isConnected || wrongNetwork} onClick={() => void submit()}>
         {pending ? "Confirming…" : side === "buy" ? `BUY $${symbol}` : `SELL $${symbol}`}
       </Button>
     </div>

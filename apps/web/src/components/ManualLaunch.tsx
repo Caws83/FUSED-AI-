@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useAccount, useChainId, useConfig, useSwitchChain } from "wagmi";
+import { useAccount, useConfig } from "wagmi";
 import { parseEther, parseEventLogs } from "viem";
 import { Button, Card } from "@fused-ai/ui";
 import {
@@ -11,31 +11,28 @@ import {
 } from "@fused-ai/blockchain/fused";
 import { validateLaunchForm } from "@fused-ai/blockchain/abi";
 import type { SocialPost } from "@fused-ai/types";
-import { chainLabelFor, nativeCurrencyFor, writeClientError } from "../lib/wallet.ts";
+import { ROBINHOOD_TESTNET_CHAIN_ID } from "@fused-ai/config/public";
+import {
+  asLaunchAddress,
+  chainLabelFor,
+  nativeCurrencyFor,
+  newLaunchForWallet,
+  writeClientError,
+} from "../lib/wallet.ts";
 import { resolveWriteClients } from "../lib/wallet-clients.ts";
 import { FusePost, type FusedDraft } from "./FusePost.tsx";
 
 type Step = "form" | "review" | "done";
 
 export function ManualLaunch({
-  factory,
-  locker,
-  chainId,
-  chainName,
   ready,
   sourcePost = null,
 }: {
-  factory: `0x${string}` | null;
-  locker: `0x${string}` | null;
-  chainId: number | null;
-  chainName: string;
   ready: boolean;
   sourcePost?: SocialPost | null;
 }) {
-  const { address, isConnected, connector } = useAccount();
-  const walletChainId = useChainId();
+  const { address, isConnected, connector, chainId: walletChainId } = useAccount();
   const config = useConfig();
-  const { switchChain } = useSwitchChain();
 
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("");
@@ -53,13 +50,17 @@ export function ManualLaunch({
   const [txHash, setTxHash] = useState<`0x${string}` | null>(null);
   const [token, setToken] = useState<`0x${string}` | null>(null);
 
-  const wrongNetwork = Boolean(isConnected && chainId && walletChainId !== chainId);
-  const quoteSymbol = nativeCurrencyFor(chainId).symbol;
+  const launch = isConnected ? newLaunchForWallet(walletChainId) : null;
+  const factory = asLaunchAddress(launch?.factory ?? null);
+  const locker = asLaunchAddress(launch?.locker ?? null);
+  const chainId = launch?.chainId ?? null;
+  const chainName = chainLabelFor(chainId ?? walletChainId) ?? "this network";
+  const quoteSymbol = nativeCurrencyFor(chainId ?? (isConnected ? walletChainId : ROBINHOOD_TESTNET_CHAIN_ID)).symbol;
   const params = useMemo(() => {
     return toCreateParams({ name, symbol, metadataURI: description });
   }, [name, symbol, description]);
 
-  if (!ready || !factory) {
+  if (!ready) {
     return (
       <Card>
         <p style={{ margin: 0, color: "var(--fused-muted)" }}>Launch is temporarily unavailable.</p>
@@ -157,6 +158,15 @@ export function ManualLaunch({
     }
   }
 
+  function launchGate(): string | null {
+    if (!isConnected || !address) return "Connect a wallet to continue.";
+    if (!walletChainId) return "Switch to Robinhood Testnet or Arc Testnet to launch.";
+    if (!newLaunchForWallet(walletChainId) || !factory || !chainId) {
+      return "This network is not supported. Switch to Robinhood Testnet or Arc Testnet.";
+    }
+    return null;
+  }
+
   async function onReview() {
     setError(null);
     const invalid = validateLaunchForm({ name, symbol, metadataURI: description });
@@ -164,17 +174,10 @@ export function ManualLaunch({
       setError(invalid);
       return;
     }
-    if (!isConnected || !address) {
-      setError("Connect a wallet to continue.");
+    const gated = launchGate();
+    if (gated) {
+      setError(gated);
       return;
-    }
-    if (wrongNetwork && chainId) {
-      try {
-        await switchChain({ chainId });
-      } catch {
-        setError(`Switch your wallet to ${chainName}.`);
-        return;
-      }
     }
     setStep("review");
   }
@@ -185,21 +188,15 @@ export function ManualLaunch({
       setError(writeClientError("account"));
       return;
     }
-    if (!factory || !chainId) {
-      setError("Launch is temporarily unavailable.");
+    const live = newLaunchForWallet(walletChainId);
+    const liveFactory = asLaunchAddress(live?.factory ?? null);
+    if (!live || !liveFactory) {
+      setError("This network is not supported. Switch to Robinhood Testnet or Arc Testnet.");
       return;
-    }
-    if (walletChainId !== chainId) {
-      try {
-        await switchChain({ chainId });
-      } catch {
-        setError(writeClientError("chain"));
-        return;
-      }
     }
     setPending(true);
     try {
-      const resolved = await resolveWriteClients(config, { chainId, account: address, connector });
+      const resolved = await resolveWriteClients(config, { chainId: live.chainId, account: address, connector });
       if (!resolved.ok) {
         setError(writeClientError(resolved.reason));
         return;
@@ -208,7 +205,7 @@ export function ManualLaunch({
       const launchParams = toCreateParams({ name, symbol, metadataURI: description });
       const value = creatorBuy.trim() ? parseEther(creatorBuy) : 0n;
       const { request } = await publicClient.simulateContract({
-        address: factory,
+        address: liveFactory,
         abi: FUSED_FACTORY_ABI,
         functionName: "create",
         args: [launchParams],
@@ -229,7 +226,7 @@ export function ManualLaunch({
       })[0];
       const launchedToken = created?.args.token;
       if (launchedToken) setToken(launchedToken);
-      await fetch(`/api/launch/sync?tx=${hash}`, {
+      await fetch(`/api/launch/sync?tx=${hash}&chainId=${walletChainId}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -237,6 +234,7 @@ export function ManualLaunch({
           imageUrl: imagePreview,
           sourcePostId: sourcePost?.postId,
           description,
+          chainId: walletChainId,
         }),
       });
       setStep("done");
@@ -293,12 +291,12 @@ export function ManualLaunch({
           <div>
             <dt>Chain</dt>
             <dd>
-              {chainLabelFor(walletChainId) ?? chainName} ({walletChainId || chainId})
+              {chainName} ({chainId ?? walletChainId ?? "—"})
             </dd>
           </div>
           <div>
             <dt>Factory</dt>
-            <dd style={{ wordBreak: "break-all" }}>{factory}</dd>
+            <dd style={{ wordBreak: "break-all" }}>{factory ?? "Unavailable on this network"}</dd>
           </div>
           {locker ? (
             <div>
@@ -330,7 +328,7 @@ export function ManualLaunch({
           ) : null}
           <div>
             <dt>Action</dt>
-            <dd>FusedFactory.create</dd>
+            <dd>FusedFactory.create on the connected chain</dd>
           </div>
         </dl>
         {error ? <p className="fused-form-error">{error}</p> : null}
@@ -338,7 +336,7 @@ export function ManualLaunch({
           <Button type="button" variant="ghost" onClick={() => setStep("form")} disabled={pending}>
             Back
           </Button>
-          <Button type="button" variant="lime" onClick={() => void onLaunch()} disabled={pending}>
+          <Button type="button" variant="lime" onClick={() => void onLaunch()} disabled={pending || !factory}>
             {pending ? "Launching…" : "LAUNCH TOKEN"}
           </Button>
         </div>
@@ -351,7 +349,8 @@ export function ManualLaunch({
       {sourcePost ? <SourcePost post={sourcePost} /> : null}
       <FusePost disabled={pending} onBusy={setFusingPost} onFused={applyFusedDraft} />
       <p style={{ marginTop: 0, color: "var(--fused-muted)" }}>
-        Set the name and ticker. You review everything before your wallet signs. AI never signs.
+        Set the name and ticker. You review everything before your wallet signs. AI never signs. The connected wallet
+        network chooses the factory.
       </p>
       <div style={{ display: "grid", gap: 12 }}>
         {sourcePost ? (
@@ -437,10 +436,14 @@ export function ManualLaunch({
         ) : (
           <p style={{ margin: 0, color: "var(--fused-muted)", fontSize: 13 }}>No logo selected.</p>
         )}
-        {wrongNetwork ? <p className="fused-form-error">Switch to {chainName} to launch.</p> : null}
+        {!isConnected ? (
+          <p className="fused-form-error">Connect a wallet on Robinhood Testnet or Arc Testnet to launch.</p>
+        ) : !factory ? (
+          <p className="fused-form-error">This network is not supported. Switch to Robinhood Testnet or Arc Testnet.</p>
+        ) : null}
         {logoError ? <p className="fused-form-error">{logoError}</p> : null}
         {error ? <p className="fused-form-error">{error}</p> : null}
-        <Button type="button" variant="lime" onClick={() => void onReview()} disabled={pending || fusingPost}>
+        <Button type="button" variant="lime" onClick={() => void onReview()} disabled={pending || fusingPost || !factory}>
           Review launch
         </Button>
       </div>

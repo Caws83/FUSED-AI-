@@ -1,6 +1,17 @@
 import { NextResponse } from "next/server";
 import { createPublicClient, http, parseEventLogs, type Hex } from "viem";
-import { loadEnv, loadRepoEnv, generationForFactory, indexedLaunchFactories, isKnownLaunchFactory, nativeCurrencyFor } from "@fused-ai/config";
+import {
+  loadEnv,
+  loadRepoEnv,
+  generationForFactory,
+  isKnownLaunchFactory,
+  nativeCurrencyFor,
+  parseSupportedChainId,
+  launchContractsForChain,
+  rpcUrlForChain,
+  sameAddress,
+  ROBINHOOD_TESTNET_CHAIN_ID,
+} from "@fused-ai/config";
 import { createDatabaseClient } from "@fused-ai/database";
 import { FUSED_FACTORY_ABI, LAUNCH_FACTORY_ABI, LAUNCH_TOKEN_ABI, STATE_LABEL, ZERO_ADDRESS } from "@fused-ai/blockchain";
 import { createMediaStore, readLaunchSyncImage, resolvePersistedLaunchImage } from "@fused-ai/media";
@@ -24,17 +35,23 @@ export async function POST(request: Request) {
     }
   }
   const tx = url.searchParams.get("tx") ?? (typeof extra.tx === "string" ? extra.tx : null);
-  if (!tx || !tx.startsWith("0x") || !env.rpcUrl || !env.chainId || indexedLaunchFactories(env.launch).length === 0) {
+  const chainId =
+    parseSupportedChainId(
+      url.searchParams.get("chainId") ??
+        (typeof extra.chainId === "string" || typeof extra.chainId === "number" ? extra.chainId : null),
+    ) ?? env.chainId;
+  const rpcUrl = chainId === env.chainId && env.rpcUrl ? env.rpcUrl : rpcUrlForChain(chainId);
+  if (!tx || !tx.startsWith("0x") || !chainId || !rpcUrl) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
   const client = createPublicClient({
     chain: {
-      id: env.chainId,
+      id: chainId,
       name: "fused",
-      nativeCurrency: nativeCurrencyFor(env.chainId),
-      rpcUrls: { default: { http: [env.rpcUrl] } },
+      nativeCurrency: nativeCurrencyFor(chainId),
+      rpcUrls: { default: { http: [rpcUrl] } },
     },
-    transport: http(env.rpcUrl),
+    transport: http(rpcUrl),
   });
   const receipt = await client.getTransactionReceipt({ hash: tx as Hex });
   const created = parseEventLogs({ abi: FUSED_FACTORY_ABI, logs: receipt.logs, eventName: "Created" })[0];
@@ -45,18 +62,22 @@ export async function POST(request: Request) {
   const metadataURI = created?.args.metadataURI ?? launched?.args.metadataURI ?? "";
   if (!token || !launcher) return NextResponse.json({ ok: false }, { status: 404 });
   const eventFactory = (created?.address ?? launched?.address ?? receipt.to) as Hex | null;
-  if (!eventFactory || !isKnownLaunchFactory(eventFactory, env.launch)) {
+  const rhKnown =
+    chainId === ROBINHOOD_TESTNET_CHAIN_ID && eventFactory && isKnownLaunchFactory(eventFactory, env.launch);
+  const mapped = launchContractsForChain(chainId);
+  const mappedKnown = Boolean(eventFactory && mapped?.deployed && sameAddress(mapped.factory, eventFactory));
+  if (!eventFactory || !(rhKnown || mappedKnown)) {
     return NextResponse.json({ ok: false }, { status: 404 });
   }
-  const gen = generationForFactory(eventFactory, env.launch);
-  const factory = (gen?.factory ?? eventFactory) as Hex;
-  const locker = (gen?.locker as Hex | null) ?? null;
+  const gen = chainId === ROBINHOOD_TESTNET_CHAIN_ID ? generationForFactory(eventFactory, env.launch) : null;
+  const factory = (gen?.factory ?? mapped?.factory ?? eventFactory) as Hex;
+  const locker = ((gen?.locker ?? mapped?.locker) as Hex | null) ?? null;
 
   const db = createDatabaseClient(env);
   try {
   const store = createMediaStore(env);
   const image = resolvePersistedLaunchImage(readLaunchSyncImage(extra), {
-    chainId: env.chainId,
+    chainId,
     publicUrlForId: (id) => store.getPublicUrl(id),
   });
   let source = {
@@ -82,7 +103,7 @@ export async function POST(request: Request) {
   const description = typeof extra.description === "string" ? extra.description : metadataURI;
   try {
     const metadata = await db.upsertTokenMetadata({
-      chainId: env.chainId,
+      chainId,
       token,
       description,
       imageId: image.imageId,
@@ -138,7 +159,7 @@ export async function POST(request: Request) {
   }
 
   const saved = await db.upsertLaunch({
-    chainId: env.chainId,
+    chainId,
     token,
     name,
     symbol,
@@ -161,7 +182,7 @@ export async function POST(request: Request) {
   });
   if (realQuote != null && graduationTarget != null && circulating != null && priceX18 != null) {
     await db.updateMarket({
-      chainId: env.chainId,
+      chainId,
       token,
       lifecycleState,
       realQuote,

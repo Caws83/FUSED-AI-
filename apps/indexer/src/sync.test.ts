@@ -33,3 +33,14 @@ test("V2 resume starts at the V2 deploy block, not the chain head", () => {
   const chunks = chunkBlockRange(119313128n, 119315128n, 2000n);
   assert.equal(chunks[0]?.from, 119313128n);
 });
+
+test("Arc indexer starts at the factory deploy block and never fabricates Graduated", () => {
+  const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "sync.ts"), "utf8");
+  assert.match(src, /GraduationReady/);
+  assert.match(src, /FeeAccrued/);
+  assert.match(src, /Claimed/);
+  assert.match(src, /ARC_TESTNET_CHAIN_ID/);
+  assert.match(src, /FUSED_FACTORY_INDEXER_ABI/);
+  const from = resumeFromBlock(62246396n, null, 50n);
+  assert.equal(from, 62246396n);
+});
