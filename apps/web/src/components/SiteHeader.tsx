@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Navigation } from "@fused-ai/ui";
 import { navFor } from "../lib/nav.ts";
@@ -18,7 +19,7 @@ export function SiteHeader({
   return (
     <header className="fused-nav">
       <div className="fused-wrap fused-nav-inner">
-        <a className="fused-logo" href="/">
+        <Link className="fused-logo" href="/">
           <img
             src="/brand/fused-ai-logo.png"
             alt=""
@@ -31,8 +32,8 @@ export function SiteHeader({
             <span className="fused-brand-fused">FUSED</span>
             <span className="fused-brand-ai">AI</span>
           </span>
-        </a>
-        <Navigation items={navFor(pathname)} open={open} />
+        </Link>
+        <Navigation items={navFor(pathname)} open={open} link={Link} />
         <div className="fused-nav-actions">
           <button type="button" className="fused-menu-toggle" onClick={() => setOpen((v) => !v)}>
             Menu

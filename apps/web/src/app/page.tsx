@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { EmptyState, FusedLogo, PostCard, SectionHeader } from "@fused-ai/ui";
 import { formatEngagement } from "@fused-ai/social";
 import { QuickFuse } from "../components/QuickFuse.tsx";
@@ -34,9 +35,9 @@ export default async function HomePage() {
             <p className="fused-support">One post. One click. One token.</p>
             <QuickFuse />
             <div className="fused-cta-row">
-              <a href="/launch" className="fused-btn fused-btn-ghost">
+              <Link href="/launch" className="fused-btn fused-btn-ghost">
                 Create manually
-              </a>
+              </Link>
             </div>
           </div>
           <div className="fused-pipeline" aria-label="How Fuse works">

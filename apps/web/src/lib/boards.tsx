@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { LaunchCard } from "@fused-ai/ui";
 import { tokenImageSrc } from "@fused-ai/media/token-image";
 import type { IndexedLaunch } from "@fused-ai/types";
@@ -30,9 +31,9 @@ export function LaunchGrid({ launches }: { launches: IndexedLaunch[] }) {
   return (
     <div className="fused-grid-3">
       {launches.map((launch) => (
-        <a key={launch.token} href={`/token/${launch.token}`} style={{ color: "inherit" }}>
+        <Link key={launch.token} href={`/token/${launch.token}`} style={{ color: "inherit" }}>
           <LaunchCard {...launchCardProps(launch)} />
-        </a>
+        </Link>
       ))}
     </div>
   );

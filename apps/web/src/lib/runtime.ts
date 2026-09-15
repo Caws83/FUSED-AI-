@@ -3,7 +3,7 @@ import { listDexAdapters } from "@fused-ai/blockchain";
 import { loadAssetRegistry } from "@fused-ai/blockchain/registry";
 import { createSocialProvider } from "@fused-ai/social";
 import { notConfigured, type Availability } from "@fused-ai/types";
-import type { WalletRuntimeConfig } from "../components/Providers.tsx";
+import type { WalletRuntimeConfig } from "./wagmi-config.ts";
 
 export async function loadRuntime() {
   try {

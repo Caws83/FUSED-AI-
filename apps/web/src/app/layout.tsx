@@ -1,8 +1,12 @@
 import type { ReactNode } from "react";
 import { DM_Sans, Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
+import Link from "next/link";
+import { headers } from "next/headers";
+import { cookieToInitialState } from "wagmi";
 import { isStatusPageEnabled, loadPublicEnv, publicWalletAvailability } from "@fused-ai/config/public";
 import { SiteHeader } from "../components/SiteHeader.tsx";
 import { Providers } from "../components/Providers.tsx";
+import { createWalletConfig } from "../lib/wagmi-config.ts";
 import "@fused-ai/ui/styles.css";
 
 const dmSans = DM_Sans({
@@ -32,7 +36,7 @@ export const metadata = {
   icons: { icon: "/brand/favicon.svg" },
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
   const pub = loadPublicEnv();
   const walletConfigured = publicWalletAvailability(pub).status === "OK";
   const wallet =
@@ -44,17 +48,19 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         }
       : null;
   const showStatus = isStatusPageEnabled();
+  const wagmiConfig = wallet ? createWalletConfig(wallet) : null;
+  const initialState = wagmiConfig ? cookieToInitialState(wagmiConfig, (await headers()).get("cookie")) : undefined;
 
   return (
     <html lang="en">
       <body className={`${dmSans.className} ${plusJakarta.variable} ${spaceGrotesk.variable} fused-shell`}>
-        <Providers wallet={wallet}>
+        <Providers wallet={wallet} initialState={initialState}>
           <SiteHeader walletConfigured={walletConfigured} expectedChainId={pub.chainId} />
           {children}
           <footer className="fused-footer">
             <div className="fused-wrap" style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
               <span>FUSED AI</span>
-              {showStatus ? <a href="/status">Status</a> : null}
+              {showStatus ? <Link href="/status">Status</Link> : null}
             </div>
           </footer>
         </Providers>
