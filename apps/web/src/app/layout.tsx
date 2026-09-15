@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { Viewport } from "next";
 import { DM_Sans, Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
 import { isStatusPageEnabled, loadPublicEnv, publicWalletAvailability } from "@fused-ai/config/public";
 import { SiteHeader } from "../components/SiteHeader.tsx";
@@ -30,6 +31,11 @@ export const metadata = {
   title: "FUSED AI",
   description: "Launch a token from a post. One post. One click. One token.",
   icons: { icon: "/brand/favicon.svg" },
+};
+
+export const viewport: Viewport = {
+  colorScheme: "only light",
+  themeColor: "#f4f7fb",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

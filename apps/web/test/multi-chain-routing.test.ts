@@ -55,6 +55,16 @@ test("Connect Wallet is one header button until connectors are revealed", () => 
   assert.match(providers, /chains/);
 });
 
+test("mobile header keeps one connect control and moves network into the menu", () => {
+  const header = readFileSync(join(root, "src/components/SiteHeader.tsx"), "utf8");
+  const css = readFileSync(join(root, "../../packages/ui/src/styles.css"), "utf8");
+  assert.match(header, /fused-nav-mobile-tools/);
+  assert.match(header, /fused-nav-desktop-tools/);
+  assert.match(header, /Open menu/);
+  assert.match(css, /fused-nav-desktop-tools/);
+  assert.match(css, /white-space: nowrap/);
+});
+
 test("Fuse-a-Post uses wallet chain at CREATE time, not AI time", () => {
   const fuse = readFileSync(join(root, "src/components/FusePost.tsx"), "utf8");
   const manual = readFileSync(join(root, "src/components/ManualLaunch.tsx"), "utf8");

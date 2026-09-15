@@ -1,4 +1,5 @@
 :root {
+  color-scheme: light only;
   --fused-navy: #071422;
   --fused-navy-2: #0c1d33;
   --fused-ink: #0a1628;
@@ -34,6 +35,7 @@ html,
 body {
   margin: 0;
   padding: 0;
+  color-scheme: light only;
   background: var(--fused-paper);
   color: var(--fused-ink);
   font-family: var(--fused-font);
@@ -202,12 +204,15 @@ textarea {
   justify-content: space-between;
   gap: 16px;
   min-height: 72px;
+  min-width: 0;
 }
 
 .fused-logo {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+  flex: 0 1 auto;
 }
 
 .fused-logo-image {
@@ -221,6 +226,7 @@ textarea {
   font-family: var(--fused-logo);
   font-size: 24px;
   gap: 0.22em;
+  white-space: nowrap;
 }
 
 .fused-logo .fused-brand-fused,
@@ -667,22 +673,60 @@ textarea {
 
 .fused-menu-toggle {
   display: none;
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--fused-line-strong);
   background: var(--fused-white);
   border-radius: 12px;
+  width: 40px;
+  min-width: 40px;
   min-height: 40px;
-  padding: 0 12px;
-  font-weight: 700;
+  padding: 0;
+  color: var(--fused-ink);
+}
+
+.fused-menu-icon {
+  display: block;
+  width: 16px;
+  height: 12px;
+  background:
+    linear-gradient(currentColor, currentColor) 0 0 / 100% 2px no-repeat,
+    linear-gradient(currentColor, currentColor) 0 50% / 100% 2px no-repeat,
+    linear-gradient(currentColor, currentColor) 0 100% / 100% 2px no-repeat;
 }
 
 .fused-nav-actions {
   display: flex;
   align-items: center;
+  flex: none;
   gap: 8px;
+  min-width: 0;
+}
+
+.fused-nav-desktop-tools {
+  display: inline-flex;
+}
+
+.fused-nav-mobile-tools {
+  display: none;
+}
+
+.fused-wallet-connected {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.fused-wallet-meta {
+  color: var(--fused-muted);
+  font-size: 13px;
+  white-space: nowrap;
 }
 
 .fused-network-select-wrap {
   display: inline-flex;
+  min-width: 0;
 }
 
 .fused-network-select {
@@ -881,6 +925,28 @@ textarea {
     display: grid;
   }
 
+  .fused-nav-inner {
+    gap: 10px;
+    min-height: 64px;
+  }
+
+  .fused-logo {
+    gap: 8px;
+  }
+
+  .fused-logo-image {
+    height: 26px;
+  }
+
+  .fused-logo .fused-brand-word {
+    font-size: 18px;
+  }
+
+  .fused-logo .fused-brand-fused,
+  .fused-logo .fused-brand-ai {
+    letter-spacing: 1px;
+  }
+
   .fused-nav-links {
     display: none;
   }
@@ -888,9 +954,10 @@ textarea {
   .fused-nav-links[data-open="true"] {
     display: grid;
     position: absolute;
-    top: 72px;
+    top: 100%;
     left: 16px;
     right: 16px;
+    z-index: 21;
     padding: 10px;
     background: var(--fused-white);
     border: 1px solid var(--fused-line);
@@ -898,14 +965,48 @@ textarea {
     box-shadow: var(--fused-shadow);
   }
 
+  .fused-nav-desktop-tools {
+    display: none;
+  }
+
+  .fused-nav-links[data-open="true"] .fused-nav-mobile-tools {
+    display: grid;
+    gap: 8px;
+    margin-top: 4px;
+    padding-top: 10px;
+    border-top: 1px solid var(--fused-line);
+  }
+
+  .fused-nav-mobile-tools .fused-network-select {
+    width: 100%;
+  }
+
   .fused-menu-toggle {
     display: inline-flex;
   }
 
   .fused-nav-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    gap: 6px;
+  }
+
+  .fused-nav-actions .fused-btn,
+  .fused-nav-actions .fused-network-select {
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .fused-wallet-chain {
+    display: none;
+  }
+
+  .fused-wallet-menu {
+    flex-wrap: nowrap;
+  }
+
+  .fused-wallet-menu .fused-btn {
+    padding: 0 10px;
   }
 
   .fused-fuse-panel,
@@ -933,5 +1034,11 @@ textarea {
   .fused-logo-preview {
     width: 72px;
     height: 72px;
+  }
+}
+
+@media (max-width: 380px) {
+  .fused-logo .fused-brand-word {
+    display: none;
   }
 }

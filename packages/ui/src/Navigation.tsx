@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 export type NavItem = {
   href: string;
   label: string;
@@ -7,17 +9,20 @@ export type NavItem = {
 export function Navigation({
   items,
   open = false,
+  children,
 }: {
   items: readonly NavItem[];
   open?: boolean;
+  children?: ReactNode;
 }) {
   return (
-    <nav className="fused-nav-links" data-open={open ? "true" : "false"} aria-label="Primary">
+    <nav id="fused-primary-nav" className="fused-nav-links" data-open={open ? "true" : "false"} aria-label="Primary">
       {items.map((item) => (
         <a key={item.href} href={item.href} data-active={item.active ? "true" : "false"}>
           {item.label}
         </a>
       ))}
+      {children}
     </nav>
   );
 }

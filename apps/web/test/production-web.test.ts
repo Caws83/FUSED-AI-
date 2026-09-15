@@ -69,3 +69,10 @@ test("creator rewards API does not invent claimable amounts", () => {
   assert.equal(src.includes("await db.migrate()"), false);
 });
 
+test("the site stays light even when the device theme is dark", () => {
+  const layout = readFileSync(join(root, "src/app/layout.tsx"), "utf8");
+  const css = readFileSync(join(root, "../../packages/ui/src/styles.css"), "utf8");
+  assert.match(layout, /colorScheme:\s*"only light"/);
+  assert.match(css, /color-scheme:\s*light only/);
+});
+

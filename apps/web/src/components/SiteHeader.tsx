@@ -28,15 +28,30 @@ export function SiteHeader({ walletConfigured }: { walletConfigured: boolean }) 
             <span className="fused-brand-ai">AI</span>
           </span>
         </a>
-        <Navigation items={navFor(pathname)} open={open} />
-        <div className="fused-nav-actions">
-          <button type="button" className="fused-menu-toggle" onClick={() => setOpen((v) => !v)}>
-            Menu
-          </button>
+        <Navigation items={navFor(pathname)} open={open}>
           {walletConfigured ? (
-            <NetworkSelector preferredChainId={preferredChainId} onPreferredChainId={setPreferredChainId} />
+            <div className="fused-nav-mobile-tools">
+              <NetworkSelector preferredChainId={preferredChainId} onPreferredChainId={setPreferredChainId} />
+            </div>
+          ) : null}
+        </Navigation>
+        <div className="fused-nav-actions">
+          {walletConfigured ? (
+            <div className="fused-nav-desktop-tools">
+              <NetworkSelector preferredChainId={preferredChainId} onPreferredChainId={setPreferredChainId} />
+            </div>
           ) : null}
           <ConnectWallet configured={walletConfigured} preferredChainId={preferredChainId} />
+          <button
+            type="button"
+            className="fused-menu-toggle"
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            aria-controls="fused-primary-nav"
+            onClick={() => setOpen((v) => !v)}
+          >
+            <span className="fused-menu-icon" data-open={open ? "true" : "false"} aria-hidden="true" />
+          </button>
         </div>
       </div>
     </header>

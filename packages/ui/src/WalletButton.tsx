@@ -53,10 +53,10 @@ export function WalletButton({
   }
   if (hasAccount && address) {
     return (
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-        <span className="fused-muted" style={{ fontSize: 13 }}>
+      <span className="fused-wallet-connected">
+        <span className="fused-wallet-meta">
           {shortAddress(address)}
-          {chainLabel ? ` · ${chainLabel}` : ""}
+          {chainLabel ? <span className="fused-wallet-chain"> · {chainLabel}</span> : null}
         </span>
         <Button type="button" variant="ghost" onClick={onDisconnect} disabled={pending}>
           {pending ? "Working…" : "Disconnect"}
