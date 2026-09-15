@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createPublicClient, http, parseEventLogs, type Hex } from "viem";
-import { loadEnv, loadRepoEnv, generationForFactory, indexedLaunchFactories, isKnownLaunchFactory } from "@fused-ai/config";
+import { loadEnv, loadRepoEnv, generationForFactory, indexedLaunchFactories, isKnownLaunchFactory, nativeCurrencyFor } from "@fused-ai/config";
 import { createDatabaseClient } from "@fused-ai/database";
 import { FUSED_FACTORY_ABI, LAUNCH_FACTORY_ABI, LAUNCH_TOKEN_ABI, STATE_LABEL, ZERO_ADDRESS } from "@fused-ai/blockchain";
 import { createMediaStore, readLaunchSyncImage, resolvePersistedLaunchImage } from "@fused-ai/media";
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     chain: {
       id: env.chainId,
       name: "fused",
-      nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+      nativeCurrency: nativeCurrencyFor(env.chainId),
       rpcUrls: { default: { http: [env.rpcUrl] } },
     },
     transport: http(env.rpcUrl),

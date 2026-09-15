@@ -56,5 +56,6 @@ deployments/*.json
 !deployments/*.example.json
 !deployments/robinhood-testnet-46630.json
 !deployments/robinhood-testnet-46630-v2.json
+!deployments/arc-testnet-5042002.json
 
 .vercel

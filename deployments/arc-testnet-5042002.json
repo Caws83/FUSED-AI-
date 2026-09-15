@@ -1,0 +1,44 @@
+{
+  "network": "arc-testnet",
+  "chainId": 5042002,
+  "generation": "arc",
+  "status": "DEPLOYED",
+  "rpcUrl": "https://rpc.testnet.arc.io",
+  "explorer": "https://testnet.arcscan.app",
+  "deployer": "0xf5fDA9015e0DA7eD406C4c329AB041C2ca6a92EE",
+  "contracts": {
+    "launchFactory": "0x98Cab6d3FaE4783A0D0cB13701d0e9772d6833E5",
+    "launchLocker": "0xcb6eA43c418e91F54c4B1748C6626493bFdB9be2",
+    "poolManager": null,
+    "positionManager": null,
+    "universalRouter": null,
+    "permit2": null,
+    "stateView": null,
+    "quoter": null,
+    "quoteToken": "0x3600000000000000000000000000000000000000"
+  },
+  "curve": {
+    "virtualQuoteWei": "50000000000000000",
+    "virtualToken": "1000000000000000000000000000",
+    "graduationTargetWei": "10000000000000000",
+    "feeBps": 100,
+    "lpFee": 10000,
+    "note": "TESTNET ONLY. Native 18-dec USDC curve. 1% fee. Tiny graduation target. No Uniswap on 5042002."
+  },
+  "dex": {
+    "available": false,
+    "status": "UNAVAILABLE_ON_TESTNET",
+    "note": "Official Uniswap V3/V4 exists on Arc mainnet 5042 only. Graduation stays fail-closed on-curve."
+  },
+  "treasury": "0x6F88E279002051ceB09ead378081Df8Fc124AacD",
+  "usdc": {
+    "nativeDecimals": 18,
+    "erc20": "0x3600000000000000000000000000000000000000",
+    "erc20Decimals": 6,
+    "scale": "1000000000000"
+  },
+  "deployBlock": 62246396,
+  "transactions": {
+    "factory": "0xae5a27417c312b1a0c4f6b0b0535f7d02586868d474286c127369c0fa1f4e247"
+  }
+}

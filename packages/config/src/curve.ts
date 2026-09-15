@@ -4,7 +4,12 @@
  * Do not fall back from Robinhood (or any public chain) to local defaults.
  */
 
-import { ROBINHOOD_TESTNET_CHAIN_ID, ROBINHOOD_TESTNET_CURVE } from "./networks.ts";
+import {
+  ARC_MAINNET_CHAIN_ID,
+  ARC_TESTNET_CHAIN_ID,
+  ROBINHOOD_TESTNET_CHAIN_ID,
+  ROBINHOOD_TESTNET_CURVE,
+} from "./networks.ts";
 
 export const LOCAL_CURVE = {
   network: "local" as const,
@@ -96,6 +101,34 @@ export function requirePublicCurveParams(env: NodeJS.Dict<string>): PublicCurveR
       reason: "Chain 46630 requires FUSED_PUBLIC_NETWORK=robinhood-testnet.",
     };
   }
+  if (chainId === ARC_TESTNET_CHAIN_ID && network !== "arc-testnet") {
+    return {
+      ok: false,
+      missing: ["FUSED_PUBLIC_NETWORK"],
+      reason: "Chain 5042002 requires FUSED_PUBLIC_NETWORK=arc-testnet.",
+    };
+  }
+  if (chainId === ARC_MAINNET_CHAIN_ID && network !== "arc") {
+    return {
+      ok: false,
+      missing: ["FUSED_PUBLIC_NETWORK"],
+      reason: "Chain 5042 requires FUSED_PUBLIC_NETWORK=arc.",
+    };
+  }
+  if (network === "arc-testnet" && chainId !== ARC_TESTNET_CHAIN_ID) {
+    return {
+      ok: false,
+      missing: ["CHAIN_ID"],
+      reason: "arc-testnet is chain 5042002 only. No Robinhood fallback.",
+    };
+  }
+  if (network === "robinhood-testnet" && chainId !== ROBINHOOD_TESTNET_CHAIN_ID) {
+    return {
+      ok: false,
+      missing: ["CHAIN_ID"],
+      reason: "robinhood-testnet is chain 46630 only. No Arc fallback.",
+    };
+  }
   if (chainId === 4663 && network === "robinhood-testnet") {
     return {
       ok: false,
@@ -115,6 +148,13 @@ export function requirePublicCurveParams(env: NodeJS.Dict<string>): PublicCurveR
       ok: false,
       missing: ["FUSED_GRADUATION_TARGET_WEI"],
       reason: "Refusing the testnet 0.01 ETH graduation target on Robinhood mainnet.",
+    };
+  }
+  if (chainId === ARC_MAINNET_CHAIN_ID && graduationTargetWei === ROBINHOOD_TESTNET_CURVE.graduationTargetWei) {
+    return {
+      ok: false,
+      missing: ["FUSED_GRADUATION_TARGET_WEI"],
+      reason: "Refusing the testnet 0.01 USDC graduation target on Arc mainnet.",
     };
   }
   const feeBps = Number(feeRaw);

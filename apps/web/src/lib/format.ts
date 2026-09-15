@@ -1,4 +1,8 @@
-export function formatEth(wei: string | bigint | null | undefined, digits = 4): string {
+export function formatNative(
+  wei: string | bigint | null | undefined,
+  symbol = "ETH",
+  digits = 4,
+): string {
   if (wei == null) return "—";
   try {
     const value = BigInt(wei);
@@ -8,10 +12,14 @@ export function formatEth(wei: string | bigint | null | undefined, digits = 4): 
     const frac = abs % 10n ** 18n;
     const fracStr = frac.toString().padStart(18, "0").slice(0, digits).replace(/0+$/, "");
     const shown = fracStr ? `${whole.toString()}.${fracStr}` : whole.toString();
-    return `${neg ? "-" : ""}${shown} ETH`;
+    return `${neg ? "-" : ""}${shown} ${symbol}`;
   } catch {
     return "—";
   }
+}
+
+export function formatEth(wei: string | bigint | null | undefined, digits = 4): string {
+  return formatNative(wei, "ETH", digits);
 }
 
 export function formatToken(amount: string | bigint | null | undefined, digits = 2): string {
@@ -51,6 +59,8 @@ export function explorerTx(chainId: number, hash: string): string | null {
   if (chainId === 31337) return null;
   if (chainId === 46630) return `https://explorer.testnet.chain.robinhood.com/tx/${hash}`;
   if (chainId === 4663) return `https://explorer.chain.robinhood.com/tx/${hash}`;
+  if (chainId === 5042002) return `https://testnet.arcscan.app/tx/${hash}`;
+  if (chainId === 5042) return `https://arc-scan.org/tx/${hash}`;
   if (chainId === 8453) return `https://basescan.org/tx/${hash}`;
   if (chainId === 1) return `https://etherscan.io/tx/${hash}`;
   return null;

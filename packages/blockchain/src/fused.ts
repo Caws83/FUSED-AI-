@@ -229,6 +229,8 @@ export const FUSED_ERROR_MESSAGES: Record<string, string> = {
   NotReadyToGraduate: "Graduation target has not been reached.",
   SaltUsed: "That launch salt is already used. Try again.",
   UnknownMarket: "Unknown token.",
+  DexUnavailable: "DEX graduation is not available on this network.",
+  NativeNotAcceptedAfterGraduation: "After graduation, use the ERC-20 quote token, not native value.",
 };
 
 export function toCreateParams(input: {

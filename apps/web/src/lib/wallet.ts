@@ -1,6 +1,6 @@
 export type WriteClientReason = "account" | "rpc" | "wallet" | "chain";
 
-export { chainLabelFor } from "@fused-ai/config/public";
+export { chainLabelFor, nativeCurrencyFor } from "@fused-ai/config/public";
 
 export function walletConnectorKinds(projectId: string | null | undefined): ("injected" | "walletConnect")[] {
   if (projectId && projectId.trim()) return ["injected", "walletConnect"];

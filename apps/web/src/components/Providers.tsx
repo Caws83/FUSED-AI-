@@ -6,7 +6,7 @@ import { WagmiProvider, createConfig, createStorage, http, noopStorage } from "w
 import { injected, walletConnect } from "wagmi/connectors";
 import { anvil } from "viem/chains";
 import { defineChain } from "viem";
-import { chainLabelFor, walletConnectorKinds } from "../lib/wallet.ts";
+import { chainLabelFor, nativeCurrencyFor, walletConnectorKinds } from "../lib/wallet.ts";
 
 export type WalletRuntimeConfig = {
   chainId: number;
@@ -40,7 +40,7 @@ export function Providers({
         : defineChain({
             id: chainId,
             name,
-            nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+            nativeCurrency: nativeCurrencyFor(chainId),
             rpcUrls: { default: { http: [rpcUrl] } },
           });
     const kinds = walletConnectorKinds(walletConnectProjectId);

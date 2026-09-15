@@ -10,13 +10,13 @@ import { TradePanel } from "./TradePanel.tsx";
 import {
   explorerTx,
   formatAge,
-  formatEth,
+  formatNative,
   formatToken,
   progressFromLaunch,
   shortAddr,
   stateBadge,
 } from "../lib/format.ts";
-import { chainLabelFor } from "../lib/wallet.ts";
+import { chainLabelFor, nativeCurrencyFor } from "../lib/wallet.ts";
 
 type TradeRow = {
   traded_at: string;
@@ -94,6 +94,7 @@ export function TokenTerminal({
   const trades = live?.trades ?? [];
   const graduated = stateBadge(launch.lifecycleState, launch.dexVersion) === "GRADUATED";
   const progress = progressFromLaunch(launch);
+  const quoteSymbol = nativeCurrencyFor(chainId).symbol;
   const price = BigInt(launch.priceX18 ?? "0");
   const circ = BigInt(launch.circulating ?? "0");
   const supply = BigInt(launch.supply ?? "0");
@@ -123,23 +124,23 @@ export function TokenTerminal({
           <div className="fused-stats" style={{ marginTop: 16 }}>
             <div className="fused-stat">
               <span>Price</span>
-              <strong>{formatEth(launch.priceX18, 8)}</strong>
+              <strong>{formatNative(launch.priceX18, quoteSymbol, 8)}</strong>
             </div>
             <div className="fused-stat">
               <span>Market cap</span>
-              <strong>{formatEth(mc.toString())}</strong>
+              <strong>{formatNative(mc.toString(), quoteSymbol)}</strong>
             </div>
             <div className="fused-stat">
               <span>FDV</span>
-              <strong>{formatEth(fdv.toString())}</strong>
+              <strong>{formatNative(fdv.toString(), quoteSymbol)}</strong>
             </div>
             <div className="fused-stat">
               <span>24h volume</span>
-              <strong>{formatEth(stats.volume24h)}</strong>
+              <strong>{formatNative(stats.volume24h, quoteSymbol)}</strong>
             </div>
             <div className="fused-stat">
               <span>Total volume</span>
-              <strong>{formatEth(stats.volumeTotal)}</strong>
+              <strong>{formatNative(stats.volumeTotal, quoteSymbol)}</strong>
             </div>
             <div className="fused-stat">
               <span>Trades</span>
@@ -184,7 +185,7 @@ export function TokenTerminal({
                   <tr>
                     <th>Age</th>
                     <th>Type</th>
-                    <th>ETH</th>
+                    <th>{quoteSymbol}</th>
                     <th>Token</th>
                     <th>Price</th>
                     <th>Wallet</th>
@@ -199,9 +200,9 @@ export function TokenTerminal({
                       <tr key={`${row.tx_hash}-${row.traded_at}`}>
                         <td>{formatAge(row.traded_at, "0")}</td>
                         <td className={buy ? "fused-buy" : "fused-sell"}>{buy ? "BUY" : "SELL"}</td>
-                        <td>{formatEth(row.quote_amount)}</td>
+                        <td>{formatNative(row.quote_amount, quoteSymbol)}</td>
                         <td>{formatToken(row.token_amount)}</td>
-                        <td>{formatEth(row.price_x18, 8)}</td>
+                        <td>{formatNative(row.price_x18, quoteSymbol, 8)}</td>
                         <td>{shortAddr(row.trader)}</td>
                         <td>
                           {href ? (
@@ -261,12 +262,12 @@ export function TokenTerminal({
           </div>
           <dl className="fused-review">
             <div>
-              <dt>ETH raised</dt>
-              <dd>{formatEth(launch.realQuote)}</dd>
+              <dt>{quoteSymbol} raised</dt>
+              <dd>{formatNative(launch.realQuote, quoteSymbol)}</dd>
             </div>
             <div>
               <dt>Graduation target</dt>
-              <dd>{formatEth(launch.graduationTarget)}</dd>
+              <dd>{formatNative(launch.graduationTarget, quoteSymbol)}</dd>
             </div>
             {graduationTargetUsd ? (
               <div>
@@ -279,11 +280,12 @@ export function TokenTerminal({
               <dd>
                 {graduated
                   ? "Graduated"
-                  : formatEth(
+                  : formatNative(
                       (BigInt(launch.graduationTarget ?? "0") - BigInt(launch.realQuote ?? "0") > 0n
                         ? BigInt(launch.graduationTarget ?? "0") - BigInt(launch.realQuote ?? "0")
                         : 0n
                       ).toString(),
+                      quoteSymbol,
                     )}
               </dd>
             </div>

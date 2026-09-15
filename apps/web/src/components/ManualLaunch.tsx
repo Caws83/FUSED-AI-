@@ -11,7 +11,7 @@ import {
 } from "@fused-ai/blockchain/fused";
 import { validateLaunchForm } from "@fused-ai/blockchain/abi";
 import type { SocialPost } from "@fused-ai/types";
-import { chainLabelFor, writeClientError } from "../lib/wallet.ts";
+import { chainLabelFor, nativeCurrencyFor, writeClientError } from "../lib/wallet.ts";
 import { resolveWriteClients } from "../lib/wallet-clients.ts";
 import { FusePost, type FusedDraft } from "./FusePost.tsx";
 
@@ -54,6 +54,7 @@ export function ManualLaunch({
   const [token, setToken] = useState<`0x${string}` | null>(null);
 
   const wrongNetwork = Boolean(isConnected && chainId && walletChainId !== chainId);
+  const quoteSymbol = nativeCurrencyFor(chainId).symbol;
   const params = useMemo(() => {
     return toCreateParams({ name, symbol, metadataURI: description });
   }, [name, symbol, description]);
@@ -307,7 +308,7 @@ export function ManualLaunch({
           ) : null}
           <div>
             <dt>Quote</dt>
-            <dd>ETH</dd>
+            <dd>{quoteSymbol}</dd>
           </div>
           <div>
             <dt>Lifecycle</dt>
@@ -317,8 +318,8 @@ export function ManualLaunch({
             <dt>Creator buy</dt>
             <dd>
               {creatorBuy.trim()
-                ? `${creatorBuy} ETH through the same bonding curve`
-                : "0 ETH — no creator buy. The curve starts with virtual reserves only."}
+                ? `${creatorBuy} ${quoteSymbol} through the same bonding curve`
+                : `0 ${quoteSymbol} — no creator buy. The curve starts with virtual reserves only.`}
             </dd>
           </div>
           {sourcePost ? (
@@ -387,7 +388,7 @@ export function ManualLaunch({
           />
         </label>
         <label>
-          Creator buy (ETH, optional)
+          Creator buy ({quoteSymbol}, optional)
           <input
             value={creatorBuy}
             onChange={(e) => setCreatorBuy(e.target.value)}

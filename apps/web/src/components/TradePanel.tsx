@@ -11,8 +11,8 @@ import {
   clampSlippageBps,
   minOut,
 } from "@fused-ai/blockchain/fused";
-import { formatEth, formatToken } from "../lib/format.ts";
-import { writeClientError } from "../lib/wallet.ts";
+import { formatNative, formatToken } from "../lib/format.ts";
+import { nativeCurrencyFor, writeClientError } from "../lib/wallet.ts";
 import { resolveWriteClients } from "../lib/wallet-clients.ts";
 
 const QUICK_ETH = ["0.01", "0.05", "0.1", "0.5"] as const;
@@ -50,6 +50,7 @@ export function TradePanel({
   const [txHash, setTxHash] = useState<string | null>(null);
 
   const slippageBps = clampSlippageBps(Number(slippage) * 100);
+  const quoteSymbol = nativeCurrencyFor(expectedChainId ?? chainId).symbol;
 
   useEffect(() => {
     if (!publicClient || !address) return;
@@ -249,7 +250,7 @@ export function TradePanel({
       {side === "buy" ? (
         <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
           <label>
-            ETH amount
+            {quoteSymbol} amount
             <input className="fused-input" value={ethIn} onChange={(e) => setEthIn(e.target.value)} />
           </label>
           <div className="fused-quick-row">
@@ -286,8 +287,8 @@ export function TradePanel({
       </label>
       <dl className="fused-review" style={{ marginTop: 14 }}>
         <div>
-          <dt>{side === "buy" ? "Tokens received" : "ETH received"}</dt>
-          <dd>{quoteOut == null ? "—" : side === "buy" ? formatToken(quoteOut) : formatEth(quoteOut)}</dd>
+          <dt>{side === "buy" ? "Tokens received" : `${quoteSymbol} received`}</dt>
+          <dd>{quoteOut == null ? "—" : side === "buy" ? formatToken(quoteOut) : formatNative(quoteOut, quoteSymbol)}</dd>
         </div>
         <div>
           <dt>Price impact</dt>
@@ -295,12 +296,12 @@ export function TradePanel({
         </div>
         <div>
           <dt>Minimum received</dt>
-          <dd>{quoteOut == null ? "—" : side === "buy" ? formatToken(minimum) : formatEth(minimum)}</dd>
+          <dd>{quoteOut == null ? "—" : side === "buy" ? formatToken(minimum) : formatNative(minimum, quoteSymbol)}</dd>
         </div>
         <div>
           <dt>Wallet</dt>
           <dd>
-            {formatEth(ethBal)} · {formatToken(balance)} {symbol}
+            {formatNative(ethBal, quoteSymbol)} · {formatToken(balance)} {symbol}
           </dd>
         </div>
       </dl>

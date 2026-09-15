@@ -1,0 +1,93 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  ARC_MAINNET_CHAIN_ID,
+  ARC_TESTNET_CHAIN_ID,
+  ARC_TESTNET_LAUNCH,
+  ROBINHOOD_TESTNET_CHAIN_ID,
+  ROBINHOOD_TESTNET_LAUNCH_V2,
+  launchContractsForChain,
+  nativeCurrencyFor,
+} from "../src/networks.ts";
+import { requirePublicCurveParams } from "../src/curve.ts";
+import { mergeChainDeployment, readPublicDeploymentManifest } from "../src/deployment.ts";
+import { ARC_TESTNET_CURVE } from "../src/networks.ts";
+
+test("native labels stay ETH on Robinhood and USDC on Arc", () => {
+  assert.equal(nativeCurrencyFor(46630).symbol, "ETH");
+  assert.equal(nativeCurrencyFor(4663).symbol, "ETH");
+  assert.equal(nativeCurrencyFor(5042002).symbol, "USDC");
+  assert.equal(nativeCurrencyFor(5042).symbol, "USDC");
+  assert.equal(nativeCurrencyFor(5042002).decimals, 18);
+});
+
+test("wallet chainId never falls back across Arc and Robinhood", () => {
+  const rh = launchContractsForChain(ROBINHOOD_TESTNET_CHAIN_ID);
+  const arc = launchContractsForChain(ARC_TESTNET_CHAIN_ID);
+  const main = launchContractsForChain(ARC_MAINNET_CHAIN_ID);
+  assert.equal(rh?.factory, ROBINHOOD_TESTNET_LAUNCH_V2.factory);
+  assert.equal(rh?.locker, ROBINHOOD_TESTNET_LAUNCH_V2.locker);
+  assert.notEqual(arc?.factory, ROBINHOOD_TESTNET_LAUNCH_V2.factory);
+  assert.equal(arc?.factory, ARC_TESTNET_LAUNCH.factory);
+  assert.equal(main?.deployed, false);
+  assert.equal(main?.factory, null);
+  assert.equal(launchContractsForChain(1), null);
+  assert.equal(launchContractsForChain(8453), null);
+  assert.equal(launchContractsForChain(null), null);
+});
+
+test("Arc curve config refuses Robinhood network names and vice versa", () => {
+  const mixed = requirePublicCurveParams({
+    FUSED_PUBLIC_NETWORK: "robinhood-testnet",
+    CHAIN_ID: "5042002",
+    FUSED_VIRTUAL_QUOTE_WEI: ARC_TESTNET_CURVE.virtualQuoteWei,
+    FUSED_VIRTUAL_TOKEN: ARC_TESTNET_CURVE.virtualToken,
+    FUSED_GRADUATION_TARGET_WEI: ARC_TESTNET_CURVE.graduationTargetWei,
+    FUSED_FEE_BPS: "100",
+    FUSED_LP_FEE: "10000",
+  });
+  assert.equal(mixed.ok, false);
+  const other = requirePublicCurveParams({
+    FUSED_PUBLIC_NETWORK: "arc-testnet",
+    CHAIN_ID: "46630",
+    FUSED_VIRTUAL_QUOTE_WEI: ARC_TESTNET_CURVE.virtualQuoteWei,
+    FUSED_VIRTUAL_TOKEN: ARC_TESTNET_CURVE.virtualToken,
+    FUSED_GRADUATION_TARGET_WEI: ARC_TESTNET_CURVE.graduationTargetWei,
+    FUSED_FEE_BPS: "100",
+    FUSED_LP_FEE: "10000",
+  });
+  assert.equal(other.ok, false);
+  const ok = requirePublicCurveParams({
+    FUSED_PUBLIC_NETWORK: "arc-testnet",
+    CHAIN_ID: String(ARC_TESTNET_CHAIN_ID),
+    FUSED_VIRTUAL_QUOTE_WEI: ARC_TESTNET_CURVE.virtualQuoteWei,
+    FUSED_VIRTUAL_TOKEN: ARC_TESTNET_CURVE.virtualToken,
+    FUSED_GRADUATION_TARGET_WEI: ARC_TESTNET_CURVE.graduationTargetWei,
+    FUSED_FEE_BPS: "100",
+    FUSED_LP_FEE: "10000",
+  });
+  assert.equal(ok.ok, true);
+  const mainnetTiny = requirePublicCurveParams({
+    FUSED_PUBLIC_NETWORK: "arc",
+    CHAIN_ID: String(ARC_MAINNET_CHAIN_ID),
+    FUSED_VIRTUAL_QUOTE_WEI: "1",
+    FUSED_VIRTUAL_TOKEN: "1",
+    FUSED_GRADUATION_TARGET_WEI: ARC_TESTNET_CURVE.graduationTargetWei,
+    FUSED_FEE_BPS: "100",
+    FUSED_LP_FEE: "10000",
+  });
+  assert.equal(mainnetTiny.ok, false);
+});
+
+test("CHAIN_ID 46630 overlay is unchanged and does not read Arc factory", () => {
+  const merged = mergeChainDeployment({
+    NODE_ENV: "production",
+    CHAIN_ID: "46630",
+    NEXT_PUBLIC_CHAIN_ID: "46630",
+  });
+  assert.equal(merged.LAUNCH_FACTORY_ADDRESS, ROBINHOOD_TESTNET_LAUNCH_V2.factory);
+  assert.equal(merged.LAUNCH_LOCKER_ADDRESS, ROBINHOOD_TESTNET_LAUNCH_V2.locker);
+  const arc = readPublicDeploymentManifest(5042002);
+  assert.equal(arc.chainId, 5042002);
+  assert.notEqual(arc.contracts.launchFactory, ROBINHOOD_TESTNET_LAUNCH_V2.factory);
+});

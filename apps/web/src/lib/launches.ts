@@ -1,13 +1,5 @@
 import { createPublicClient, http, type Hex } from "viem";
-import {
-  loadEnv,
-  loadRepoEnv,
-  indexerFreshnessFromParts,
-  indexedLaunchFactories,
-  tradeFactoryForLaunch,
-  type FusedEnv,
-  type IndexerFreshness,
-} from "@fused-ai/config";
+import { loadEnv, loadRepoEnv, indexerFreshnessFromParts, indexedLaunchFactories, tradeFactoryForLaunch, nativeCurrencyFor, type FusedEnv, type IndexerFreshness } from "@fused-ai/config";
 import { createDatabaseClient } from "@fused-ai/database";
 import { createMediaStore, resolvePersistedLaunchImage } from "@fused-ai/media";
 import { FUSED_FACTORY_ABI, LAUNCH_TOKEN_ABI, STATE_LABEL, ZERO_ADDRESS } from "@fused-ai/blockchain";
@@ -21,7 +13,7 @@ export function createChainClient(env: Pick<FusedEnv, "rpcUrl" | "chainId">) {
     chain: {
       id: env.chainId,
       name: "fused",
-      nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+      nativeCurrency: nativeCurrencyFor(env.chainId),
       rpcUrls: { default: { http: [env.rpcUrl] } },
     },
     transport: http(env.rpcUrl, { timeout: 20_000 }),

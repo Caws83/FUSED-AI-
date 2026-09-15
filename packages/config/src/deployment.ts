@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 import { findRepoRoot } from "./load-repo-env.ts";
 import { isProductionEnv, LOCAL_CHAIN_ID } from "./production-safety.ts";
 import {
+  ARC_MAINNET_CHAIN_ID,
+  ARC_TESTNET_CHAIN_ID,
   ROBINHOOD_MAINNET_CHAIN_ID,
   ROBINHOOD_TESTNET_CHAIN_ID,
   deploymentFileName,
@@ -69,7 +71,11 @@ export function parseDeploymentManifest(raw: unknown): DeploymentManifest | null
           ? "robinhood-testnet"
           : chainId === ROBINHOOD_MAINNET_CHAIN_ID
             ? "robinhood"
-            : "unknown";
+            : chainId === ARC_TESTNET_CHAIN_ID
+              ? "arc-testnet"
+              : chainId === ARC_MAINNET_CHAIN_ID
+                ? "arc"
+                : "unknown";
   return {
     network,
     chainId,
@@ -161,7 +167,11 @@ function emptyManifest(chainId: number): DeploymentManifest {
       ? "robinhood-testnet"
       : chainId === ROBINHOOD_MAINNET_CHAIN_ID
         ? "robinhood"
-        : `chain-${chainId}`;
+        : chainId === ARC_TESTNET_CHAIN_ID
+          ? "arc-testnet"
+          : chainId === ARC_MAINNET_CHAIN_ID
+            ? "arc"
+            : `chain-${chainId}`;
   return {
     network,
     chainId,

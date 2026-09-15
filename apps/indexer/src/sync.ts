@@ -3,6 +3,7 @@ import {
   loadEnv,
   indexedLaunchFactories,
   sameAddress,
+  nativeCurrencyFor,
   type FusedEnv,
   type LaunchGeneration,
 } from "@fused-ai/config";
@@ -85,7 +86,7 @@ export function createRpc(env: FusedEnv) {
     chain: {
       id: env.chainId,
       name: "fused",
-      nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+      nativeCurrency: nativeCurrencyFor(env.chainId),
       rpcUrls: { default: { http: [env.rpcUrl] } },
     },
     transport: transports.length > 1 ? fallback(transports) : primary,

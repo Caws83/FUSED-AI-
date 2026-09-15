@@ -2,7 +2,8 @@ import { LaunchCard } from "@fused-ai/ui";
 import { tokenImageSrc } from "@fused-ai/media/token-image";
 import type { IndexedLaunch } from "@fused-ai/types";
 import { fdvWei, marketCapWei } from "@fused-ai/blockchain/fused";
-import { formatAge, formatEth, progressFromLaunch, shortAddr, stateBadge } from "./format.ts";
+import { formatAge, formatNative, progressFromLaunch, shortAddr, stateBadge } from "./format.ts";
+import { nativeCurrencyFor } from "./wallet.ts";
 
 export function launchCardProps(launch: IndexedLaunch) {
   const state = stateBadge(launch.lifecycleState, launch.dexVersion);
@@ -20,8 +21,8 @@ export function launchCardProps(launch: IndexedLaunch) {
     launchState: state,
     createdAt: formatAge(launch.createdAt, launch.blockNumber),
     progressPct: progressFromLaunch(launch),
-    marketCap: formatEth(mc.toString()),
-    volume: formatEth(launch.volumeQuote),
+    marketCap: formatNative(mc.toString(), nativeCurrencyFor(launch.chainId).symbol),
+    volume: formatNative(launch.volumeQuote, nativeCurrencyFor(launch.chainId).symbol),
     state,
   };
 }
@@ -54,5 +55,5 @@ export function fdvLabel(launch: IndexedLaunch): string {
   const price = BigInt(launch.priceX18 ?? "0");
   const supply = BigInt(launch.supply ?? "0");
   if (price === 0n || supply === 0n) return "—";
-  return formatEth(fdvWei(price, supply).toString());
+  return formatNative(fdvWei(price, supply).toString(), nativeCurrencyFor(launch.chainId).symbol);
 }

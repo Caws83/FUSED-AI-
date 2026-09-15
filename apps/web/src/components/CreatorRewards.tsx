@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { useAccount, useChainId, useConfig, usePublicClient } from "wagmi";
 import { Button, Card } from "@fused-ai/ui";
 import { FUSED_ERROR_MESSAGES, FUSED_FACTORY_CLAIM_ABI } from "@fused-ai/blockchain/fused";
-import { writeClientError } from "../lib/wallet.ts";
+import { formatNative } from "../lib/format.ts";
+import { nativeCurrencyFor, writeClientError } from "../lib/wallet.ts";
 import { resolveWriteClients } from "../lib/wallet-clients.ts";
-import { formatEth } from "../lib/format.ts";
 
 type EligibleLaunch = {
   token: string;
@@ -35,6 +35,7 @@ export function CreatorRewards({
   const [refresh, setRefresh] = useState(0);
 
   const wrongNetwork = Boolean(isConnected && chainId && walletChainId !== chainId);
+  const quoteSymbol = nativeCurrencyFor(chainId).symbol;
 
   useEffect(() => {
     let stop = false;
@@ -138,7 +139,7 @@ export function CreatorRewards({
         <div style={{ display: "grid", gap: 14 }}>
           <div>
             <div style={{ color: "var(--fused-muted)", fontSize: 13 }}>Available Curve Rewards</div>
-            <strong style={{ fontSize: 28 }}>{claimable == null ? "—" : formatEth(claimable.toString(), 8)}</strong>
+            <strong style={{ fontSize: 28 }}>{claimable == null ? "—" : formatNative(claimable.toString(), quoteSymbol, 8)}</strong>
           </div>
           <div>
             <div style={{ color: "var(--fused-muted)", fontSize: 13, marginBottom: 8 }}>Eligible V2 launches</div>
