@@ -89,8 +89,13 @@ See `docs/ENV_QUICKSTART.md`.
 | `NEXT_PUBLIC_RPC_URL` | then yes | Public RPC (not localhost) | no | `https://rpc.testnet.chain.robinhood.com` |
 | `CHAIN_ID` | then yes | Same as public chain | no | `46630` |
 | `RPC_URL` | then yes | Server RPC; keyed URL is a secret | if keyed | same public RPC is fine |
-| `LAUNCH_FACTORY_ADDRESS` | after Fused deploy | Overlay from `deployments/robinhood-testnet-46630.json` | no | do not invent |
-| `LAUNCH_LOCKER_ADDRESS` | after Fused deploy | Same manifest | no | do not invent |
+| `LAUNCH_FACTORY_ADDRESS` | after Fused deploy | Overlay default = V2 from `deployments/robinhood-testnet-46630-v2.json` | no | do not invent |
+| `LAUNCH_LOCKER_ADDRESS` | after Fused deploy | V2 locker | no | do not invent |
+| `LAUNCH_FACTORY_V1_ADDRESS` | keep for legacy tokens | `deployments/robinhood-testnet-46630.json` | no | V1 factory |
+| `LAUNCH_LOCKER_V1_ADDRESS` | keep for legacy tokens | same V1 manifest | no | V1 locker |
+| `LAUNCH_FACTORY_V2_ADDRESS` | after V2 deploy | V2 manifest | no | V2 factory |
+| `LAUNCH_LOCKER_V2_ADDRESS` | after V2 deploy | V2 manifest | no | V2 locker |
+| `DEFAULT_LAUNCH_VERSION` | after V2 | `v2` | no | new launches |
 | `UNISWAP_POOL_MANAGER_ADDRESS` | overlay | Testnet example JSON (bytecode-verified) | no | do not paste Anvil |
 | `UNISWAP_POSITION_MANAGER_ADDRESS` | overlay | Testnet example JSON | no | do not paste Anvil |
 | `UNISWAP_PERMIT2_ADDRESS` | overlay | Canonical Permit2 | no | CREATE2 address |

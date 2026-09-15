@@ -160,6 +160,50 @@ export const FUSED_FACTORY_ABI = [
   { type: "error", name: "ZeroValue", inputs: [] },
 ] as const;
 
+export const FUSED_FACTORY_CLAIM_ABI = [
+  {
+    type: "function",
+    name: "claim",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [{ name: "amount", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "claimFor",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ name: "amount", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "claimable",
+    stateMutability: "view",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "event",
+    name: "Claimed",
+    inputs: [
+      { name: "account", type: "address", indexed: true },
+      { name: "amount", type: "uint256", indexed: false },
+    ],
+  },
+  {
+    type: "event",
+    name: "FeeAccrued",
+    inputs: [
+      { name: "token", type: "address", indexed: true },
+      { name: "creator", type: "address", indexed: true },
+      { name: "creatorAmount", type: "uint256", indexed: false },
+      { name: "treasuryAmount", type: "uint256", indexed: false },
+    ],
+  },
+] as const;
+
+export const FUSED_FACTORY_V2_ABI = [...FUSED_FACTORY_ABI, ...FUSED_FACTORY_CLAIM_ABI] as const;
+
 export const ERC20_ABI = [
   { type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ name: "account", type: "address" }], outputs: [{ name: "", type: "uint256" }] },
   { type: "function", name: "allowance", stateMutability: "view", inputs: [{ name: "owner", type: "address" }, { name: "spender", type: "address" }], outputs: [{ name: "", type: "uint256" }] },

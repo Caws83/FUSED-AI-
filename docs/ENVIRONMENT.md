@@ -60,8 +60,15 @@ Aliases (either name works):
 | `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | web wallet | no | no | empty | WalletConnect Cloud id |
 | `WALLETCONNECT_PROJECT_ID` | web | no | no | alias | Same id if not using NEXT_PUBLIC |
 | `DEPLOYER_PRIVATE_KEY` | forge scripts | **yes** | deploy only | empty | Contract deploy EOA. Never user launches |
-| `LAUNCH_FACTORY_ADDRESS` | web, indexer, adapters | no | before launch | empty | Fused AI factory after **our** deploy |
-| `LAUNCH_LOCKER_ADDRESS` | web, indexer | no | before launch | empty | Fused AI locker after **our** deploy |
+| `LAUNCH_FACTORY_ADDRESS` | web, indexer | no | before launch | empty | **Default** factory. On testnet 46630 this overlays to **V2**. |
+| `LAUNCH_LOCKER_ADDRESS` | web, indexer | no | before launch | empty | **Default** locker (V2 on testnet). |
+| `LAUNCH_FACTORY_V1_ADDRESS` | web, indexer | no | legacy reads | overlay | Legacy FusedFactory. Existing V1 tokens keep using this. |
+| `LAUNCH_LOCKER_V1_ADDRESS` | web, indexer | no | legacy reads | overlay | Legacy V1 locker. |
+| `LAUNCH_FACTORY_V2_ADDRESS` | web, indexer | no | before launch | overlay | FusedFactoryV2. New launches. |
+| `LAUNCH_LOCKER_V2_ADDRESS` | web, indexer | no | before launch | overlay | V2 locker. |
+| `DEFAULT_LAUNCH_VERSION` | web | no | no | `v2` on 46630 | `v1` or `v2`. New create() target. |
+| `LAUNCH_V1_DEPLOY_BLOCK` | indexer | no | no | `117433209` | V1 factory deploy block. |
+| `LAUNCH_V2_DEPLOY_BLOCK` | indexer | no | no | `119313128` | V2 factory deploy block. |
 | `LAUNCH_DEPLOY_BLOCK` | indexer | no | before index | empty | Alias of start block |
 | `UNISWAP_POOL_MANAGER_ADDRESS` | launch path | no | before launch | empty | Canonical Uniswap v4 PoolManager |
 | `UNISWAP_POSITION_MANAGER_ADDRESS` | launch path | no | before launch | empty | Canonical PositionManager |
@@ -125,3 +132,18 @@ Aliases (either name works):
 - **Permit2 (public chains):** canonical CREATE2 `0x000000000022D473030F116dDEE9F6B43aC78BA3` on most EVM chains — still confirm.
 - **X / AI:** vendor dashboards.
 - **Registry:** operator-maintained JSON; identity is chain + contract, not ticker.
+
+## Treasury (no public UI)
+
+Treasury is `0x6F88E279002051ceB09ead378081Df8Fc124AacD`. Curve treasury fees accrue as `claimable[treasury]` on **FusedFactoryV2**. Anyone can trigger a payout with permissionless `claimFor(treasury)` — the treasury private key is not required.
+
+Cast example (Robinhood testnet 46630 only):
+
+```
+cast send 0x359b3D82d958488eA9177c0F56EB3558ba59a40B \
+  "claimFor(address)" 0x6F88E279002051ceB09ead378081Df8Fc124AacD \
+  --rpc-url https://rpc.testnet.chain.robinhood.com
+```
+
+There is no public treasury claim page. Do not add one.
+

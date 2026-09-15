@@ -119,6 +119,14 @@ CREATE TABLE IF NOT EXISTS fused_sync_cursor (
   updated_at         timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS fused_factory_sync_cursor (
+  chain_id           integer NOT NULL,
+  factory            text NOT NULL,
+  block_number       bigint NOT NULL,
+  updated_at         timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (chain_id, factory)
+);
+
 CREATE TABLE IF NOT EXISTS fused_trades (
   chain_id           integer NOT NULL,
   token              text NOT NULL,

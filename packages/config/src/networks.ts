@@ -49,9 +49,34 @@ export function chainLabelFor(chainId: number | null | undefined): string | unde
   return `Chain ${chainId}`;
 }
 
+/** Immutable V2 treasury. Permissionless claimFor; no public UI. */
+export const FUSED_TREASURY = "0x6F88E279002051ceB09ead378081Df8Fc124AacD";
+
+/** Legacy FusedFactory on Robinhood testnet. Do not use for new launches. */
+export const ROBINHOOD_TESTNET_LAUNCH_V1 = {
+  version: "v1" as const,
+  factory: "0x42654079a991EE21e2d2f7Eed0A77bf6a0082208",
+  locker: "0x68000CD8F3AFE93BB87BeEDc9f2daBbf39E0836b",
+  deployBlock: 117433209,
+};
+
+/** Default FusedFactoryV2 on Robinhood testnet. */
+export const ROBINHOOD_TESTNET_LAUNCH_V2 = {
+  version: "v2" as const,
+  factory: "0x359b3D82d958488eA9177c0F56EB3558ba59a40B",
+  locker: "0x2De462b0a9A7bB378a8a4E68a352eF30A9250D15",
+  deployBlock: 119313128,
+};
+
 export function deploymentFileName(chainId: number): string {
   if (chainId === LOCAL_CHAIN_ID) return `local-${LOCAL_CHAIN_ID}.json`;
   if (chainId === ROBINHOOD_TESTNET_CHAIN_ID) return "robinhood-testnet-46630.json";
   if (chainId === ROBINHOOD_MAINNET_CHAIN_ID) return "robinhood-4663.json";
   return `chain-${chainId}.json`;
+}
+
+/** V2 overlay only. Never used for mainnet 4663. */
+export function v2DeploymentFileName(chainId: number): string | null {
+  if (chainId === ROBINHOOD_TESTNET_CHAIN_ID) return "robinhood-testnet-46630-v2.json";
+  return null;
 }

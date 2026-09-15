@@ -8,6 +8,12 @@ import { loadPublicEnv, publicWalletAvailability, type PublicEnv } from "./publi
 import { mergeLocalDeployment } from "./deployment.ts";
 import { isPublicLaunchEnabled, isPublicChainConfigured, isStatusPageEnabled } from "./features.ts";
 import {
+  parseLaunchRouting,
+  defaultLaunchGeneration,
+  indexedLaunchFactories,
+  type LaunchRouting,
+} from "./launch.ts";
+import {
   isProductionEnv,
   shouldRejectAnvilAddress,
   shouldRejectLocalhostUrl,
@@ -27,6 +33,7 @@ export type FusedEnv = {
   launchFactory: string | null;
   launchLocker: string | null;
   launchDeployBlock: number | null;
+  launch: LaunchRouting;
   uniswap: {
     poolManager: string | null;
     positionManager: string | null;
@@ -153,6 +160,10 @@ function collectInvalid(env: NodeJS.Dict<string>): string[] {
     "LAUNCH_FACTORY_ADDRESS",
     "FUSED_FACTORY_ADDRESS",
     "LAUNCH_LOCKER_ADDRESS",
+    "LAUNCH_FACTORY_V1_ADDRESS",
+    "LAUNCH_LOCKER_V1_ADDRESS",
+    "LAUNCH_FACTORY_V2_ADDRESS",
+    "LAUNCH_LOCKER_V2_ADDRESS",
     "UNISWAP_POOL_MANAGER_ADDRESS",
     "UNISWAP_POOL_MANAGER",
     "UNISWAP_POSITION_MANAGER_ADDRESS",
@@ -170,7 +181,7 @@ function collectInvalid(env: NodeJS.Dict<string>): string[] {
     const v = read(key, env);
     if (v && !isAddress(v)) invalid.push(key);
   }
-  for (const key of ["CHAIN_ID", "NEXT_PUBLIC_CHAIN_ID", "LAUNCH_DEPLOY_BLOCK", "INDEXER_START_BLOCK"]) {
+  for (const key of ["CHAIN_ID", "NEXT_PUBLIC_CHAIN_ID", "LAUNCH_DEPLOY_BLOCK", "INDEXER_START_BLOCK", "LAUNCH_V1_DEPLOY_BLOCK", "LAUNCH_V2_DEPLOY_BLOCK"]) {
     const v = read(key, env);
     if (v && !Number.isInteger(Number(v))) invalid.push(key);
   }
@@ -232,6 +243,46 @@ export function loadEnv(env: NodeJS.Dict<string> = process.env): FusedEnv {
     "LAUNCH_LOCKER_ADDRESS",
     invalid,
   );
+  const launchFactoryV1 = rejectOrKeep(
+    read("LAUNCH_FACTORY_V1_ADDRESS", source),
+    shouldRejectAnvilAddress(read("LAUNCH_FACTORY_V1_ADDRESS", source), chainId, source),
+    "LAUNCH_FACTORY_V1_ADDRESS",
+    invalid,
+  );
+  const launchLockerV1 = rejectOrKeep(
+    read("LAUNCH_LOCKER_V1_ADDRESS", source),
+    shouldRejectAnvilAddress(read("LAUNCH_LOCKER_V1_ADDRESS", source), chainId, source),
+    "LAUNCH_LOCKER_V1_ADDRESS",
+    invalid,
+  );
+  const launchFactoryV2 = rejectOrKeep(
+    read("LAUNCH_FACTORY_V2_ADDRESS", source),
+    shouldRejectAnvilAddress(read("LAUNCH_FACTORY_V2_ADDRESS", source), chainId, source),
+    "LAUNCH_FACTORY_V2_ADDRESS",
+    invalid,
+  );
+  const launchLockerV2 = rejectOrKeep(
+    read("LAUNCH_LOCKER_V2_ADDRESS", source),
+    shouldRejectAnvilAddress(read("LAUNCH_LOCKER_V2_ADDRESS", source), chainId, source),
+    "LAUNCH_LOCKER_V2_ADDRESS",
+    invalid,
+  );
+
+  const launch = parseLaunchRouting({
+    chainId,
+    defaultFactory: launchFactory,
+    defaultLocker: launchLocker,
+    defaultVersionRaw: read("DEFAULT_LAUNCH_VERSION", source),
+    v1Factory: launchFactoryV1,
+    v1Locker: launchLockerV1,
+    v1DeployBlock: firstInt(source, "LAUNCH_V1_DEPLOY_BLOCK"),
+    v2Factory: launchFactoryV2,
+    v2Locker: launchLockerV2,
+    v2DeployBlock: firstInt(source, "LAUNCH_V2_DEPLOY_BLOCK"),
+  });
+  const defaultGen = defaultLaunchGeneration(launch);
+  const resolvedFactory = defaultGen?.factory ?? launchFactory;
+  const resolvedLocker = defaultGen?.locker ?? launchLocker;
 
   const poolManagerRaw = first(source, "UNISWAP_POOL_MANAGER_ADDRESS", "UNISWAP_POOL_MANAGER");
   const positionManagerRaw = first(source, "UNISWAP_POSITION_MANAGER_ADDRESS", "UNISWAP_POSITION_MANAGER");
@@ -267,10 +318,10 @@ export function loadEnv(env: NodeJS.Dict<string> = process.env): FusedEnv {
   }
   if (!siteUrl) siteUrl = production ? "" : "http://localhost:3000";
 
-  const startBlock = firstInt(source, "INDEXER_START_BLOCK", "LAUNCH_DEPLOY_BLOCK");
+  const startBlock = firstInt(source, "INDEXER_START_BLOCK", "LAUNCH_DEPLOY_BLOCK", "LAUNCH_V1_DEPLOY_BLOCK");
   const contractsOk =
-    Boolean(launchFactory) &&
-    Boolean(launchLocker) &&
+    Boolean(resolvedFactory) &&
+    Boolean(resolvedLocker) &&
     !invalid.includes("LAUNCH_FACTORY_ADDRESS") &&
     !invalid.includes("LAUNCH_LOCKER_ADDRESS");
 
@@ -299,9 +350,10 @@ export function loadEnv(env: NodeJS.Dict<string> = process.env): FusedEnv {
     chainId,
     rpcUrl,
     rpcUrlFallback,
-    launchFactory,
-    launchLocker,
+    launchFactory: resolvedFactory,
+    launchLocker: resolvedLocker,
     launchDeployBlock: startBlock,
+    launch,
     uniswap: {
       poolManager,
       positionManager,
@@ -473,7 +525,7 @@ export function indexerAvailability(cfg: FusedEnv): Availability {
   if (!cfg.databaseUrl) missing.push("DATABASE_URL");
   if (!cfg.rpcUrl) missing.push("RPC_URL");
   if (!cfg.chainId) missing.push("CHAIN_ID");
-  if (!cfg.launchFactory) missing.push("LAUNCH_FACTORY_ADDRESS");
+  if (indexedLaunchFactories(cfg.launch).length === 0 && !cfg.launchFactory) missing.push("LAUNCH_FACTORY_ADDRESS");
   if (missing.length) {
     return notConfigured(missing, "Launch indexer is not configured.");
   }

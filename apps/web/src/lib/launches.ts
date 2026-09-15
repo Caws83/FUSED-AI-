@@ -1,5 +1,13 @@
 import { createPublicClient, http, type Hex } from "viem";
-import { loadEnv, loadRepoEnv, indexerFreshnessFromParts, type FusedEnv, type IndexerFreshness } from "@fused-ai/config";
+import {
+  loadEnv,
+  loadRepoEnv,
+  indexerFreshnessFromParts,
+  indexedLaunchFactories,
+  tradeFactoryForLaunch,
+  type FusedEnv,
+  type IndexerFreshness,
+} from "@fused-ai/config";
 import { createDatabaseClient } from "@fused-ai/database";
 import { createMediaStore, resolvePersistedLaunchImage } from "@fused-ai/media";
 import { FUSED_FACTORY_ABI, LAUNCH_TOKEN_ABI, STATE_LABEL, ZERO_ADDRESS } from "@fused-ai/blockchain";
@@ -78,21 +86,49 @@ export function marketToIndexedLaunch(input: {
   };
 }
 
-export async function loadOnchainLaunch(token: string): Promise<IndexedLaunch | null> {
+export async function readMarketOnFactories(
+  client: NonNullable<ReturnType<typeof createChainClient>>,
+  token: Hex,
+  env: FusedEnv,
+  preferredFactory?: string | null,
+): Promise<{ factory: Hex; locker: Hex | null; market: Parameters<typeof marketToIndexedLaunch>[0]["market"] } | null> {
+  const gens = indexedLaunchFactories(env.launch);
+  const ordered = [
+    ...gens.filter((g) => preferredFactory && g.factory.toLowerCase() === preferredFactory.toLowerCase()),
+    ...gens.filter((g) => !preferredFactory || g.factory.toLowerCase() !== preferredFactory.toLowerCase()),
+  ];
+  for (const gen of ordered) {
+    try {
+      const market = await client.readContract({
+        address: gen.factory as Hex,
+        abi: FUSED_FACTORY_ABI,
+        functionName: "getMarket",
+        args: [token],
+      });
+      if (market.state === 0) continue;
+      return {
+        factory: gen.factory as Hex,
+        locker: (gen.locker as Hex | null) ?? null,
+        market,
+      };
+    } catch {
+      /* try the next known factory */
+    }
+  }
+  return null;
+}
+
+export async function loadOnchainLaunch(token: string, preferredFactory?: string | null): Promise<IndexedLaunch | null> {
   try {
     loadRepoEnv();
     const env = loadEnv();
-    if (!env.rpcUrl || !env.chainId || !env.launchFactory || !token?.startsWith("0x")) return null;
+    if (!env.rpcUrl || !env.chainId || !token?.startsWith("0x")) return null;
+    if (indexedLaunchFactories(env.launch).length === 0) return null;
     const client = createChainClient(env);
     if (!client) return null;
     const address = token as Hex;
-    const market = await client.readContract({
-      address: env.launchFactory as Hex,
-      abi: FUSED_FACTORY_ABI,
-      functionName: "getMarket",
-      args: [address],
-    });
-    if (market.state === 0) return null;
+    const found = await readMarketOnFactories(client, address, env, preferredFactory);
+    if (!found) return null;
     let name = "";
     let symbol = "";
     try {
@@ -108,13 +144,18 @@ export async function loadOnchainLaunch(token: string): Promise<IndexedLaunch | 
       token: address,
       name,
       symbol,
-      factory: env.launchFactory as Hex,
-      locker: (env.launchLocker as Hex | null) ?? null,
-      market,
+      factory: found.factory,
+      locker: found.locker,
+      market: found.market,
     });
   } catch {
     return null;
   }
+}
+
+export function tradeFactoryAddress(launch: Pick<IndexedLaunch, "factory">, env: FusedEnv): `0x${string}` | null {
+  const resolved = tradeFactoryForLaunch(launch.factory, env.launch);
+  return resolved?.startsWith("0x") ? (resolved as `0x${string}`) : null;
 }
 
 export function hydrateLaunchImage(launch: IndexedLaunch, env: FusedEnv): IndexedLaunch {
@@ -157,7 +198,14 @@ export async function loadIndexedLaunch(token: string): Promise<IndexedLaunch | 
 
 export async function loadLaunchPage(token: string): Promise<{ launch: IndexedLaunch; indexed: boolean } | null> {
   const indexed = await loadIndexedLaunch(token);
-  if (indexed) return { launch: indexed, indexed: true };
+  if (indexed) {
+    if (indexed.factory) return { launch: indexed, indexed: true };
+    const onchain = await loadOnchainLaunch(token);
+    if (onchain?.factory) {
+      return { launch: { ...indexed, factory: onchain.factory, locker: onchain.locker ?? indexed.locker }, indexed: true };
+    }
+    return { launch: indexed, indexed: true };
+  }
   const onchain = await loadOnchainLaunch(token);
   if (onchain) return { launch: onchain, indexed: false };
   return null;

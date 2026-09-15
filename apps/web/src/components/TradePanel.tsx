@@ -23,12 +23,14 @@ export function TradePanel({
   token,
   symbol,
   graduated,
+  expectedChainId,
   onTraded,
 }: {
   factory: `0x${string}`;
   token: `0x${string}`;
   symbol: string;
   graduated: boolean;
+  expectedChainId?: number | null;
   onTraded?: () => void;
 }) {
   const { address, isConnected, connector } = useAccount();
@@ -163,9 +165,13 @@ export function TradePanel({
       setError(writeClientError("account"));
       return;
     }
+    if (expectedChainId && chainId !== expectedChainId) {
+      setError(writeClientError("chain"));
+      return;
+    }
     setPending(true);
     try {
-      const resolved = await resolveWriteClients(config, { chainId, account: address, connector });
+      const resolved = await resolveWriteClients(config, { chainId: expectedChainId ?? chainId, account: address, connector });
       if (!resolved.ok) {
         setError(writeClientError(resolved.reason));
         return;

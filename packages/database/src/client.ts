@@ -59,6 +59,9 @@ export type DatabaseClient = {
   lastSocialSync(): Promise<Result<{ lastSyncAt: string | null; postCount: number }>>;
   getCursor(chainId: number): Promise<Result<bigint | null>>;
   setCursor(chainId: number, blockNumber: bigint): Promise<Result<true>>;
+  getFactoryCursor(chainId: number, factory: HexAddress): Promise<Result<bigint | null>>;
+  setFactoryCursor(chainId: number, factory: HexAddress, blockNumber: bigint): Promise<Result<true>>;
+  listLaunchesByLauncher(chainId: number, launcher: HexAddress, factory?: HexAddress | null): Promise<Result<IndexedLaunch[]>>;
   updateMarket(row: {
     chainId: number;
     token: HexAddress;
@@ -460,6 +463,52 @@ export function createDatabaseClient(env: FusedEnv): DatabaseClient {
         return err(databaseUnavailable(error instanceof Error ? error.message : "list failed"));
       }
     },
+    listLaunchesByLauncher: async (chainId, launcher, factory) => {
+      const a = availability();
+      if (a.status !== "OK") return fail(a);
+      const client = conn();
+      if (!client) return fail(a);
+      try {
+        const launcherLc = launcher.toLowerCase();
+        const factoryLc = factory?.toLowerCase() ?? null;
+        const rows = factoryLc
+          ? await client`
+          SELECT l.*, m.image_id, m.image_url, m.description AS app_description, m.source_platform,
+                 m.source_post_id, m.source_post_url, m.source_author, m.source_excerpt,
+                 (SELECT COALESCE(SUM(quote_amount), 0) FROM fused_trades t WHERE t.chain_id = l.chain_id AND t.token = l.token) AS volume_quote,
+                 (SELECT COUNT(*) FROM fused_holders h WHERE h.chain_id = l.chain_id AND h.token = l.token AND h.balance > 0
+                    AND h.holder NOT IN (
+                      '0x0000000000000000000000000000000000000000',
+                      '0x000000000000000000000000000000000000dead',
+                      COALESCE(l.factory, ''),
+                      COALESCE(l.locker, '')
+                    )) AS holder_count
+          FROM fused_launches l
+          LEFT JOIN fused_token_metadata m ON m.chain_id = l.chain_id AND m.token = l.token
+          WHERE l.chain_id = ${chainId} AND l.launcher = ${launcherLc} AND l.factory = ${factoryLc}
+          ORDER BY l.block_number DESC
+        `
+          : await client`
+          SELECT l.*, m.image_id, m.image_url, m.description AS app_description, m.source_platform,
+                 m.source_post_id, m.source_post_url, m.source_author, m.source_excerpt,
+                 (SELECT COALESCE(SUM(quote_amount), 0) FROM fused_trades t WHERE t.chain_id = l.chain_id AND t.token = l.token) AS volume_quote,
+                 (SELECT COUNT(*) FROM fused_holders h WHERE h.chain_id = l.chain_id AND h.token = l.token AND h.balance > 0
+                    AND h.holder NOT IN (
+                      '0x0000000000000000000000000000000000000000',
+                      '0x000000000000000000000000000000000000dead',
+                      COALESCE(l.factory, ''),
+                      COALESCE(l.locker, '')
+                    )) AS holder_count
+          FROM fused_launches l
+          LEFT JOIN fused_token_metadata m ON m.chain_id = l.chain_id AND m.token = l.token
+          WHERE l.chain_id = ${chainId} AND l.launcher = ${launcherLc}
+          ORDER BY l.block_number DESC
+        `;
+        return ok(rows.map((row) => mapLaunch(row as Record<string, unknown>)));
+      } catch (error) {
+        return err(databaseUnavailable(error instanceof Error ? error.message : "list by launcher failed"));
+      }
+    },
     getLaunch: async (chainId, token) => {
       const a = availability();
       if (a.status !== "OK") return fail(a);
@@ -670,6 +719,38 @@ export function createDatabaseClient(env: FusedEnv): DatabaseClient {
         return ok(true);
       } catch (error) {
         return err(databaseUnavailable(error instanceof Error ? error.message : "cursor write failed"));
+      }
+    },
+    getFactoryCursor: async (chainId, factory) => {
+      const a = availability();
+      if (a.status !== "OK") return fail(a);
+      const client = conn();
+      if (!client) return fail(a);
+      try {
+        const rows = await client`
+          SELECT block_number FROM fused_factory_sync_cursor
+          WHERE chain_id = ${chainId} AND factory = ${factory.toLowerCase()}
+        `;
+        const value = rows[0]?.block_number;
+        return ok(value == null ? null : BigInt(String(value)));
+      } catch (error) {
+        return err(databaseUnavailable(error instanceof Error ? error.message : "factory cursor read failed"));
+      }
+    },
+    setFactoryCursor: async (chainId, factory, blockNumber) => {
+      const a = availability();
+      if (a.status !== "OK") return fail(a);
+      const client = conn();
+      if (!client) return fail(a);
+      try {
+        await client`
+          INSERT INTO fused_factory_sync_cursor (chain_id, factory, block_number, updated_at)
+          VALUES (${chainId}, ${factory.toLowerCase()}, ${blockNumber.toString()}, now())
+          ON CONFLICT (chain_id, factory) DO UPDATE SET block_number = EXCLUDED.block_number, updated_at = now()
+        `;
+        return ok(true);
+      } catch (error) {
+        return err(databaseUnavailable(error instanceof Error ? error.message : "factory cursor write failed"));
       }
     },
     close: async () => {

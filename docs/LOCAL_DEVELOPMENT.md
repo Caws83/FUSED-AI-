@@ -92,8 +92,9 @@ address into the browser wallet instead of trusting a derived key from a script.
 npm run indexer
 ```
 
-It reads `Created` / `Trade` / `Graduated` events from `LAUNCH_FACTORY_ADDRESS`
-(the Fused factory) on chain `31337` and writes rows to Postgres. No synthetic
+It reads `Created` / `Trade` / `Graduated` events from the configured factory
+(local: `LAUNCH_FACTORY_ADDRESS` on chain `31337`) and writes rows to Postgres.
+On Robinhood testnet the worker indexes **both** V1 and V2 factories. No synthetic
 launches, prices, or volume.
 
 Optional: set `SOCIAL_PROVIDER=x` and `X_BEARER_TOKEN` in `.env` (not

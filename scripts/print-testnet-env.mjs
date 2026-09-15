@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 /**
  * Print public Vercel env for Robinhood testnet. No secrets.
- * Factory/locker stay unset until deployments/robinhood-testnet-46630.json is DEPLOYED.
+ * Default factory/locker are V2. Legacy V1 addresses are printed separately.
  */
-import { readPublicDeploymentManifest } from "@fused-ai/config";
 import {
+  readPublicDeploymentManifest,
+  readPublicV2DeploymentManifest,
   ROBINHOOD_TESTNET,
   ROBINHOOD_TESTNET_CHAIN_ID,
   ROBINHOOD_TESTNET_V4,
@@ -23,11 +24,12 @@ const SECRET_KEYS = new Set([
   "DATABASE_URL",
 ]);
 
-const manifest = readPublicDeploymentManifest(ROBINHOOD_TESTNET_CHAIN_ID);
-const c = manifest.contracts;
-const factory = manifest.status === "DEPLOYED" ? c.launchFactory : null;
-const locker = manifest.status === "DEPLOYED" ? c.launchLocker : null;
-const rpc = manifest.rpcUrl || ROBINHOOD_TESTNET.rpcUrl;
+const v1 = readPublicDeploymentManifest(ROBINHOOD_TESTNET_CHAIN_ID);
+const v2 = readPublicV2DeploymentManifest(ROBINHOOD_TESTNET_CHAIN_ID);
+const c = v2?.status === "DEPLOYED" ? v2.contracts : v1.contracts;
+const defaultFactory = v2?.status === "DEPLOYED" ? v2.contracts.launchFactory : v1.status === "DEPLOYED" ? v1.contracts.launchFactory : null;
+const defaultLocker = v2?.status === "DEPLOYED" ? v2.contracts.launchLocker : v1.status === "DEPLOYED" ? v1.contracts.launchLocker : null;
+const rpc = v1.rpcUrl || ROBINHOOD_TESTNET.rpcUrl;
 const v4 = {
   poolManager: c.poolManager || ROBINHOOD_TESTNET_V4.poolManager,
   positionManager: c.positionManager || ROBINHOOD_TESTNET_V4.positionManager,
@@ -44,7 +46,7 @@ const rows = [
   ["CHAIN_ID", String(ROBINHOOD_TESTNET_CHAIN_ID)],
   ["RPC_URL", rpc],
   ["PUBLIC_CHAIN_CONFIGURED", "true"],
-  ["PUBLIC_LAUNCH_ENABLED", factory ? "true" : "false"],
+  ["PUBLIC_LAUNCH_ENABLED", defaultFactory ? "true" : "false"],
   ["UNISWAP_POOL_MANAGER_ADDRESS", v4.poolManager],
   ["UNISWAP_POSITION_MANAGER_ADDRESS", v4.positionManager],
   ["UNISWAP_PERMIT2_ADDRESS", v4.permit2],
@@ -53,19 +55,32 @@ const rows = [
   ["UNISWAP_QUOTER", v4.quoter],
 ];
 
-if (factory) rows.push(["LAUNCH_FACTORY_ADDRESS", factory]);
-if (locker) rows.push(["LAUNCH_LOCKER_ADDRESS", locker]);
-if (manifest.deployBlock != null && manifest.deployBlock > 0) {
-  rows.push(["INDEXER_START_BLOCK", String(manifest.deployBlock)]);
+if (defaultFactory) {
+  rows.push(["DEFAULT_LAUNCH_VERSION", v2?.status === "DEPLOYED" ? "v2" : "v1"]);
+  rows.push(["LAUNCH_FACTORY_ADDRESS", defaultFactory]);
+}
+if (defaultLocker) rows.push(["LAUNCH_LOCKER_ADDRESS", defaultLocker]);
+if (v1.status === "DEPLOYED" && v1.contracts.launchFactory) {
+  rows.push(["LAUNCH_FACTORY_V1_ADDRESS", v1.contracts.launchFactory]);
+  if (v1.contracts.launchLocker) rows.push(["LAUNCH_LOCKER_V1_ADDRESS", v1.contracts.launchLocker]);
+  if (v1.deployBlock != null) rows.push(["LAUNCH_V1_DEPLOY_BLOCK", String(v1.deployBlock)]);
+}
+if (v2?.status === "DEPLOYED" && v2.contracts.launchFactory) {
+  rows.push(["LAUNCH_FACTORY_V2_ADDRESS", v2.contracts.launchFactory]);
+  if (v2.contracts.launchLocker) rows.push(["LAUNCH_LOCKER_V2_ADDRESS", v2.contracts.launchLocker]);
+  if (v2.deployBlock != null) rows.push(["LAUNCH_V2_DEPLOY_BLOCK", String(v2.deployBlock)]);
+}
+if (v1.deployBlock != null && v1.deployBlock > 0) {
+  rows.push(["INDEXER_START_BLOCK", String(v1.deployBlock)]);
 }
 
 console.log(`# FUSED AI — Robinhood Chain Testnet (${ROBINHOOD_TESTNET_CHAIN_ID})`);
 console.log(`# Network: ${ROBINHOOD_TESTNET.name}`);
 console.log(`# Explorer: ${ROBINHOOD_TESTNET.explorer}`);
-console.log(`# Fused contracts: ${manifest.status}`);
-if (manifest.status !== "DEPLOYED") {
+console.log(`# Default launches: ${v2?.status === "DEPLOYED" ? "FusedFactoryV2" : v1.status}`);
+console.log(`# Legacy V1 factory remains indexed. Do not delete V1 support.`);
+if (!defaultFactory) {
   console.log("# LAUNCH_FACTORY_ADDRESS and LAUNCH_LOCKER_ADDRESS are unset. Do not invent them.");
-  console.log("# After a real deploy, committed deployments/robinhood-testnet-46630.json fills them.");
 }
 console.log("# Paste public values into Vercel. Do not paste deployer keys, X, AI, DB, or AWS secrets.");
 console.log("");

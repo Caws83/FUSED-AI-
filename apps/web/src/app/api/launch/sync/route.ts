@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createPublicClient, http, parseEventLogs, type Hex } from "viem";
-import { loadEnv, loadRepoEnv } from "@fused-ai/config";
+import { loadEnv, loadRepoEnv, generationForFactory, indexedLaunchFactories, isKnownLaunchFactory } from "@fused-ai/config";
 import { createDatabaseClient } from "@fused-ai/database";
 import { FUSED_FACTORY_ABI, LAUNCH_FACTORY_ABI, LAUNCH_TOKEN_ABI, STATE_LABEL, ZERO_ADDRESS } from "@fused-ai/blockchain";
 import { createMediaStore, readLaunchSyncImage, resolvePersistedLaunchImage } from "@fused-ai/media";
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     }
   }
   const tx = url.searchParams.get("tx") ?? (typeof extra.tx === "string" ? extra.tx : null);
-  if (!tx || !tx.startsWith("0x") || !env.rpcUrl || !env.chainId || !env.launchFactory) {
+  if (!tx || !tx.startsWith("0x") || !env.rpcUrl || !env.chainId || indexedLaunchFactories(env.launch).length === 0) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
   const client = createPublicClient({
@@ -45,6 +45,13 @@ export async function POST(request: Request) {
   const supply = created?.args.supply ?? launched?.args.supply;
   const metadataURI = created?.args.metadataURI ?? launched?.args.metadataURI ?? "";
   if (!token || !launcher) return NextResponse.json({ ok: false }, { status: 404 });
+  const eventFactory = (created?.address ?? launched?.address ?? receipt.to) as Hex | null;
+  if (!eventFactory || !isKnownLaunchFactory(eventFactory, env.launch)) {
+    return NextResponse.json({ ok: false }, { status: 404 });
+  }
+  const gen = generationForFactory(eventFactory, env.launch);
+  const factory = (gen?.factory ?? eventFactory) as Hex;
+  const locker = (gen?.locker as Hex | null) ?? null;
 
   const db = createDatabaseClient(env);
   try {
@@ -107,7 +114,7 @@ export async function POST(request: Request) {
   let priceX18: string | null = null;
   try {
     const market = await client.readContract({
-      address: env.launchFactory as Hex,
+      address: factory,
       abi: FUSED_FACTORY_ABI,
       functionName: "getMarket",
       args: [token],
@@ -141,8 +148,8 @@ export async function POST(request: Request) {
     txHash: receipt.transactionHash,
     blockNumber: receipt.blockNumber,
     createdAt: new Date(Number(block.timestamp) * 1000),
-    factory: env.launchFactory as Hex,
-    locker: (env.launchLocker as Hex | null) ?? null,
+    factory,
+    locker,
     dexVersion,
     lifecycleState,
     graduationTarget: graduationTarget ?? undefined,

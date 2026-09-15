@@ -1,5 +1,11 @@
 import { createPublicClient, fallback, http, parseEventLogs, type Hex, type Log } from "viem";
-import { loadEnv, type FusedEnv } from "@fused-ai/config";
+import {
+  loadEnv,
+  indexedLaunchFactories,
+  sameAddress,
+  type FusedEnv,
+  type LaunchGeneration,
+} from "@fused-ai/config";
 import { createDatabaseClient, type DatabaseClient, type LaunchInsert } from "@fused-ai/database";
 import {
   ERC20_ABI,
@@ -33,6 +39,27 @@ export function chunkBlockRange(fromBlock: bigint, toBlock: bigint, maxBlocks: b
     from = to + 1n;
   }
   return chunks;
+}
+
+export function resumeFromBlock(start: bigint, cursor: bigint | null, overlap: bigint): bigint {
+  let from = start;
+  if (cursor != null) {
+    from = cursor > overlap ? cursor - overlap : 0n;
+    if (from < start) from = start;
+  }
+  return from;
+}
+
+export function uniqueFactories(gens: LaunchGeneration[]): LaunchGeneration[] {
+  const out: LaunchGeneration[] = [];
+  const seen = new Set<string>();
+  for (const gen of gens) {
+    const key = gen.factory.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(gen);
+  }
+  return out;
 }
 
 export async function withRpcRetry<T>(fn: () => Promise<T>, attempts = 5): Promise<T> {
@@ -99,6 +126,8 @@ export function launchedToInsert(
     metadataURI: string;
   },
   blockTime: Date | null,
+  factory: Hex,
+  locker: Hex | null,
 ): Omit<LaunchInsert, "name" | "symbol"> & { name?: string; symbol?: string; metadataURI: string } {
   return {
     chainId: env.chainId ?? 0,
@@ -114,8 +143,8 @@ export function launchedToInsert(
     txHash: log.transactionHash as Hex,
     blockNumber: log.blockNumber ?? 0n,
     createdAt: blockTime,
-    factory: env.launchFactory as Hex | null,
-    locker: env.launchLocker as Hex | null,
+    factory,
+    locker,
     dexVersion: "v4",
     lifecycleState: "GRADUATED",
   };
@@ -134,6 +163,8 @@ export function createdToInsert(
     metadataURI: string;
   },
   blockTime: Date | null,
+  factory: Hex,
+  locker: Hex | null,
 ): Omit<LaunchInsert, "name" | "symbol"> & { name?: string; symbol?: string; metadataURI: string } {
   return {
     chainId: env.chainId ?? 0,
@@ -149,8 +180,8 @@ export function createdToInsert(
     txHash: log.transactionHash as Hex,
     blockNumber: log.blockNumber ?? 0n,
     createdAt: blockTime,
-    factory: env.launchFactory as Hex | null,
-    locker: env.launchLocker as Hex | null,
+    factory,
+    locker,
     dexVersion: "curve",
     lifecycleState: "CURVE",
     graduationTarget: args.graduationTarget.toString(),
@@ -171,11 +202,12 @@ async function refreshMarket(
   client: NonNullable<ReturnType<typeof createRpc>>,
   db: DatabaseClient,
   token: Hex,
+  factory: Hex,
 ): Promise<void> {
-  if (!env.launchFactory || !env.chainId) return;
+  if (!env.chainId) return;
   try {
     const v = await client.readContract({
-      address: env.launchFactory as Hex,
+      address: factory,
       abi: FUSED_FACTORY_ABI,
       functionName: "getMarket",
       args: [token],
@@ -199,10 +231,17 @@ async function refreshMarket(
   }
 }
 
-export async function applyRange(env: FusedEnv, db: DatabaseClient, fromBlock: bigint, toBlock: bigint): Promise<number> {
+export async function applyRange(
+  env: FusedEnv,
+  db: DatabaseClient,
+  fromBlock: bigint,
+  toBlock: bigint,
+  gen: LaunchGeneration,
+): Promise<number> {
   const client = createRpc(env);
-  if (!client || !env.launchFactory || !env.chainId) return 0;
-  const factory = env.launchFactory as Hex;
+  if (!client || !env.chainId) return 0;
+  const factory = gen.factory as Hex;
+  const locker = (gen.locker as Hex | null) ?? null;
   let count = 0;
 
   const createdLogs = await withRpcRetry(() =>
@@ -216,11 +255,12 @@ export async function applyRange(env: FusedEnv, db: DatabaseClient, fromBlock: b
   for (const log of createdLogs) {
     const parsed = parseEventLogs({ abi: FUSED_FACTORY_ABI, logs: [log], eventName: "Created" })[0];
     if (!parsed) continue;
-    const base = createdToInsert(env, log, parsed.args, await blockTimeOf(client, log));
+    const logFactory = (log.address as Hex | undefined) ?? factory;
+    const base = createdToInsert(env, log, parsed.args, await blockTimeOf(client, log), logFactory, locker);
     const row = await enrichLaunch(client, base);
     const saved = await db.upsertLaunch(row);
     if (saved.ok) count += 1;
-    await refreshMarket(env, client, db, parsed.args.token);
+    await refreshMarket(env, client, db, parsed.args.token, logFactory);
   }
 
   const launchedLogs = await withRpcRetry(() =>
@@ -234,7 +274,8 @@ export async function applyRange(env: FusedEnv, db: DatabaseClient, fromBlock: b
   for (const log of launchedLogs) {
     const parsed = parseEventLogs({ abi: LAUNCH_FACTORY_ABI, logs: [log], eventName: "Launched" })[0];
     if (!parsed) continue;
-    const base = launchedToInsert(env, log, parsed.args, await blockTimeOf(client, log));
+    const logFactory = (log.address as Hex | undefined) ?? factory;
+    const base = launchedToInsert(env, log, parsed.args, await blockTimeOf(client, log), logFactory, locker);
     const row = await enrichLaunch(client, base);
     const saved = await db.upsertLaunch(row);
     if (saved.ok) count += 1;
@@ -269,7 +310,8 @@ export async function applyRange(env: FusedEnv, db: DatabaseClient, fromBlock: b
       venue: venueName(Number(args.venue)),
     });
     count += 1;
-    await refreshMarket(env, client, db, args.token);
+    const logFactory = (log.address as Hex | undefined) ?? factory;
+    await refreshMarket(env, client, db, args.token, logFactory);
   }
 
   const graduatedLogs = await withRpcRetry(() =>
@@ -295,12 +337,21 @@ export async function applyRange(env: FusedEnv, db: DatabaseClient, fromBlock: b
       poolId: parsed.args.poolId,
       dexVersion: "uniswap_v4",
     });
-    await refreshMarket(env, client, db, parsed.args.token);
+    const logFactory = (log.address as Hex | undefined) ?? factory;
+    await refreshMarket(env, client, db, parsed.args.token, logFactory);
     count += 1;
   }
 
   const known = await db.listLaunches(env.chainId);
-  const tokens = known.ok ? known.value.map((row) => row.token as Hex) : [];
+  const tokens = known.ok
+    ? known.value
+        .filter((row) => {
+          if (sameAddress(row.factory, factory)) return true;
+          if (!row.factory && gen.version === "v1") return true;
+          return false;
+        })
+        .map((row) => row.token as Hex)
+    : [];
   if (tokens.length > 0) {
     const transferLogs = await withRpcRetry(() =>
       client.getLogs({
@@ -331,8 +382,31 @@ export async function applyRange(env: FusedEnv, db: DatabaseClient, fromBlock: b
   return count;
 }
 
+async function fromBlockForFactory(
+  env: FusedEnv,
+  db: DatabaseClient,
+  gen: LaunchGeneration,
+  chainCursor: bigint | null,
+): Promise<bigint> {
+  const start =
+    gen.deployBlock != null
+      ? BigInt(gen.deployBlock)
+      : env.indexer.startBlock != null
+        ? BigInt(env.indexer.startBlock)
+        : 0n;
+  const stored = env.chainId ? await db.getFactoryCursor(env.chainId, gen.factory as Hex) : { ok: true as const, value: null };
+  let cursor = stored.ok ? stored.value : null;
+  if (cursor == null && gen.version === "v1") cursor = chainCursor;
+  return resumeFromBlock(start, cursor, BigInt(env.indexer.overlapBlocks));
+}
+
 export async function pollOnce(env: FusedEnv = loadEnv(), db: DatabaseClient = createDatabaseClient(env)): Promise<IndexerRunResult | { started: false; reason: unknown }> {
-  const checks = [db.availability(), env.rpcUrl && env.chainId ? { status: "OK" as const } : { status: "NOT_CONFIGURED" as const }, env.launchFactory ? { status: "OK" as const } : { status: "NOT_CONFIGURED" as const }];
+  const factories = uniqueFactories(indexedLaunchFactories(env.launch));
+  const checks = [
+    db.availability(),
+    env.rpcUrl && env.chainId ? { status: "OK" as const } : { status: "NOT_CONFIGURED" as const },
+    factories.length > 0 ? { status: "OK" as const } : { status: "NOT_CONFIGURED" as const },
+  ];
   const blocked = checks.find((c) => c.status !== "OK");
   if (blocked) return { started: false, reason: blocked };
 
@@ -345,25 +419,36 @@ export async function pollOnce(env: FusedEnv = loadEnv(), db: DatabaseClient = c
   const head = await withRpcRetry(() => client.getBlockNumber());
   const confirm = BigInt(env.indexer.confirmations);
   const toBlock = head >= confirm ? head - confirm : 0n;
-  const cursor = await db.getCursor(env.chainId);
-  const start = env.indexer.startBlock != null ? BigInt(env.indexer.startBlock) : 0n;
-  const overlap = BigInt(env.indexer.overlapBlocks);
-  let fromBlock = start;
-  if (cursor.ok && cursor.value != null) {
-    fromBlock = cursor.value > overlap ? cursor.value - overlap : 0n;
-    if (fromBlock < start) fromBlock = start;
-  }
-  if (toBlock < fromBlock) {
-    return { started: true, fromBlock, toBlock, indexed: 0 };
+  const chainCursor = await db.getCursor(env.chainId);
+  const chainBlock = chainCursor.ok ? chainCursor.value : null;
+
+  let indexed = 0;
+  let earliestFrom = toBlock;
+  let latestTo = 0n;
+  const factoryHeads: bigint[] = [];
+
+  for (const gen of factories) {
+    const fromBlock = await fromBlockForFactory(env, db, gen, chainBlock);
+    if (fromBlock < earliestFrom) earliestFrom = fromBlock;
+    if (toBlock < fromBlock) {
+      factoryHeads.push(fromBlock);
+      continue;
+    }
+    const chunks = chunkBlockRange(fromBlock, toBlock, BigInt(env.indexer.maxRangeBlocks));
+    let lastTo = fromBlock;
+    for (const chunk of chunks) {
+      indexed += await applyRange(env, db, chunk.from, chunk.to, gen);
+      await db.setFactoryCursor(env.chainId, gen.factory as Hex, chunk.to);
+      lastTo = chunk.to;
+    }
+    factoryHeads.push(lastTo);
+    if (lastTo > latestTo) latestTo = lastTo;
   }
 
-  const chunks = chunkBlockRange(fromBlock, toBlock, BigInt(env.indexer.maxRangeBlocks));
-  let indexed = 0;
-  let lastTo = fromBlock;
-  for (const chunk of chunks) {
-    indexed += await applyRange(env, db, chunk.from, chunk.to);
-    await db.setCursor(env.chainId, chunk.to);
-    lastTo = chunk.to;
+  if (factoryHeads.length > 0) {
+    const minHead = factoryHeads.reduce((a, b) => (a < b ? a : b));
+    await db.setCursor(env.chainId, minHead);
   }
-  return { started: true, fromBlock, toBlock: lastTo, indexed };
+
+  return { started: true, fromBlock: earliestFrom, toBlock: latestTo || toBlock, indexed };
 }

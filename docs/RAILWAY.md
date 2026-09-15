@@ -80,13 +80,28 @@ Secret (from the Railway Postgres plugin — **Reference** the variable if both 
 DATABASE_URL=<Railway Postgres URL>
 ```
 
-Factory and locker **do not need to be pasted** if `CHAIN_ID=46630` is set. The committed file `deployments/robinhood-testnet-46630.json` overlays:
+Factory and locker **do not need to be pasted** if `CHAIN_ID=46630` is set. Overlays:
 
-- `LAUNCH_FACTORY_ADDRESS=0x42654079a991EE21e2d2f7Eed0A77bf6a0082208`
-- `LAUNCH_LOCKER_ADDRESS=0x68000CD8F3AFE93BB87BeEDc9f2daBbf39E0836b`
-- start block `117433209`
+From `deployments/robinhood-testnet-46630.json` (legacy V1):
 
-You **may** paste those addresses explicitly. Do **not** paste Anvil `0x9fE467…` / `0x755378…`.
+- `LAUNCH_FACTORY_V1_ADDRESS=0x42654079a991EE21e2d2f7Eed0A77bf6a0082208`
+- `LAUNCH_LOCKER_V1_ADDRESS=0x68000CD8F3AFE93BB87BeEDc9f2daBbf39E0836b`
+- `LAUNCH_V1_DEPLOY_BLOCK=117433209`
+- `INDEXER_START_BLOCK=117433209` (earliest; do not raise this to the V2 block)
+
+From `deployments/robinhood-testnet-46630-v2.json` (default V2):
+
+- `LAUNCH_FACTORY_ADDRESS=0x359b3D82d958488eA9177c0F56EB3558ba59a40B`
+- `LAUNCH_LOCKER_ADDRESS=0x2De462b0a9A7bB378a8a4E68a352eF30A9250D15`
+- `LAUNCH_FACTORY_V2_ADDRESS` / `LAUNCH_LOCKER_V2_ADDRESS` (same)
+- `LAUNCH_V2_DEPLOY_BLOCK=119313128`
+- `DEFAULT_LAUNCH_VERSION=v2`
+
+You **may** paste those addresses explicitly. Do **not** paste Anvil `0x9fE467…` / `0x755378…`. Do **not** delete the V1 vars.
+
+The indexer polls **both** factories. V1 resumes from the existing per-chain cursor. V2 backfills from block `119313128` using `fused_factory_sync_cursor`. Trades stay unique on `(chain_id, tx_hash, log_index)`.
+
+Treasury `claimFor` is permissionless and is **not** run by this worker. See `docs/ENVIRONMENT.md`.
 
 Optional:
 
@@ -104,9 +119,9 @@ Do **not** set:
 
 ## 4. Backfill
 
-The first poll starts at **`INDEXER_START_BLOCK=117433209`**, not “now”. It walks forward in 2000-block chunks, writes a per-chain cursor, then resumes after restarts.
+The first poll still uses **`INDEXER_START_BLOCK=117433209`** as the V1 floor. Each factory has its own cursor. V2 starts at **`119313128`**. Do not wipe Postgres to pick up V2.
 
-That recovers every Fused `Created` / `Trade` / `Graduated` event from this factory, including **FSMOKE** and tokens launched from Vercel, without typing their addresses.
+That recovers V1 `Created` / `Trade` / `Graduated` history and V2 events (including **FV2SMOKE**) without typing token addresses.
 
 ## 5. Give Vercel the same database
 

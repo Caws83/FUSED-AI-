@@ -95,10 +95,18 @@ test("listLaunches filters by chain_id", () => {
   assert.match(src, /imageId: row\.image_id/);
 });
 
-test("client uses postgres connection options helper", () => {
+test("schema declares per-factory indexer cursors without dropping the chain cursor", () => {
+  assert.match(schema, /CREATE TABLE IF NOT EXISTS fused_factory_sync_cursor/);
+  assert.match(schema, /PRIMARY KEY \(chain_id, factory\)/);
+  assert.match(schema, /CREATE TABLE IF NOT EXISTS fused_sync_cursor/);
+});
+
+test("client uses postgres connection options helper and per-factory cursors", () => {
   const src = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "src", "client.ts"), "utf8");
   assert.match(src, /postgresClientOptions/);
   assert.match(src, /fused_sync_cursor/);
+  assert.match(src, /fused_factory_sync_cursor/);
+  assert.match(src, /listLaunchesByLauncher/);
 });
 
 test("public Postgres URLs require TLS; local and Railway private DNS do not", async () => {

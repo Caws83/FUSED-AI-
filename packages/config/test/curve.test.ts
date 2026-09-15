@@ -3,7 +3,7 @@ import test from "node:test";
 import { LOCAL_CURVE, PUBLIC_GRADUATION_TARGET_USD, requirePublicCurveParams } from "../src/curve.ts";
 import { mergeChainDeployment, parseDeploymentManifest, readPublicDeploymentManifest } from "../src/deployment.ts";
 import { isPublicLaunchEnabled } from "../src/features.ts";
-import { ROBINHOOD_TESTNET_CURVE, ROBINHOOD_TESTNET_V4 } from "../src/networks.ts";
+import { ROBINHOOD_TESTNET_CURVE, ROBINHOOD_TESTNET_LAUNCH_V2, ROBINHOOD_TESTNET_V4 } from "../src/networks.ts";
 import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -79,7 +79,7 @@ test("Robinhood testnet accepts explicit 0.01 ETH and refuses local 0.1 ETH", ()
   assert.equal(testnetOnMainnet.ok, false);
 });
 
-test("Robinhood testnet live overlay uses the deployed factory, not Anvil", () => {
+test("Robinhood testnet live overlay defaults to V2 and keeps V1 legacy", () => {
   const row = readPublicDeploymentManifest(46630);
   assert.equal(row.status, "DEPLOYED");
   assert.equal(row.chainId, 46630);
@@ -92,8 +92,13 @@ test("Robinhood testnet live overlay uses the deployed factory, not Anvil", () =
     CHAIN_ID: "46630",
     NEXT_PUBLIC_CHAIN_ID: "46630",
   });
-  assert.equal(merged.LAUNCH_FACTORY_ADDRESS, row.contracts.launchFactory);
-  assert.equal(merged.LAUNCH_LOCKER_ADDRESS, row.contracts.launchLocker);
+  assert.equal(merged.LAUNCH_FACTORY_V1_ADDRESS, row.contracts.launchFactory);
+  assert.equal(merged.LAUNCH_LOCKER_V1_ADDRESS, row.contracts.launchLocker);
+  assert.equal(merged.LAUNCH_FACTORY_ADDRESS, ROBINHOOD_TESTNET_LAUNCH_V2.factory);
+  assert.equal(merged.LAUNCH_LOCKER_ADDRESS, ROBINHOOD_TESTNET_LAUNCH_V2.locker);
+  assert.equal(merged.LAUNCH_FACTORY_V2_ADDRESS, ROBINHOOD_TESTNET_LAUNCH_V2.factory);
+  assert.equal(merged.DEFAULT_LAUNCH_VERSION, "v2");
+  assert.equal(merged.INDEXER_START_BLOCK, String(row.deployBlock));
   assert.equal(merged.UNISWAP_POOL_MANAGER_ADDRESS?.toLowerCase(), ROBINHOOD_TESTNET_V4.poolManager.toLowerCase());
   assert.equal(merged.NEXT_PUBLIC_RPC_URL, "https://rpc.testnet.chain.robinhood.com");
 });
