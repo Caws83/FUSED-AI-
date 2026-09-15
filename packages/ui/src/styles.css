@@ -601,6 +601,14 @@ textarea {
   font-size: 13px;
 }
 
+.fused-review-actions {
+  margin-top: 4px;
+}
+
+.fused-review-actions .fused-btn-lime {
+  flex: 1;
+}
+
 .fused-live-card {
   display: grid;
   gap: 14px;
@@ -612,6 +620,7 @@ textarea {
 
 .fused-live-card p {
   margin: 0;
+  color: var(--fused-muted);
 }
 
 .fused-live-open {
@@ -619,18 +628,18 @@ textarea {
   text-decoration: none;
 }
 
+.fused-origin-btn {
+  margin-top: 12px;
+  width: fit-content;
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
 .fused-live-tx {
   font-size: 13px;
   color: var(--fused-muted);
   word-break: break-all;
-}
-
-.fused-review-actions {
-  margin-top: 4px;
-}
-
-.fused-review-actions .fused-btn-lime {
-  flex: 1;
 }
 
 .fused-pipeline {

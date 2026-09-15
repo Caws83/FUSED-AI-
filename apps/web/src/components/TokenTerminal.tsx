@@ -119,12 +119,14 @@ export function TokenTerminal({
                 <span style={{ color: "var(--fused-muted)", fontSize: 13, wordBreak: "break-all" }}>{launch.token}</span>
               </div>
               {launch.sourcePostUrl ? (
-                <p className="fused-token-origin">
-                  Created from X post{" "}
-                  <a href={launch.sourcePostUrl} target="_blank" rel="noreferrer">
-                    @{launch.sourceAuthor || "post"}
-                  </a>
-                </p>
+                <a
+                  href={launch.sourcePostUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="fused-btn fused-btn-ghost fused-origin-btn"
+                >
+                  Created from this post
+                </a>
               ) : null}
             </div>
           </div>
@@ -233,7 +235,10 @@ export function TokenTerminal({
           <Card>
             <p className="fused-kicker">Origin post</p>
             {launch.sourceAuthor ? <strong>@{launch.sourceAuthor}</strong> : null}
-            <p style={{ whiteSpace: "pre-wrap", marginBottom: 0 }}>{launch.sourceExcerpt}</p>
+            {launch.sourceExcerpt ? <p style={{ whiteSpace: "pre-wrap" }}>{launch.sourceExcerpt}</p> : null}
+            <a href={launch.sourcePostUrl} target="_blank" rel="noreferrer" className="fused-btn fused-btn-ghost">
+              Created from this post
+            </a>
           </Card>
         ) : null}
       </div>

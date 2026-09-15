@@ -261,10 +261,8 @@ export function ManualLaunch({
     return (
       <Card className="fused-live-card">
         <p className="fused-kicker">Live</p>
-        <h2 className="fused-h2" style={{ fontSize: 28 }}>
-          {name} is on the curve
-        </h2>
-        <p style={{ color: "var(--fused-muted)" }}>
+        <h2 className="fused-h2">{name} is on the curve</h2>
+        <p>
           {symbol.toUpperCase()} is onchain. Buy and sell on the bonding curve until it graduates.
         </p>
         <a href={`/token/${token}`} className="fused-btn fused-btn-lime fused-btn-lg fused-live-open">
@@ -287,7 +285,7 @@ export function ManualLaunch({
             </div>
           )}
           <div className="fused-review-hero-copy">
-            <p className="fused-kicker">Review fuse</p>
+            <p className="fused-kicker">Confirm launch</p>
             <h2 className="fused-h2">{params.name}</h2>
             <div className="fused-review-tags">
               <span className="fused-badge fused-badge-lime">${params.symbol}</span>
@@ -305,9 +303,7 @@ export function ManualLaunch({
           </div>
           <div>
             <dt>Chain</dt>
-            <dd>
-              {chainLabelFor(walletChainId) ?? chainName}
-            </dd>
+            <dd>{chainLabelFor(walletChainId) ?? chainName}</dd>
           </div>
           <div>
             <dt>Creator buy</dt>
