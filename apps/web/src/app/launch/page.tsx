@@ -1,4 +1,4 @@
-import { SectionHeader, Card } from "@fused-ai/ui";
+import { Card } from "@fused-ai/ui";
 import { loadEnv, loadRepoEnv } from "@fused-ai/config";
 import { chainLabelFor } from "@fused-ai/config/public";
 import { ManualLaunch } from "../../components/ManualLaunch.tsx";
@@ -17,7 +17,6 @@ export default async function LaunchPage({ searchParams }: { searchParams: Promi
   return (
     <main className="fused-section">
       <div className="fused-wrap" style={{ display: "grid", gap: 22, maxWidth: 720 }}>
-        <SectionHeader kicker="Create Launch" title={sourcePost ? "Fuse this moment" : "Create manually"} />
         {ready && factory ? (
           <ManualLaunch
             factory={factory}

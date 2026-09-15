@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useAccount, useChainId, useConfig, useSwitchChain } from "wagmi";
 import { parseEther, parseEventLogs } from "viem";
-import { Button, Card } from "@fused-ai/ui";
+import { Button, Card, SectionHeader } from "@fused-ai/ui";
 import {
   FUSED_ERROR_MESSAGES,
   FUSED_FACTORY_ABI,
@@ -259,7 +259,7 @@ export function ManualLaunch({
 
   if (step === "done" && token && txHash) {
     return (
-      <Card>
+      <Card className="fused-live-card">
         <p className="fused-kicker">Live</p>
         <h2 className="fused-h2" style={{ fontSize: 28 }}>
           {name} is on the curve
@@ -267,10 +267,10 @@ export function ManualLaunch({
         <p style={{ color: "var(--fused-muted)" }}>
           {symbol.toUpperCase()} is onchain. Buy and sell on the bonding curve until it graduates.
         </p>
-        <p>
-          <a href={`/token/${token}`}>Open token</a>
-        </p>
-        <p style={{ fontSize: 13, color: "var(--fused-muted)", wordBreak: "break-all" }}>{txHash}</p>
+        <a href={`/token/${token}`} className="fused-btn fused-btn-lime fused-btn-lg fused-live-open">
+          Open token
+        </a>
+        <p className="fused-live-tx">{txHash}</p>
       </Card>
     );
   }
@@ -349,6 +349,8 @@ export function ManualLaunch({
   }
 
   return (
+    <>
+    <SectionHeader kicker="Create Launch" title={sourcePost ? "Fuse this moment" : "Create manually"} />
     <Card>
       {sourcePost ? <SourcePost post={sourcePost} /> : null}
       <FusePost disabled={pending} onBusy={setFusingPost} onFused={applyFusedDraft} onReview={() => void onReview()} />
@@ -447,6 +449,7 @@ export function ManualLaunch({
         </Button>
       </div>
     </Card>
+    </>
   );
 }
 

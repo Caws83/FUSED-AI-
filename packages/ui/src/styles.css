@@ -601,6 +601,30 @@ textarea {
   font-size: 13px;
 }
 
+.fused-live-card {
+  display: grid;
+  gap: 14px;
+}
+
+.fused-live-card .fused-h2 {
+  margin: 0;
+}
+
+.fused-live-card p {
+  margin: 0;
+}
+
+.fused-live-open {
+  width: 100%;
+  text-decoration: none;
+}
+
+.fused-live-tx {
+  font-size: 13px;
+  color: var(--fused-muted);
+  word-break: break-all;
+}
+
 .fused-review-actions {
   margin-top: 4px;
 }
