@@ -23,8 +23,10 @@
     "next": "^16.2.9",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "viem": "^2.37.6",
-    "wagmi": "^2.16.9"
+    "@reown/appkit": "^1.8.24",
+    "@reown/appkit-adapter-wagmi": "^1.8.24",
+    "viem": "^2.56.5",
+    "wagmi": "^2.19.5"
   },
   "engines": {
     "node": ">=22"
