@@ -1,0 +1,54 @@
+{
+  "network": "arc",
+  "chainId": 5042,
+  "generation": "arc",
+  "status": "DEPLOYED",
+  "rpcUrl": "https://rpc.mainnet.arc.io",
+  "explorer": "https://arc-scan.org",
+  "deployer": "0xf5fDA9015e0DA7eD406C4c329AB041C2ca6a92EE",
+  "contracts": {
+    "launchFactory": "0xd8aBCbb88a5449D9C3C3004EE1092B7306285851",
+    "launchLocker": "0xf31675e5Ac818B5100cBb4D19B36c74191ACD330",
+    "poolManager": "0x8366a39CC670B4001A1121B8F6A443A643e40951",
+    "positionManager": "0x6049c9a0e26405c0985f9e3685c87d0ae917f82b",
+    "universalRouter": "0x4fca4a51ab4f23a7447b3284fbd7d73289a89fb1",
+    "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+    "stateView": "0xf3334192d15450cdd385c8b70e03f9a6bd9e673b",
+    "quoter": "0x8dc178efb8111bb0973dd9d722ebeff267c98f94",
+    "quoteToken": "0x3600000000000000000000000000000000000000"
+  },
+  "curve": {
+    "virtualQuoteWei": "4571428571428571428570",
+    "virtualToken": "1000000000000000000000000000",
+    "graduationTargetWei": "11428571428571428571425",
+    "feeBps": 100,
+    "lpFee": 10000,
+    "ratio": "0.4",
+    "circulatingMcApprox": "39999999999999285714286",
+    "fdvApprox": "55999999999999000000000",
+    "note": "Arc mainnet 5042. ~$40k circulating MC at graduation. 1% curve 30/70. V4 70/10/20. Canonical USDC."
+  },
+  "usdc": {
+    "nativeDecimals": 18,
+    "erc20": "0x3600000000000000000000000000000000000000",
+    "erc20Decimals": 6,
+    "scale": "1000000000000"
+  },
+  "treasury": "0x6F88E279002051ceB09ead378081Df8Fc124AacD",
+  "fees": {
+    "curveBps": 100,
+    "creatorCurveBps": 30,
+    "treasuryCurveBps": 70,
+    "v4CreatorBps": 7000,
+    "v4TreasuryBps": 1000,
+    "v4CompoundBps": 2000
+  },
+  "deployBlock": 21188583,
+  "transactions": {
+    "factory": "0xbf4460cfde44673f1c9d854dbe56f26011b14e0bf96e52af9ef83469af8effab"
+  },
+  "microTest": {
+    "disposableFactory": "0x98Cab6d3FaE4783A0D0cB13701d0e9772d6833E5",
+    "note": "Disposable V4 micro-test factory. Not used for public launches."
+  }
+}

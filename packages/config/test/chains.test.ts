@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   ARC_MAINNET_CHAIN_ID,
+  ARC_MAINNET_LAUNCH,
   ARC_TESTNET_CHAIN_ID,
   ARC_TESTNET_LAUNCH,
   ROBINHOOD_MAINNET_CHAIN_ID,
@@ -38,8 +39,10 @@ test("wallet chainId never falls back across Arc and Robinhood", () => {
   assert.notEqual(main?.factory, ROBINHOOD_TESTNET_LAUNCH_V2.factory);
   assert.notEqual(arc?.factory, ROBINHOOD_TESTNET_LAUNCH_V2.factory);
   assert.equal(arc?.factory, ARC_TESTNET_LAUNCH.factory);
-  assert.equal(arcMain?.deployed, false);
-  assert.equal(arcMain?.factory, null);
+  assert.equal(arcMain?.deployed, true);
+  assert.equal(arcMain?.factory, ARC_MAINNET_LAUNCH.factory);
+  assert.equal(arcMain?.locker, ARC_MAINNET_LAUNCH.locker);
+  assert.notEqual(arcMain?.factory, ARC_TESTNET_LAUNCH.factory);
   assert.equal(launchContractsForChain(1), null);
   assert.equal(launchContractsForChain(8453), null);
   assert.equal(launchContractsForChain(null), null);
@@ -47,15 +50,16 @@ test("wallet chainId never falls back across Arc and Robinhood", () => {
 
 test("newLaunchForWallet maps supported wallets and fail-closes otherwise", () => {
   const rh = newLaunchForWallet(4663);
-  const arc = newLaunchForWallet(5042002);
+  const arc = newLaunchForWallet(5042);
   assert.equal(rh?.factory, ROBINHOOD_MAINNET_LAUNCH_V2.factory);
-  assert.equal(arc?.factory, ARC_TESTNET_LAUNCH.factory);
+  assert.equal(arc?.factory, ARC_MAINNET_LAUNCH.factory);
   assert.notEqual(rh?.factory, arc?.factory);
+  assert.notEqual(arc?.factory, ARC_TESTNET_LAUNCH.factory);
   assert.equal(newLaunchForWallet(1), null);
   assert.equal(newLaunchForWallet(46630), null);
-  assert.equal(newLaunchForWallet(5042), null);
+  assert.equal(newLaunchForWallet(5042002), null);
   assert.equal(newLaunchForWallet(null), null);
-  assert.deepEqual([...WALLET_SELECTOR_CHAIN_IDS], [4663, 5042002]);
+  assert.deepEqual([...WALLET_SELECTOR_CHAIN_IDS], [4663, 5042]);
 });
 
 test("Arc curve config refuses Robinhood network names and vice versa", () => {
@@ -141,6 +145,19 @@ test("CHAIN_ID 5042002 overlay uses Arc factory and deploy block 62246396", () =
   assert.notEqual(merged.LAUNCH_FACTORY_ADDRESS, ROBINHOOD_TESTNET_LAUNCH_V2.factory);
 });
 
+test("CHAIN_ID 5042 overlay uses Arc mainnet factory and deploy block 21188583", () => {
+  const merged = mergeChainDeployment({
+    CHAIN_ID: "5042",
+    NEXT_PUBLIC_CHAIN_ID: "5042",
+  });
+  assert.equal(merged.LAUNCH_FACTORY_ADDRESS, ARC_MAINNET_LAUNCH.factory);
+  assert.equal(merged.LAUNCH_LOCKER_ADDRESS, ARC_MAINNET_LAUNCH.locker);
+  assert.equal(merged.INDEXER_START_BLOCK, "21188583");
+  assert.equal(merged.LAUNCH_DEPLOY_BLOCK, "21188583");
+  assert.notEqual(merged.LAUNCH_FACTORY_ADDRESS, ARC_TESTNET_LAUNCH.factory);
+  assert.notEqual(merged.LAUNCH_FACTORY_ADDRESS, ROBINHOOD_MAINNET_LAUNCH_V2.factory);
+});
+
 test("unsupported selector chain ids fail closed", () => {
   assert.equal(parseSupportedChainId("1"), null);
   assert.equal(parseSupportedChainId("4663"), 4663);
@@ -148,6 +165,7 @@ test("unsupported selector chain ids fail closed", () => {
   assert.equal(parseSupportedChainId(46630), 46630);
   assert.equal(parseSupportedChainId(5042002), 5042002);
   assert.equal(rpcUrlForChain(5042002), "https://rpc.testnet.arc.io");
+  assert.equal(rpcUrlForChain(5042), "https://rpc.mainnet.arc.io");
   assert.equal(rpcUrlForChain(4663), "https://rpc.mainnet.chain.robinhood.com");
   assert.equal(rpcUrlForChain(1), null);
 });

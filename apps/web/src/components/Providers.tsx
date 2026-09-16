@@ -7,6 +7,8 @@ import { injected, walletConnect } from "wagmi/connectors";
 import { anvil } from "viem/chains";
 import { defineChain, type Chain } from "viem";
 import {
+  ARC_MAINNET,
+  ARC_MAINNET_CHAIN_ID,
   ARC_TESTNET,
   ARC_TESTNET_CHAIN_ID,
   ROBINHOOD_MAINNET,
@@ -48,10 +50,12 @@ export function Providers({
     if (chainId == null || !rpcUrl) return null;
     const robinhoodMainnetRpc = chainId === ROBINHOOD_MAINNET_CHAIN_ID ? rpcUrl : ROBINHOOD_MAINNET.rpcUrl;
     const robinhoodTestnetRpc = chainId === ROBINHOOD_TESTNET_CHAIN_ID ? rpcUrl : ROBINHOOD_TESTNET.rpcUrl;
-    const arcRpc = chainId === ARC_TESTNET_CHAIN_ID ? rpcUrl : ARC_TESTNET.rpcUrl;
+    const arcTestnetRpc = chainId === ARC_TESTNET_CHAIN_ID ? rpcUrl : ARC_TESTNET.rpcUrl;
+    const arcMainnetRpc = chainId === ARC_MAINNET_CHAIN_ID ? rpcUrl : ARC_MAINNET.rpcUrl;
     const robinhoodMainnet = fusedChain(ROBINHOOD_MAINNET_CHAIN_ID, robinhoodMainnetRpc);
     const robinhoodTestnet = fusedChain(ROBINHOOD_TESTNET_CHAIN_ID, robinhoodTestnetRpc);
-    const arc = fusedChain(ARC_TESTNET_CHAIN_ID, arcRpc);
+    const arcTestnet = fusedChain(ARC_TESTNET_CHAIN_ID, arcTestnetRpc);
+    const arcMainnet = fusedChain(ARC_MAINNET_CHAIN_ID, arcMainnetRpc);
     const chains: [Chain, ...Chain[]] =
       chainId === 31337
         ? [
@@ -61,10 +65,11 @@ export function Providers({
               rpcUrls: { default: { http: [rpcUrl] }, public: { http: [rpcUrl] } },
             },
             robinhoodMainnet,
-            arc,
+            arcMainnet,
+            arcTestnet,
             robinhoodTestnet,
           ]
-        : [robinhoodMainnet, arc, robinhoodTestnet];
+        : [robinhoodMainnet, arcMainnet, arcTestnet, robinhoodTestnet];
     const kinds = walletConnectorKinds(walletConnectProjectId);
     const connectors = [
       injected(),
@@ -75,7 +80,8 @@ export function Providers({
     const transports: Record<number, ReturnType<typeof http>> = {
       [ROBINHOOD_MAINNET_CHAIN_ID]: http(robinhoodMainnetRpc),
       [ROBINHOOD_TESTNET_CHAIN_ID]: http(robinhoodTestnetRpc),
-      [ARC_TESTNET_CHAIN_ID]: http(arcRpc),
+      [ARC_MAINNET_CHAIN_ID]: http(arcMainnetRpc),
+      [ARC_TESTNET_CHAIN_ID]: http(arcTestnetRpc),
     };
     if (chainId === 31337) transports[31337] = http(rpcUrl);
     return createConfig({

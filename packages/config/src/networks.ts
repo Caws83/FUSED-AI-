@@ -43,9 +43,9 @@ export const ARC_TESTNET = {
 export const ARC_MAINNET = {
   network: "arc" as const,
   chainId: ARC_MAINNET_CHAIN_ID,
-  name: "Arc",
+  name: "Arc Mainnet",
   nativeCurrency: NATIVE_USDC,
-  rpcUrl: "https://rpc.arc-scan.org",
+  rpcUrl: "https://rpc.mainnet.arc.io",
   explorer: "https://arc-scan.org",
   canonicalUsdc: "0x3600000000000000000000000000000000000000",
   usdcErc20Decimals: 6,
@@ -121,12 +121,31 @@ export const ARC_TESTNET_CURVE = {
   note: "TESTNET ONLY. Native 18-dec USDC curve. 1% fee. Tiny graduation target. No Uniswap on 5042002.",
 };
 
+export const ARC_MAINNET_CURVE = {
+  network: "arc" as const,
+  chainId: ARC_MAINNET_CHAIN_ID,
+  virtualQuoteWei: "4571428571428571428570",
+  virtualToken: "1000000000000000000000000000",
+  graduationTargetWei: "11428571428571428571425",
+  feeBps: 100,
+  lpFee: 10_000,
+  note: "Arc mainnet 5042. ~$40k circulating MC. 0.4 virtualQuote/target. Canonical USDC V4.",
+};
+
 /** Populated after Arc testnet deploy. Never a Robinhood address. */
 export const ARC_TESTNET_LAUNCH = {
   version: "arc" as const,
   factory: "0x98Cab6d3FaE4783A0D0cB13701d0e9772d6833E5",
   locker: "0xcb6eA43c418e91F54c4B1748C6626493bFdB9be2",
   deployBlock: 62246396,
+};
+
+/** FusedFactoryArc on Arc Mainnet 5042. Never the disposable micro factory. */
+export const ARC_MAINNET_LAUNCH = {
+  version: "arc" as const,
+  factory: "0xd8aBCbb88a5449D9C3C3004EE1092B7306285851",
+  locker: "0xf31675e5Ac818B5100cBb4D19B36c74191ACD330",
+  deployBlock: 21188583,
 };
 
 export function nativeCurrencyFor(chainId: number | null | undefined): NativeCurrency {
@@ -148,7 +167,7 @@ export function chainLabelFor(chainId: number | null | undefined): string | unde
   if (chainId === ROBINHOOD_TESTNET_CHAIN_ID) return "Robinhood Testnet";
   if (chainId === ROBINHOOD_MAINNET_CHAIN_ID) return ROBINHOOD_MAINNET.name;
   if (chainId === ARC_TESTNET_CHAIN_ID) return "Arc Testnet";
-  if (chainId === ARC_MAINNET_CHAIN_ID) return "Arc";
+  if (chainId === ARC_MAINNET_CHAIN_ID) return "Arc Mainnet";
   return `Chain ${chainId}`;
 }
 
@@ -190,16 +209,21 @@ export function launchContractsForChain(chainId: number | null | undefined): Cha
     };
   }
   if (chainId === ARC_MAINNET_CHAIN_ID) {
-    return { chainId, factory: null, locker: null, deployed: false };
+    return {
+      chainId,
+      factory: ARC_MAINNET_LAUNCH.factory,
+      locker: ARC_MAINNET_LAUNCH.locker,
+      deployed: Boolean(ARC_MAINNET_LAUNCH.factory && ARC_MAINNET_LAUNCH.locker),
+    };
   }
   return null;
 }
 
-/** Header Network dropdown. Production Robinhood is Mainnet 4663. Arc testnet stays. */
-export const WALLET_SELECTOR_CHAIN_IDS = [ROBINHOOD_MAINNET_CHAIN_ID, ARC_TESTNET_CHAIN_ID] as const;
+/** Header Network dropdown. Production: Robinhood Mainnet 4663 and Arc Mainnet 5042. */
+export const WALLET_SELECTOR_CHAIN_IDS = [ROBINHOOD_MAINNET_CHAIN_ID, ARC_MAINNET_CHAIN_ID] as const;
 
 export function isWalletSelectorChain(chainId: number | null | undefined): boolean {
-  return chainId === ROBINHOOD_MAINNET_CHAIN_ID || chainId === ARC_TESTNET_CHAIN_ID;
+  return chainId === ROBINHOOD_MAINNET_CHAIN_ID || chainId === ARC_MAINNET_CHAIN_ID;
 }
 
 /** Boards list the selector chains. Historical 46630 rows stay in Postgres with their own chain_id. */
@@ -285,7 +309,7 @@ export function deploymentFileName(chainId: number): string {
   if (chainId === ROBINHOOD_TESTNET_CHAIN_ID) return "robinhood-testnet-46630.json";
   if (chainId === ROBINHOOD_MAINNET_CHAIN_ID) return "robinhood-4663.json";
   if (chainId === ARC_TESTNET_CHAIN_ID) return "arc-testnet-5042002.json";
-  if (chainId === ARC_MAINNET_CHAIN_ID) return "arc-5042.json";
+  if (chainId === ARC_MAINNET_CHAIN_ID) return "arc-mainnet-5042.json";
   return `chain-${chainId}.json`;
 }
 

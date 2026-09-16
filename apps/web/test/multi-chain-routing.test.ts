@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  ARC_MAINNET_LAUNCH,
   ARC_TESTNET_LAUNCH,
   ROBINHOOD_MAINNET_LAUNCH_V2,
   ROBINHOOD_TESTNET_LAUNCH_V2,
@@ -15,31 +16,32 @@ import { resolveLaunchIdentity } from "../src/lib/launches.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-test("wallet 4663 launches on Robinhood Mainnet V2 and 5042002 launches on Arc", () => {
+test("wallet 4663 launches on Robinhood Mainnet V2 and 5042 launches on Arc Mainnet", () => {
   assert.equal(newLaunchForWallet(4663)?.factory, ROBINHOOD_MAINNET_LAUNCH_V2.factory);
-  assert.equal(newLaunchForWallet(5042002)?.factory, ARC_TESTNET_LAUNCH.factory);
-  assert.notEqual(newLaunchForWallet(4663)?.factory, newLaunchForWallet(5042002)?.factory);
+  assert.equal(newLaunchForWallet(5042)?.factory, ARC_MAINNET_LAUNCH.factory);
+  assert.notEqual(newLaunchForWallet(4663)?.factory, newLaunchForWallet(5042)?.factory);
   assert.notEqual(newLaunchForWallet(4663)?.factory, ROBINHOOD_TESTNET_LAUNCH_V2.factory);
+  assert.notEqual(newLaunchForWallet(5042)?.factory, ARC_TESTNET_LAUNCH.factory);
 });
 
 test("unsupported chain has no launch factory", () => {
   assert.equal(newLaunchForWallet(1), null);
   assert.equal(newLaunchForWallet(8453), null);
   assert.equal(newLaunchForWallet(46630), null);
-  assert.equal(newLaunchForWallet(5042), null);
+  assert.equal(newLaunchForWallet(5042002), null);
   assert.equal(newLaunchForWallet(undefined), null);
 });
 
 test("Robinhood currency is ETH and Arc currency is USDC", () => {
   assert.equal(nativeCurrencyFor(46630).symbol, "ETH");
   assert.equal(nativeCurrencyFor(5042002).symbol, "USDC");
+  assert.equal(nativeCurrencyFor(5042).symbol, "USDC");
 });
 
-test("network selector exposes Robinhood Mainnet and Arc testnet", () => {
+test("network selector exposes Robinhood Mainnet and Arc Mainnet", () => {
   const selector = readFileSync(join(root, "src/components/NetworkSelector.tsx"), "utf8");
   assert.match(selector, /WALLET_SELECTOR_CHAIN_IDS/);
-  assert.deepEqual([...WALLET_SELECTOR_CHAIN_IDS], [4663, 5042002]);
-  assert.equal(selector.includes("ARC_MAINNET_CHAIN_ID"), false);
+  assert.deepEqual([...WALLET_SELECTOR_CHAIN_IDS], [4663, 5042]);
   assert.match(selector, /ROBINHOOD_MAINNET_CHAIN_ID/);
   assert.match(selector, /switchChain/);
 });
@@ -54,6 +56,7 @@ test("Connect Wallet is one header button until connectors are revealed", () => 
   assert.match(connect, /connect\(\{ connector, chainId: preferredChainId \}\)/);
   assert.match(providers, /ROBINHOOD_MAINNET_CHAIN_ID/);
   assert.match(providers, /ROBINHOOD_TESTNET_CHAIN_ID/);
+  assert.match(providers, /ARC_MAINNET_CHAIN_ID/);
   assert.match(providers, /ARC_TESTNET_CHAIN_ID/);
   assert.match(providers, /chains/);
 });
