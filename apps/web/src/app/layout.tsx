@@ -41,20 +41,13 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   const pub = loadPublicEnv();
   const walletConfigured = publicWalletAvailability(pub).status === "OK";
-  const wallet =
-    walletConfigured && pub.chainId && pub.rpcUrl
-      ? {
-          chainId: pub.chainId,
-          rpcUrl: pub.rpcUrl,
-          walletConnectProjectId: pub.walletConnectProjectId,
-        }
-      : null;
+  
   const showStatus = isStatusPageEnabled();
 
   return (
     <html lang="en">
       <body className={`${dmSans.className} ${plusJakarta.variable} ${spaceGrotesk.variable} fused-shell`}>
-        <Providers wallet={wallet}>
+        <Providers>
           <SiteHeader walletConfigured={walletConfigured} />
           {children}
           <footer className="fused-footer">

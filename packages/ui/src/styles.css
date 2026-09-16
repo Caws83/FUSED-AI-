@@ -704,7 +704,14 @@ textarea {
 }
 
 .fused-nav-desktop-tools {
-  display: inline-flex;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fused-nav-desktop-tools > * {
+  display: flex;
+  align-items: center;
 }
 
 .fused-nav-mobile-tools {
@@ -1040,5 +1047,134 @@ textarea {
 @media (max-width: 380px) {
   .fused-logo .fused-brand-word {
     display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .fused-nav-desktop-tools {
+    display: none;
+  }
+
+  .fused-nav-mobile-tools {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+  }
+
+  .fused-nav-mobile-tools > * {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+}
+
+/* Shared wallet button base */
+.fused-btn-network,
+.fused-btn-connect {
+  height: 36px;
+  padding: 0 14px;
+
+  border-radius: 10px;
+  border: 1px solid transparent;
+
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+/* Network selector */
+.fused-btn-network {
+  background: #0a1424;
+  color: #ffffff;
+  border-color: #0a1424;
+}
+
+.fused-btn-network:hover {
+  background: #111d30;
+  border-color: #111d30;
+  transform: translateY(-1px);
+}
+
+.fused-btn-network:active {
+  transform: translateY(0);
+}
+
+/* Connect wallet */
+.fused-btn-connect {
+  background: #b8f238;
+  color: #0a1424;
+  border-color: #b8f238;
+  box-shadow: 0 4px 14px rgba(184, 242, 56, 0.18);
+}
+
+.fused-btn-connect:hover {
+  background: #c5fa52;
+  border-color: #c5fa52;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(184, 242, 56, 0.24);
+}
+
+.fused-btn-connect:active {
+  transform: translateY(0);
+}
+
+/* Keyboard accessibility */
+.fused-btn-network:focus-visible,
+.fused-btn-connect:focus-visible {
+  outline: 3px solid rgba(184, 242, 56, 0.35);
+  outline-offset: 2px;
+}
+
+/* Desktop wallet area */
+.fused-nav-desktop-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Mobile wallet area */
+.fused-nav-mobile-tools {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .fused-nav-desktop-tools {
+    display: none;
+  }
+
+  .fused-nav-mobile-tools {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+
+    width: 100%;
+    margin-top: 8px;
+    padding-top: 12px;
+
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+  }
+
+  .fused-btn-network,
+  .fused-btn-connect {
+    min-width: 160px;
   }
 }

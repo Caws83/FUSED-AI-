@@ -1,9 +1,8 @@
 "use client";
 
-import { type ReactNode, useMemo } from "react";
+import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider, type Config, http } from "wagmi";
-import { anvil } from "viem/chains";
+import { WagmiProvider, type Config } from "wagmi";
 
 import {
   defineChain,
@@ -25,23 +24,27 @@ import {
   nativeCurrencyFor,
 } from "../lib/wallet.ts";
 
-export type WalletRuntimeConfig = {
-  chainId: number;
-  rpcUrl: string;
-  walletConnectProjectId: string | null;
-};
-
 const queryClient = new QueryClient();
 
-function fusedChain(chainId: number, rpcUrl: string): AppKitNetwork {
+const projectId =
+  process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ??
+  "2b6111ec844e3cd755c1792dfacc8533";
+
+function fusedChain(
+  chainId: number,
+  rpcUrl: string,
+): AppKitNetwork {
   return defineChain({
     id: chainId,
     caipNetworkId: `eip155:${chainId}`,
     chainNamespace: "eip155",
 
-    name: chainLabelFor(chainId) ?? "Fused AI chain",
+    name:
+      chainLabelFor(chainId) ??
+      "Fused AI chain",
 
-    nativeCurrency: nativeCurrencyFor(chainId),
+    nativeCurrency:
+      nativeCurrencyFor(chainId),
 
     rpcUrls: {
       default: {
@@ -51,107 +54,56 @@ function fusedChain(chainId: number, rpcUrl: string): AppKitNetwork {
   });
 }
 
-export function Providers({
-  wallet,
-  children,
-}: {
-  wallet: WalletRuntimeConfig | null;
-  children: ReactNode;
-}) {
-  const setup = useMemo(() => {
-    if (
-      !wallet?.walletConnectProjectId ||
-      !wallet.rpcUrl
-    ) {
-      return null;
-    }
+const robinhood = fusedChain(
+  ROBINHOOD_TESTNET_CHAIN_ID,
+  ROBINHOOD_TESTNET.rpcUrl,
+);
 
-    const projectId = wallet.walletConnectProjectId;
+const arc = fusedChain(
+  ARC_TESTNET_CHAIN_ID,
+  ARC_TESTNET.rpcUrl,
+);
 
-    const robinhoodRpc =
-      wallet.chainId === ROBINHOOD_TESTNET_CHAIN_ID
-        ? wallet.rpcUrl
-        : ROBINHOOD_TESTNET.rpcUrl;
+const networks = [
+  robinhood,
+  arc,
+] satisfies [
+  AppKitNetwork,
+  ...AppKitNetwork[],
+];
 
-    const arcRpc =
-      wallet.chainId === ARC_TESTNET_CHAIN_ID
-        ? wallet.rpcUrl
-        : ARC_TESTNET.rpcUrl;
+const wagmiAdapter = new WagmiAdapter({
+  projectId,
+  networks,
+  ssr: true,
+});
 
-    const robinhood = fusedChain(
-      ROBINHOOD_TESTNET_CHAIN_ID,
-      robinhoodRpc,
-    );
+createAppKit({
+  adapters: [wagmiAdapter],
+  networks,
+  projectId,
 
-    const arc = fusedChain(
-      ARC_TESTNET_CHAIN_ID,
-      arcRpc,
-    );
+  metadata: {
+    name: "Fused AI",
+    description: "Fused AI",
+    url: "https://fused.ai",
+    icons: ["/brand/fused-ai-logo.png"],
+  },
 
-const local: AppKitNetwork = defineChain({
-  id: 31337,
-  caipNetworkId: "eip155:31337",
-  chainNamespace: "eip155",
-
-  name: chainLabelFor(31337) ?? "Fused Local",
-
-  nativeCurrency: anvil.nativeCurrency,
-
-  rpcUrls: {
-    default: {
-      http: [wallet.rpcUrl],
-    },
+  features: {
+    analytics: false,
   },
 });
 
-    const networks =
-  wallet.chainId === 31337
-    ? ([local, robinhood, arc] satisfies [
-        AppKitNetwork,
-        ...AppKitNetwork[],
-      ])
-    : ([robinhood, arc] satisfies [
-        AppKitNetwork,
-        ...AppKitNetwork[],
-      ]);
-
-    const wagmiAdapter = new WagmiAdapter({
-      projectId,
-      networks,
-      ssr: true,
-    });
-
-    createAppKit({
-      adapters: [wagmiAdapter],
-      networks,
-      projectId,
-
-      metadata: {
-        name: "Fused AI",
-        description: "Fused AI",
-        url:
-          typeof window !== "undefined"
-            ? window.location.origin
-            : "https://fused.ai",
-        icons: ["/brand/fused-ai-logo.png"],
-      },
-
-      features: {
-        analytics: false,
-      },
-    });
-
-    return {
-      config: wagmiAdapter.wagmiConfig as Config,
-    };
-  }, [wallet]);
-
-  if (!setup) {
-    return children;
-  }
-
+export function Providers({
+  children,
+}: {
+  children: ReactNode;
+}) {
   return (
-    <WagmiProvider config={setup.config}>
+    <WagmiProvider
+      config={wagmiAdapter.wagmiConfig as Config}
+    >
       <QueryClientProvider client={queryClient}>
         {children}
       </QueryClientProvider>
