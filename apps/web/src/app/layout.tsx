@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import { DM_Sans, Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
 import { isStatusPageEnabled, loadPublicEnv, publicWalletAvailability } from "@fused-ai/config/public";
 import { SiteHeader } from "../components/SiteHeader.tsx";
@@ -27,10 +27,40 @@ const spaceGrotesk = Space_Grotesk({
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "FUSED AI",
-  description: "Launch a token from a post. One post. One click. One token.",
+const SITE_URL = "https://www.fusedai.org";
+const SITE_TITLE = "FUSED AI — Launch Tokens From Posts";
+const SITE_DESCRIPTION =
+  "Turn a post into a token with AI. Create, launch and trade through the FUSED bonding curve.";
+const OG_IMAGE = `${SITE_URL}/brand/og-1200x630.png`;
+
+export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: `${SITE_URL}/` },
   icons: { icon: "/brand/favicon.svg" },
+  openGraph: {
+    type: "website",
+    url: `${SITE_URL}/`,
+    siteName: "FUSED AI",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [
+      {
+        url: OG_IMAGE,
+        width: 1200,
+        height: 630,
+        alt: "FUSED AI — Launch a token from a post.",
+        type: "image/png",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [OG_IMAGE],
+  },
 };
 
 export const viewport: Viewport = {
