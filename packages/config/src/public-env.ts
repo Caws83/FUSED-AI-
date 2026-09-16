@@ -94,11 +94,13 @@ export {
 } from "./networks.ts";
 
 export function publicWalletAvailability(pub: PublicEnv): Availability {
+  
   const missing: string[] = [];
   if (!pub.chainId) missing.push("NEXT_PUBLIC_CHAIN_ID");
   if (!pub.rpcUrl) missing.push("NEXT_PUBLIC_RPC_URL");
   if (missing.length) {
     return notConfigured(missing, "Browser wallet is not configured.");
   }
+
   return { status: AVAILABILITY_STATUS.OK };
 }
