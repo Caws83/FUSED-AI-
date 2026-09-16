@@ -28,7 +28,7 @@ const queryClient = new QueryClient();
 
 const projectId =
   process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ??
-  "2b6111ec844e3cd755c1792dfacc8533";
+  "";
 
 function fusedChain(
   chainId: number,
