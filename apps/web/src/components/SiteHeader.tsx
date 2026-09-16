@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Navigation } from "@fused-ai/ui";
 
@@ -25,9 +25,14 @@ export function SiteHeader({
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  const { open: openModal } = useAppKit();
+  const { open: openModal, close: closeModal } = useAppKit();
   const { isConnected, address } = useAppKitAccount();
   const { selectedNetworkId } = useAppKitState();
+
+  useEffect(() => {
+    setOpen(false);
+    closeModal();
+  }, [pathname]);
 
   const truncatedAddress = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -41,10 +46,12 @@ export function SiteHeader({
         : "Select Network";
 
   const openNetworkModal = () => {
+    setOpen(false);
     openModal({ view: "Networks" });
   };
 
   const openWalletModal = () => {
+    setOpen(false);
     openModal({
       view: isConnected ? "Account" : "Connect",
     });

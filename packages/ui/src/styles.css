@@ -57,6 +57,7 @@ textarea {
 
 .fused-shell {
   min-height: 100vh;
+  overflow-x: clip;
   background:
     radial-gradient(1200px 420px at 8% -10%, rgba(200, 245, 74, 0.28), transparent 55%),
     radial-gradient(900px 380px at 100% 0%, rgba(31, 111, 255, 0.16), transparent 50%),
@@ -194,14 +195,16 @@ textarea {
   top: 0;
   z-index: 20;
   backdrop-filter: blur(16px);
-  background: rgba(244, 247, 251, 0.78);
+  background: rgba(244, 247, 251, 0.92);
   border-bottom: 1px solid rgba(227, 234, 241, 0.9);
 }
 
 .fused-nav-inner {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: nowrap;
   gap: 16px;
   min-height: 72px;
   min-width: 0;
@@ -211,8 +214,8 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  min-width: 0;
-  flex: 0 1 auto;
+  flex: 0 0 auto;
+  z-index: 2;
 }
 
 .fused-logo-image {
@@ -359,6 +362,7 @@ textarea {
   letter-spacing: -0.03em;
   font-size: clamp(28px, 4vw, 40px);
   line-height: 1.05;
+  overflow-wrap: anywhere;
 }
 
 .fused-empty {
@@ -939,6 +943,7 @@ textarea {
 
   .fused-logo {
     gap: 8px;
+    max-width: calc(100% - 52px);
   }
 
   .fused-logo-image {
@@ -961,9 +966,9 @@ textarea {
   .fused-nav-links[data-open="true"] {
     display: grid;
     position: absolute;
-    top: 100%;
-    left: 16px;
-    right: 16px;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
     z-index: 21;
     padding: 10px;
     background: var(--fused-white);
@@ -1050,28 +1055,6 @@ textarea {
   }
 }
 
-@media (max-width: 768px) {
-  .fused-nav-desktop-tools {
-    display: none;
-  }
-
-  .fused-nav-mobile-tools {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    width: 100%;
-    margin-top: 8px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(15, 23, 42, 0.08);
-  }
-
-  .fused-nav-mobile-tools > * {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-  }
-}
-
 /* Shared wallet button base */
 .fused-btn-network,
 .fused-btn-connect {
@@ -1143,40 +1126,16 @@ textarea {
   outline-offset: 2px;
 }
 
-/* Desktop wallet area */
-.fused-nav-desktop-tools {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* Mobile wallet area */
-.fused-nav-mobile-tools {
-  display: none;
-}
-
-@media (max-width: 768px) {
-  .fused-nav-desktop-tools {
-    display: none;
-  }
-
-  .fused-nav-mobile-tools {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-
-    width: 100%;
-    margin-top: 8px;
-    padding-top: 12px;
-
-    border-top: 1px solid rgba(15, 23, 42, 0.08);
-  }
-
+@media (max-width: 860px) {
   .fused-btn-network,
   .fused-btn-connect {
     min-width: 160px;
   }
+}
+
+w3m-modal:not(.open) {
+  display: none !important;
+  pointer-events: none !important;
 }
 
 
@@ -1185,6 +1144,7 @@ textarea {
   grid-template-columns: minmax(0, 1fr) 340px;
   gap: 18px;
   align-items: start;
+  min-width: 0;
 }
 
 .fused-terminal-main,
@@ -1224,6 +1184,7 @@ textarea {
   margin: 0;
   font-size: 28px;
   line-height: 1.05;
+  overflow-wrap: anywhere;
 }
 
 .fused-token-symbol {

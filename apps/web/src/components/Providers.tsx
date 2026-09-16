@@ -82,6 +82,8 @@ createAppKit({
   adapters: [wagmiAdapter],
   networks,
   projectId,
+  themeMode: "light",
+  allowUnsupportedChain: true,
 
   metadata: {
     name: "Fused AI",
@@ -92,6 +94,10 @@ createAppKit({
 
   features: {
     analytics: false,
+    email: false,
+    socials: false,
+    swaps: false,
+    onramp: false,
   },
 });
 
