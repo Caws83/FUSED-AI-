@@ -160,9 +160,9 @@ export function ManualLaunch({
 
   function launchGate(): string | null {
     if (!isConnected || !address) return "Connect a wallet to continue.";
-    if (!walletChainId) return "Switch to Robinhood Mainnet or Arc Testnet to launch.";
+    if (!walletChainId) return "Switch to Robinhood Mainnet or Arc Mainnet to launch.";
     if (!newLaunchForWallet(walletChainId) || !factory || !chainId) {
-      return "This network is not supported. Switch to Robinhood Mainnet or Arc Testnet.";
+      return "This network is not supported. Switch to Robinhood Mainnet or Arc Mainnet.";
     }
     return null;
   }
@@ -191,7 +191,7 @@ export function ManualLaunch({
     const live = newLaunchForWallet(walletChainId);
     const liveFactory = asLaunchAddress(live?.factory ?? null);
     if (!live || !liveFactory) {
-      setError("This network is not supported. Switch to Robinhood Mainnet or Arc Testnet.");
+      setError("This network is not supported. Switch to Robinhood Mainnet or Arc Mainnet.");
       return;
     }
     setPending(true);
@@ -437,9 +437,9 @@ export function ManualLaunch({
           <p style={{ margin: 0, color: "var(--fused-muted)", fontSize: 13 }}>No logo selected.</p>
         )}
         {!isConnected ? (
-          <p className="fused-form-error">Connect a wallet on Robinhood Mainnet or Arc Testnet to launch.</p>
+          <p className="fused-form-error">Connect a wallet on Robinhood Mainnet or Arc Mainnet to launch.</p>
         ) : !factory ? (
-          <p className="fused-form-error">This network is not supported. Switch to Robinhood Mainnet or Arc Testnet.</p>
+          <p className="fused-form-error">This network is not supported. Switch to Robinhood Mainnet or Arc Mainnet.</p>
         ) : null}
         {logoError ? <p className="fused-form-error">{logoError}</p> : null}
         {error ? <p className="fused-form-error">{error}</p> : null}

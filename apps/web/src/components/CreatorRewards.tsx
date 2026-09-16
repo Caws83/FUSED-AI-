@@ -135,7 +135,7 @@ export function CreatorRewards() {
         <p style={{ color: "var(--fused-muted)", marginBottom: 0 }}>Connect a wallet to view claimable curve rewards.</p>
       ) : !factory || !chainId ? (
         <p style={{ color: "var(--fused-muted)", marginBottom: 0 }}>
-          Creator rewards are not live on this network. Switch to Robinhood Mainnet or Arc Testnet.
+          Creator rewards are not live on this network. Switch to Robinhood Mainnet or Arc Mainnet.
         </p>
       ) : (
         <div style={{ display: "grid", gap: 14 }}>
