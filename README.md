@@ -1,4 +1,4 @@
-# Fused AI
+## Fused AI
 
 **Launch a token from a post.** One post. One click. One token.
 
