@@ -1385,6 +1385,15 @@ textarea {
   border-color: #0a1424;
 }
 
+.fused-btn-network-dot {
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: #b8f238;
+  box-shadow: 0 0 0 3px rgba(184, 242, 56, 0.18);
+}
+
 .fused-btn-network:hover {
   background: #111d30;
   border-color: #111d30;

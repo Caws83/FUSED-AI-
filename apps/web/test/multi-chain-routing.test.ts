@@ -39,26 +39,27 @@ test("Robinhood currency is ETH and Arc currency is USDC", () => {
 });
 
 test("network selector exposes Robinhood Mainnet and Arc Mainnet", () => {
-  const selector = readFileSync(join(root, "src/components/NetworkSelector.tsx"), "utf8");
-  assert.match(selector, /WALLET_SELECTOR_CHAIN_IDS/);
+  const header = readFileSync(join(root, "src/components/SiteHeader.tsx"), "utf8");
+  const providers = readFileSync(join(root, "src/components/Providers.tsx"), "utf8");
   assert.deepEqual([...WALLET_SELECTOR_CHAIN_IDS], [4663, 5042]);
-  assert.match(selector, /ROBINHOOD_MAINNET_CHAIN_ID/);
-  assert.match(selector, /switchChain/);
+  assert.match(header, /WALLET_SELECTOR_CHAIN_IDS/);
+  assert.match(header, /ROBINHOOD_MAINNET_CHAIN_ID/);
+  assert.match(header, /ARC_MAINNET_CHAIN_ID/);
+  assert.match(providers, /ROBINHOOD_MAINNET_CHAIN_ID/);
+  assert.match(providers, /ARC_MAINNET_CHAIN_ID/);
+  assert.equal(providers.includes("ROBINHOOD_TESTNET_CHAIN_ID"), false);
+  assert.equal(providers.includes("ARC_TESTNET_CHAIN_ID"), false);
 });
 
 test("Connect Wallet is one header button until connectors are revealed", () => {
-  const wallet = readFileSync(join(root, "../../packages/ui/src/WalletButton.tsx"), "utf8");
-  const connect = readFileSync(join(root, "src/components/ConnectWallet.tsx"), "utf8");
+  const header = readFileSync(join(root, "src/components/SiteHeader.tsx"), "utf8");
   const providers = readFileSync(join(root, "src/components/Providers.tsx"), "utf8");
-  assert.match(wallet, /Connect Wallet/);
-  assert.match(wallet, /connectorMenuOpen/);
-  assert.match(connect, /onToggleConnectorMenu/);
-  assert.match(connect, /connect\(\{ connector, chainId: preferredChainId \}\)/);
+  assert.match(header, /Connect Wallet/);
+  assert.match(header, /openModal\(\{ view: isConnected \? "Account" : "Connect" \}\)/);
+  assert.match(providers, /createAppKit/);
+  assert.match(providers, /WagmiAdapter/);
   assert.match(providers, /ROBINHOOD_MAINNET_CHAIN_ID/);
-  assert.match(providers, /ROBINHOOD_TESTNET_CHAIN_ID/);
   assert.match(providers, /ARC_MAINNET_CHAIN_ID/);
-  assert.match(providers, /ARC_TESTNET_CHAIN_ID/);
-  assert.match(providers, /chains/);
 });
 
 test("mobile header keeps one connect control and moves network into the menu", () => {
