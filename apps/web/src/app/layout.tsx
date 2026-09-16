@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import type { Viewport } from "next";
 import { DM_Sans, Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
-import { isStatusPageEnabled, loadPublicEnv, publicWalletAvailability } from "@fused-ai/config/public";
+import { loadPublicEnv, publicWalletAvailability } from "@fused-ai/config/public";
 import { SiteHeader } from "../components/SiteHeader.tsx";
+import { SiteFooter } from "../components/SiteFooter.tsx";
 import { Providers } from "../components/Providers.tsx";
 import "@fused-ai/ui/styles.css";
 
@@ -41,8 +42,6 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   const pub = loadPublicEnv();
   const walletConfigured = publicWalletAvailability(pub).status === "OK";
-  
-  const showStatus = isStatusPageEnabled();
 
   return (
     <html lang="en">
@@ -50,12 +49,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <Providers>
           <SiteHeader walletConfigured={walletConfigured} />
           {children}
-          <footer className="fused-footer">
-            <div className="fused-wrap" style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <span>FUSED AI</span>
-              {showStatus ? <a href="/status">Status</a> : null}
-            </div>
-          </footer>
+          <SiteFooter />
         </Providers>
       </body>
     </html>
