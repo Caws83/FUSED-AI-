@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Badge, Card } from "@fused-ai/ui";
+import { Badge, Card, ZoomableTokenImage } from "@fused-ai/ui";
 import { tokenImageSrc } from "@fused-ai/media/token-image";
+import { originXPostHref } from "@fused-ai/social";
 import type { IndexedLaunch } from "@fused-ai/types";
 import { fdvWei, marketCapWei } from "@fused-ai/blockchain/fused";
 
 import { CandleChart, type Candle } from "./CandleChart.tsx";
+import { CreatedFromX } from "./CreatedFromX.tsx";
 import { TradePanel } from "./TradePanel.tsx";
 
 import {
@@ -153,15 +155,22 @@ export function TokenTerminal({
     launch.chainId ?? chainId,
   );
 
+  const originHref = originXPostHref({
+    url: launch.sourcePostUrl,
+    postId: launch.sourcePostId,
+    username: launch.sourceAuthor,
+    platform: launch.sourcePlatform,
+  });
+
   return (
     <div className="fused-terminal">
       <main className="fused-terminal-main">
         {/* TOKEN HEADER */}
         <Card>
           <div className="fused-token-header">
-            <img
+            <ZoomableTokenImage
               src={image}
-              alt=""
+              alt={`${launch.name || launch.symbol || "Token"} image`}
               width={64}
               height={64}
               className="fused-token-image"
@@ -194,6 +203,8 @@ export function TokenTerminal({
                     Indexing…
                   </Badge>
                 ) : null}
+
+                {originHref ? <CreatedFromX href={originHref} /> : null}
 
                 <span>
                   {chainLabelFor(chainId) ??
@@ -422,7 +433,7 @@ export function TokenTerminal({
           )}
         </Card>
 
-        {launch.sourcePostUrl ? (
+        {originHref ? (
           <Card>
             <p className="fused-kicker">
               Origin
@@ -450,13 +461,7 @@ export function TokenTerminal({
               </p>
             ) : null}
 
-            <a
-              href={launch.sourcePostUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              View original post
-            </a>
+            <CreatedFromX href={originHref} className="fused-created-from-x-block" />
           </Card>
         ) : null}
       </main>

@@ -31,7 +31,7 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "FUSED AI",
   description: "Launch a token from a post. One post. One click. One token.",
-  icons: { icon: "/brand/favicon.svg" },
+  icons: { icon: "/brand/favicon.png" },
 };
 
 export const viewport: Viewport = {

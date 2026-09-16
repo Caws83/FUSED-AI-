@@ -11,3 +11,4 @@ export { RewardAssetCard, type RewardAssetCardProps } from "./RewardAssetCard.ts
 export { WalletButton, type WalletButtonProps } from "./WalletButton.tsx";
 export { walletHeaderCopy } from "./walletHeader.ts";
 export { FusedLogo } from "./FusedLogo.tsx";
+export { ZoomableTokenImage } from "./ZoomableTokenImage.tsx";

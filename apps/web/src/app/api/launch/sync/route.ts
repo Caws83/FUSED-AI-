@@ -15,10 +15,74 @@ import {
 import { createDatabaseClient } from "@fused-ai/database";
 import { FUSED_FACTORY_ABI, LAUNCH_FACTORY_ABI, LAUNCH_TOKEN_ABI, STATE_LABEL, ZERO_ADDRESS } from "@fused-ai/blockchain";
 import { createMediaStore, readLaunchSyncImage, resolvePersistedLaunchImage } from "@fused-ai/media";
+import { extractXPostUrl, originXPostHref, parseXPostUrl } from "@fused-ai/social";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+type LaunchSource = {
+  sourcePlatform: string | null;
+  sourcePostId: string | null;
+  sourceAuthor: string | null;
+  sourcePostUrl: string | null;
+  sourceExcerpt: string | null;
+};
+
+function emptySource(): LaunchSource {
+  return {
+    sourcePlatform: null,
+    sourcePostId: null,
+    sourceAuthor: null,
+    sourcePostUrl: null,
+    sourceExcerpt: null,
+  };
+}
+
+function sourceFromLaunchSync(
+  extra: Record<string, unknown>,
+  post: {
+    platform: string;
+    postId: string;
+    authorUsername: string;
+    url: string;
+    text: string;
+  } | null,
+): LaunchSource {
+  const extraId = typeof extra.sourcePostId === "string" ? extra.sourcePostId.trim() : "";
+  const extraUrl = typeof extra.sourcePostUrl === "string" ? extra.sourcePostUrl.trim() : "";
+  const extraExcerpt = typeof extra.sourceExcerpt === "string" ? extra.sourceExcerpt.trim() : "";
+  if (post) {
+    return {
+      sourcePlatform: post.platform,
+      sourcePostId: post.postId,
+      sourceAuthor: post.authorUsername,
+      sourcePostUrl:
+        originXPostHref({
+          url: post.url,
+          postId: post.postId,
+          username: post.authorUsername,
+          platform: post.platform,
+        }) ?? post.url,
+      sourceExcerpt: post.text.slice(0, 240),
+    };
+  }
+  const parsed = parseXPostUrl(extraUrl) ?? extractXPostUrl(extraUrl);
+  const href = originXPostHref({
+    url: extraUrl,
+    postId: extraId || parsed?.postId || null,
+    username: parsed?.username ?? null,
+    platform: "x",
+  });
+  if (!href) return emptySource();
+  return {
+    sourcePlatform: "x",
+    sourcePostId: parsed?.postId || extraId || null,
+    sourceAuthor: parsed?.username ?? null,
+    sourcePostUrl: href,
+    sourceExcerpt: extraExcerpt ? extraExcerpt.slice(0, 240) : null,
+  };
+}
 
 export async function POST(request: Request) {
   try {
@@ -80,25 +144,13 @@ export async function POST(request: Request) {
     chainId,
     publicUrlForId: (id) => store.getPublicUrl(id),
   });
-  let source = {
-    sourcePlatform: null as string | null,
-    sourcePostId: null as string | null,
-    sourceAuthor: null as string | null,
-    sourcePostUrl: null as string | null,
-    sourceExcerpt: null as string | null,
-  };
+  let source = emptySource();
   const sourcePostId = typeof extra.sourcePostId === "string" ? extra.sourcePostId : "";
   if (sourcePostId) {
     const post = await db.getSocialPost("x", sourcePostId);
-    if (post.ok && post.value) {
-      source = {
-        sourcePlatform: post.value.platform,
-        sourcePostId: post.value.postId,
-        sourceAuthor: post.value.authorUsername,
-        sourcePostUrl: post.value.url,
-        sourceExcerpt: post.value.text.slice(0, 240),
-      };
-    }
+    source = sourceFromLaunchSync(extra, post.ok ? post.value : null);
+  } else {
+    source = sourceFromLaunchSync(extra, null);
   }
   const description = typeof extra.description === "string" ? extra.description : metadataURI;
   try {
