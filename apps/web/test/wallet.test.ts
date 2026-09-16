@@ -22,7 +22,7 @@ test("write-client errors distinguish account, chain, rpc, and confirm-in-wallet
 test("chain labels cover local, Robinhood, Arc, and unknown chains", () => {
   assert.equal(chainLabelFor(31337), "Fused Local");
   assert.equal(chainLabelFor(46630), "Robinhood Testnet");
-  assert.equal(chainLabelFor(4663), "Robinhood Chain");
+  assert.equal(chainLabelFor(4663), "Robinhood Mainnet");
   assert.equal(chainLabelFor(5042002), "Arc Testnet");
   assert.equal(chainLabelFor(5042), "Arc");
   assert.equal(chainLabelFor(1), "Chain 1");

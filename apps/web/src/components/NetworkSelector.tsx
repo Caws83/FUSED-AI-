@@ -2,7 +2,7 @@
 
 import { useAccount, useSwitchChain } from "wagmi";
 import {
-  ROBINHOOD_TESTNET_CHAIN_ID,
+  ROBINHOOD_MAINNET_CHAIN_ID,
   WALLET_SELECTOR_CHAIN_IDS,
   chainLabelFor,
   isWalletSelectorChain,
@@ -51,4 +51,4 @@ export function NetworkSelector({
   );
 }
 
-export const DEFAULT_PREFERRED_CHAIN_ID = ROBINHOOD_TESTNET_CHAIN_ID;
+export const DEFAULT_PREFERRED_CHAIN_ID = ROBINHOOD_MAINNET_CHAIN_ID;

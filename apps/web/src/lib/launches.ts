@@ -337,7 +337,7 @@ export function boardEmptyCopy(
   if (indexing) {
     return {
       title: "Indexing…",
-      body: "On-chain launches are being read from Robinhood Testnet and Arc Testnet. Tokens do not disappear — they appear here when the indexer catches up.",
+      body: "On-chain launches are being read from Robinhood Mainnet and Arc Testnet. Tokens do not disappear — they appear here when the indexer catches up.",
     };
   }
   if (kind === "live") return { title: "No live curves yet.", body: "New tokens appear here after a wallet launch." };

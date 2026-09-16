@@ -21,6 +21,12 @@ test("systemStatus never marks launch contracts OK without addresses", () => {
   assert.equal(status.tokenizedAssetRegistry.status, "NOT_CONFIGURED");
 });
 
+test("loadPublicEnv fills the public Robinhood mainnet RPC when chain id is 4663", () => {
+  const pub = loadPublicEnv({ NEXT_PUBLIC_CHAIN_ID: "4663" });
+  assert.equal(pub.chainId, 4663);
+  assert.equal(pub.rpcUrl, "https://rpc.mainnet.chain.robinhood.com");
+});
+
 test("loadPublicEnv fills the public Robinhood testnet RPC when chain id is 46630", () => {
   const pub = loadPublicEnv({ NEXT_PUBLIC_CHAIN_ID: "46630" });
   assert.equal(pub.chainId, 46630);

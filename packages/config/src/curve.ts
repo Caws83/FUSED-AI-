@@ -7,6 +7,7 @@
 import {
   ARC_MAINNET_CHAIN_ID,
   ARC_TESTNET_CHAIN_ID,
+  ROBINHOOD_MAINNET_CHAIN_ID,
   ROBINHOOD_TESTNET_CHAIN_ID,
   ROBINHOOD_TESTNET_CURVE,
 } from "./networks.ts";
@@ -129,11 +130,18 @@ export function requirePublicCurveParams(env: NodeJS.Dict<string>): PublicCurveR
       reason: "robinhood-testnet is chain 46630 only. No Arc fallback.",
     };
   }
-  if (chainId === 4663 && network === "robinhood-testnet") {
+  if (chainId === ROBINHOOD_MAINNET_CHAIN_ID && network !== "robinhood") {
     return {
       ok: false,
       missing: ["FUSED_PUBLIC_NETWORK"],
-      reason: "Robinhood mainnet 4663 is not the testnet network name.",
+      reason: "Chain 4663 requires FUSED_PUBLIC_NETWORK=robinhood.",
+    };
+  }
+  if (network === "robinhood" && chainId !== ROBINHOOD_MAINNET_CHAIN_ID) {
+    return {
+      ok: false,
+      missing: ["CHAIN_ID"],
+      reason: "robinhood is chain 4663 only. No testnet fallback.",
     };
   }
   if (graduationTargetWei === LOCAL_CURVE.graduationTargetWei) {
@@ -143,7 +151,7 @@ export function requirePublicCurveParams(env: NodeJS.Dict<string>): PublicCurveR
       reason: "Refusing the local 0.1 ETH graduation target on a public network.",
     };
   }
-  if (chainId === 4663 && graduationTargetWei === ROBINHOOD_TESTNET_CURVE.graduationTargetWei) {
+  if (chainId === ROBINHOOD_MAINNET_CHAIN_ID && graduationTargetWei === ROBINHOOD_TESTNET_CURVE.graduationTargetWei) {
     return {
       ok: false,
       missing: ["FUSED_GRADUATION_TARGET_WEI"],

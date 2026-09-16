@@ -9,6 +9,8 @@ import { defineChain, type Chain } from "viem";
 import {
   ARC_TESTNET,
   ARC_TESTNET_CHAIN_ID,
+  ROBINHOOD_MAINNET,
+  ROBINHOOD_MAINNET_CHAIN_ID,
   ROBINHOOD_TESTNET,
   ROBINHOOD_TESTNET_CHAIN_ID,
 } from "@fused-ai/config/public";
@@ -44,9 +46,11 @@ export function Providers({
 
   const config = useMemo(() => {
     if (chainId == null || !rpcUrl) return null;
-    const robinhoodRpc = chainId === ROBINHOOD_TESTNET_CHAIN_ID ? rpcUrl : ROBINHOOD_TESTNET.rpcUrl;
+    const robinhoodMainnetRpc = chainId === ROBINHOOD_MAINNET_CHAIN_ID ? rpcUrl : ROBINHOOD_MAINNET.rpcUrl;
+    const robinhoodTestnetRpc = chainId === ROBINHOOD_TESTNET_CHAIN_ID ? rpcUrl : ROBINHOOD_TESTNET.rpcUrl;
     const arcRpc = chainId === ARC_TESTNET_CHAIN_ID ? rpcUrl : ARC_TESTNET.rpcUrl;
-    const robinhood = fusedChain(ROBINHOOD_TESTNET_CHAIN_ID, robinhoodRpc);
+    const robinhoodMainnet = fusedChain(ROBINHOOD_MAINNET_CHAIN_ID, robinhoodMainnetRpc);
+    const robinhoodTestnet = fusedChain(ROBINHOOD_TESTNET_CHAIN_ID, robinhoodTestnetRpc);
     const arc = fusedChain(ARC_TESTNET_CHAIN_ID, arcRpc);
     const chains: [Chain, ...Chain[]] =
       chainId === 31337
@@ -56,10 +60,11 @@ export function Providers({
               name: chainLabelFor(31337) ?? "Fused Local",
               rpcUrls: { default: { http: [rpcUrl] }, public: { http: [rpcUrl] } },
             },
-            robinhood,
+            robinhoodMainnet,
             arc,
+            robinhoodTestnet,
           ]
-        : [robinhood, arc];
+        : [robinhoodMainnet, arc, robinhoodTestnet];
     const kinds = walletConnectorKinds(walletConnectProjectId);
     const connectors = [
       injected(),
@@ -68,7 +73,8 @@ export function Providers({
         : []),
     ];
     const transports: Record<number, ReturnType<typeof http>> = {
-      [ROBINHOOD_TESTNET_CHAIN_ID]: http(robinhoodRpc),
+      [ROBINHOOD_MAINNET_CHAIN_ID]: http(robinhoodMainnetRpc),
+      [ROBINHOOD_TESTNET_CHAIN_ID]: http(robinhoodTestnetRpc),
       [ARC_TESTNET_CHAIN_ID]: http(arcRpc),
     };
     if (chainId === 31337) transports[31337] = http(rpcUrl);

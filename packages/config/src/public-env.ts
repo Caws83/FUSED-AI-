@@ -1,6 +1,13 @@
 import { AVAILABILITY_STATUS, notConfigured, type Availability } from "@fused-ai/types";
 import { isProductionEnv, shouldRejectLocalhostUrl } from "./production-safety.ts";
-import { ARC_TESTNET, ARC_TESTNET_CHAIN_ID, ROBINHOOD_TESTNET, ROBINHOOD_TESTNET_CHAIN_ID } from "./networks.ts";
+import {
+  ARC_TESTNET,
+  ARC_TESTNET_CHAIN_ID,
+  ROBINHOOD_MAINNET,
+  ROBINHOOD_MAINNET_CHAIN_ID,
+  ROBINHOOD_TESTNET,
+  ROBINHOOD_TESTNET_CHAIN_ID,
+} from "./networks.ts";
 
 /**
  * Browser-safe env. Only NEXT_PUBLIC_* keys. Never read AI, X, database, or
@@ -35,6 +42,7 @@ export function loadPublicEnv(env: NodeJS.Dict<string> = process.env): PublicEnv
   const chainId = readInt("NEXT_PUBLIC_CHAIN_ID", env);
   let rpcUrl = read("NEXT_PUBLIC_RPC_URL", env);
   if (shouldRejectLocalhostUrl(rpcUrl, env)) rpcUrl = null;
+  if (!rpcUrl && chainId === ROBINHOOD_MAINNET_CHAIN_ID) rpcUrl = ROBINHOOD_MAINNET.rpcUrl;
   if (!rpcUrl && chainId === ROBINHOOD_TESTNET_CHAIN_ID) rpcUrl = ROBINHOOD_TESTNET.rpcUrl;
   if (!rpcUrl && chainId === ARC_TESTNET_CHAIN_ID) rpcUrl = ARC_TESTNET.rpcUrl;
 
@@ -72,6 +80,7 @@ export {
   LOCAL_CHAIN_ID,
   ARC_MAINNET_CHAIN_ID,
   ARC_TESTNET_CHAIN_ID,
+  ROBINHOOD_MAINNET,
   ROBINHOOD_MAINNET_CHAIN_ID,
   ROBINHOOD_TESTNET,
   ROBINHOOD_TESTNET_CHAIN_ID,

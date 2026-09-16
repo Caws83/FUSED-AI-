@@ -3,7 +3,7 @@ import test from "node:test";
 import { LOCAL_CURVE, PUBLIC_GRADUATION_TARGET_USD, requirePublicCurveParams } from "../src/curve.ts";
 import { mergeChainDeployment, parseDeploymentManifest, readPublicDeploymentManifest } from "../src/deployment.ts";
 import { isPublicLaunchEnabled } from "../src/features.ts";
-import { ROBINHOOD_TESTNET_CURVE, ROBINHOOD_TESTNET_LAUNCH_V2, ROBINHOOD_TESTNET_V4 } from "../src/networks.ts";
+import { ROBINHOOD_MAINNET_CURVE, ROBINHOOD_MAINNET_LAUNCH_V2, ROBINHOOD_TESTNET_CURVE, ROBINHOOD_TESTNET_LAUNCH_V2, ROBINHOOD_TESTNET_V4 } from "../src/networks.ts";
 import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -128,10 +128,25 @@ test("production never overlays local-31337.json", () => {
   assert.equal(merged.LAUNCH_FACTORY_ADDRESS, undefined);
 });
 
-test("Robinhood manifest without a real file is NOT_DEPLOYED", () => {
+test("Robinhood mainnet 4663 live overlay is V2 with the approved curve", () => {
   const row = readPublicDeploymentManifest(4663);
-  assert.equal(row.status, "NOT_DEPLOYED");
-  assert.equal(row.contracts.launchFactory, null);
+  assert.equal(row.status, "DEPLOYED");
+  assert.equal(row.chainId, 4663);
+  assert.equal(row.contracts.launchFactory, ROBINHOOD_MAINNET_LAUNCH_V2.factory);
+  assert.equal(row.contracts.launchLocker, ROBINHOOD_MAINNET_LAUNCH_V2.locker);
+  assert.equal(row.deployBlock, 64595202);
+  assert.equal(row.curve?.virtualQuoteWei, ROBINHOOD_MAINNET_CURVE.virtualQuoteWei);
+  assert.equal(row.curve?.graduationTargetWei, ROBINHOOD_MAINNET_CURVE.graduationTargetWei);
+  const merged = mergeChainDeployment({
+    NODE_ENV: "production",
+    CHAIN_ID: "4663",
+    NEXT_PUBLIC_CHAIN_ID: "4663",
+  });
+  assert.equal(merged.LAUNCH_FACTORY_ADDRESS, ROBINHOOD_MAINNET_LAUNCH_V2.factory);
+  assert.equal(merged.LAUNCH_LOCKER_ADDRESS, ROBINHOOD_MAINNET_LAUNCH_V2.locker);
+  assert.equal(merged.DEFAULT_LAUNCH_VERSION, "v2");
+  assert.equal(merged.INDEXER_START_BLOCK, "64595202");
+  assert.notEqual(merged.LAUNCH_FACTORY_ADDRESS, ROBINHOOD_TESTNET_LAUNCH_V2.factory);
 });
 
 test("example Robinhood JSON does not invent addresses", () => {

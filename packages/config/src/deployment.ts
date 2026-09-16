@@ -7,7 +7,10 @@ import {
   ARC_MAINNET_CHAIN_ID,
   ARC_TESTNET_CHAIN_ID,
   ROBINHOOD_MAINNET_CHAIN_ID,
+  ROBINHOOD_MAINNET_LAUNCH_V2,
   ROBINHOOD_TESTNET_CHAIN_ID,
+  ROBINHOOD_TESTNET_LAUNCH_V1,
+  ROBINHOOD_TESTNET_LAUNCH_V2,
   deploymentFileName,
   v2DeploymentFileName,
 } from "./networks.ts";
@@ -140,9 +143,9 @@ export function publicV2DeploymentPath(chainId: number, root = resolveRepoRoot()
   return path.join(root, "deployments", file);
 }
 
-/** V2 public manifest. Missing file → null. Never invents addresses. Never used for 4663. */
+/** V2 public manifest. Missing file → null. Never invents addresses. */
 export function readPublicV2DeploymentManifest(chainId: number, root = resolveRepoRoot()): DeploymentManifest | null {
-  if (chainId === LOCAL_CHAIN_ID || chainId === ROBINHOOD_MAINNET_CHAIN_ID) return null;
+  if (chainId === LOCAL_CHAIN_ID) return null;
   const filePath = publicV2DeploymentPath(chainId, root);
   if (!filePath) return null;
   const parsed = parseDeploymentManifest(readJsonFile(filePath));
@@ -292,7 +295,39 @@ export function mergeChainDeployment(env: NodeJS.Dict<string>, root = resolveRep
   if (chainId === ROBINHOOD_TESTNET_CHAIN_ID) {
     return applyTestnetGenerations(env, root);
   }
+  if (chainId === ROBINHOOD_MAINNET_CHAIN_ID) {
+    return applyRobinhoodMainnet(env, root);
+  }
   return applyManifest(env, readPublicDeploymentManifest(chainId, root));
+}
+
+function sameAddr(a: string | null | undefined, b: string | null | undefined): boolean {
+  return Boolean(a && b && a.toLowerCase() === b.toLowerCase());
+}
+
+function applyRobinhoodMainnet(env: NodeJS.Dict<string>, root: string): NodeJS.Dict<string> {
+  const manifest = readPublicDeploymentManifest(ROBINHOOD_MAINNET_CHAIN_ID, root);
+  const overlay = applyManifest(env, manifest) as Record<string, string>;
+  const factory = manifest.contracts.launchFactory;
+  const locker = manifest.contracts.launchLocker;
+  if (manifest.status !== "DEPLOYED" || !factory || !locker) return overlay;
+  if (sameAddr(factory, ROBINHOOD_TESTNET_LAUNCH_V1.factory) || sameAddr(factory, ROBINHOOD_TESTNET_LAUNCH_V2.factory)) {
+    return overlay;
+  }
+  if (!sameAddr(factory, ROBINHOOD_MAINNET_LAUNCH_V2.factory) || !sameAddr(locker, ROBINHOOD_MAINNET_LAUNCH_V2.locker)) {
+    return overlay;
+  }
+  overlay.LAUNCH_FACTORY_ADDRESS = factory;
+  overlay.LAUNCH_LOCKER_ADDRESS = locker;
+  overlay.LAUNCH_FACTORY_V2_ADDRESS = factory;
+  overlay.LAUNCH_LOCKER_V2_ADDRESS = locker;
+  overlay.DEFAULT_LAUNCH_VERSION = "v2";
+  if (manifest.deployBlock != null) {
+    overlay.LAUNCH_V2_DEPLOY_BLOCK = String(manifest.deployBlock);
+    overlay.LAUNCH_DEPLOY_BLOCK = String(manifest.deployBlock);
+    overlay.INDEXER_START_BLOCK = overlay.INDEXER_START_BLOCK || String(manifest.deployBlock);
+  }
+  return overlay;
 }
 
 export { ROBINHOOD_TESTNET_CHAIN_ID, ROBINHOOD_MAINNET_CHAIN_ID };

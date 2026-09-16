@@ -1,4 +1,8 @@
-import { ROBINHOOD_MAINNET_CHAIN_ID } from "./networks.ts";
+import {
+  ROBINHOOD_MAINNET_CHAIN_ID,
+  ROBINHOOD_TESTNET_LAUNCH_V1,
+  ROBINHOOD_TESTNET_LAUNCH_V2,
+} from "./networks.ts";
 
 export type LaunchVersion = "v1" | "v2";
 
@@ -47,6 +51,16 @@ export function parseLaunchVersion(raw: string | null | undefined): LaunchVersio
   return null;
 }
 
+function refuseTestnetFactoryOnMainnet(
+  chainId: number | null,
+  factory: string | null,
+): string | null {
+  if (chainId !== ROBINHOOD_MAINNET_CHAIN_ID) return factory;
+  if (sameAddress(factory, ROBINHOOD_TESTNET_LAUNCH_V1.factory)) return null;
+  if (sameAddress(factory, ROBINHOOD_TESTNET_LAUNCH_V2.factory)) return null;
+  return factory;
+}
+
 export function parseLaunchRouting(input: {
   chainId: number | null;
   defaultFactory: string | null;
@@ -59,30 +73,28 @@ export function parseLaunchRouting(input: {
   v2Locker: string | null;
   v2DeployBlock: number | null;
 }): LaunchRouting {
-  // Mainnet 4663 stays v1-only. Never default new launches to a testnet V2 address.
-  if (input.chainId === ROBINHOOD_MAINNET_CHAIN_ID) {
-    const v1 =
-      asGeneration("v1", input.v1Factory, input.v1Locker, input.v1DeployBlock) ??
-      asGeneration("v1", input.defaultFactory, input.defaultLocker, input.v1DeployBlock);
-    return { defaultVersion: "v1", v1, v2: null };
-  }
+  const defaultFactory = refuseTestnetFactoryOnMainnet(input.chainId, input.defaultFactory);
+  const v1Factory = refuseTestnetFactoryOnMainnet(input.chainId, input.v1Factory);
+  const v2Factory = refuseTestnetFactoryOnMainnet(input.chainId, input.v2Factory);
 
-  const explicitV1 = asGeneration("v1", input.v1Factory, input.v1Locker, input.v1DeployBlock);
-  const explicitV2 = asGeneration("v2", input.v2Factory, input.v2Locker, input.v2DeployBlock);
+  const explicitV1 = asGeneration("v1", v1Factory, input.v1Locker, input.v1DeployBlock);
+  const explicitV2 = asGeneration("v2", v2Factory, input.v2Locker, input.v2DeployBlock);
   let v1 = explicitV1;
   let v2 = explicitV2;
 
-  if (!v1 && !v2 && isHexAddress(input.defaultFactory)) {
-    const requested = parseLaunchVersion(input.defaultVersionRaw) ?? "v1";
-    const only = asGeneration(requested, input.defaultFactory, input.defaultLocker, requested === "v2" ? input.v2DeployBlock : input.v1DeployBlock);
+  if (!v1 && !v2 && isHexAddress(defaultFactory)) {
+    const requested =
+      parseLaunchVersion(input.defaultVersionRaw) ??
+      (input.chainId === ROBINHOOD_MAINNET_CHAIN_ID ? "v2" : "v1");
+    const only = asGeneration(requested, defaultFactory, input.defaultLocker, requested === "v2" ? input.v2DeployBlock : input.v1DeployBlock);
     if (requested === "v2") v2 = only;
     else v1 = only;
   } else {
-    if (!v2 && isHexAddress(input.defaultFactory) && !sameAddress(input.defaultFactory, v1?.factory)) {
-      v2 = asGeneration("v2", input.defaultFactory, input.defaultLocker, input.v2DeployBlock);
+    if (!v2 && isHexAddress(defaultFactory) && !sameAddress(defaultFactory, v1?.factory)) {
+      v2 = asGeneration("v2", defaultFactory, input.defaultLocker, input.v2DeployBlock);
     }
-    if (!v1 && isHexAddress(input.defaultFactory) && !sameAddress(input.defaultFactory, v2?.factory)) {
-      v1 = asGeneration("v1", input.defaultFactory, input.defaultLocker, input.v1DeployBlock);
+    if (!v1 && isHexAddress(defaultFactory) && !sameAddress(defaultFactory, v2?.factory)) {
+      v1 = asGeneration("v1", defaultFactory, input.defaultLocker, input.v1DeployBlock);
     }
   }
 

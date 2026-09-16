@@ -6,7 +6,7 @@ import {
   indexedLaunchFactories,
   launchVersionOf,
 } from "../src/launch.ts";
-import { ROBINHOOD_TESTNET_LAUNCH_V1, ROBINHOOD_TESTNET_LAUNCH_V2, ARC_TESTNET_LAUNCH } from "../src/networks.ts";
+import { ROBINHOOD_MAINNET_LAUNCH_V2, ROBINHOOD_TESTNET_LAUNCH_V1, ROBINHOOD_TESTNET_LAUNCH_V2, ARC_TESTNET_LAUNCH } from "../src/networks.ts";
 
 test("new launches default to v2 when both generations are configured", () => {
   const routing = parseLaunchRouting({
@@ -51,7 +51,7 @@ test("trade routing uses the token factory, not the current default", () => {
   assert.equal(launchVersionOf(ROBINHOOD_TESTNET_LAUNCH_V2.factory, routing), "v2");
 });
 
-test("mainnet 4663 never picks up a v2 factory", () => {
+test("mainnet 4663 never picks up a testnet factory", () => {
   const routing = parseLaunchRouting({
     chainId: 4663,
     defaultFactory: ROBINHOOD_TESTNET_LAUNCH_V1.factory,
@@ -64,9 +64,27 @@ test("mainnet 4663 never picks up a v2 factory", () => {
     v2Locker: ROBINHOOD_TESTNET_LAUNCH_V2.locker,
     v2DeployBlock: 2,
   });
-  assert.equal(routing.defaultVersion, "v1");
   assert.equal(routing.v2, null);
-  assert.equal(routing.v1?.factory, ROBINHOOD_TESTNET_LAUNCH_V1.factory);
+  assert.equal(routing.v1, null);
+});
+
+test("mainnet 4663 defaults new launches to the deployed V2 factory", () => {
+  const routing = parseLaunchRouting({
+    chainId: 4663,
+    defaultFactory: ROBINHOOD_MAINNET_LAUNCH_V2.factory,
+    defaultLocker: ROBINHOOD_MAINNET_LAUNCH_V2.locker,
+    defaultVersionRaw: "v2",
+    v1Factory: null,
+    v1Locker: null,
+    v1DeployBlock: null,
+    v2Factory: ROBINHOOD_MAINNET_LAUNCH_V2.factory,
+    v2Locker: ROBINHOOD_MAINNET_LAUNCH_V2.locker,
+    v2DeployBlock: ROBINHOOD_MAINNET_LAUNCH_V2.deployBlock,
+  });
+  assert.equal(routing.defaultVersion, "v2");
+  assert.equal(routing.v2?.factory, ROBINHOOD_MAINNET_LAUNCH_V2.factory);
+  assert.equal(routing.v2?.deployBlock, 64595202);
+  assert.equal(routing.v1, null);
 });
 
 test("Arc factory uses LAUNCH_DEPLOY_BLOCK as its indexer start", () => {
