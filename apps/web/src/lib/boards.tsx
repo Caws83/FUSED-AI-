@@ -24,6 +24,7 @@ export function launchCardProps(launch: IndexedLaunch, ethUsd: number | null = n
     marketCap: formatHeadlineUsd(mc, launch.chainId, ethUsd),
     volume: formatNative(launch.volumeQuote, nativeCurrencyFor(launch.chainId).symbol),
     state,
+    chainId: launch.chainId,
   };
 }
 

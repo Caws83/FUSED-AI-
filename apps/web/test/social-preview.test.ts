@@ -18,7 +18,7 @@ test("root metadata uses the production FUSED AI social preview", () => {
   assert.match(layout, /siteName:\s*"FUSED AI"/);
   assert.match(layout, /card:\s*"summary_large_image"/);
   assert.match(layout, /\/brand\/og-1200x630\.png/);
-  assert.match(layout, /icons:\s*\{\s*icon:\s*"\/brand\/favicon\.svg"/);
+  assert.match(layout, /icons:\s*\{\s*icon:\s*"\/brand\/favicon\.png"/);
 });
 
 test("Open Graph image is a public 1200x630 PNG", () => {

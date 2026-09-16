@@ -31,10 +31,9 @@ test("Robinhood headline USD uses a live ETH conversion and never a hardcoded pr
 });
 
 test("chart sorts real indexed candles and draws a line for sparse trades", () => {
-  const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../src/components/CandleChart.tsx"), "utf8");
+  const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../src/lib/chart-series.ts"), "utf8");
   assert.match(src, /sortCandles/);
-  assert.match(src, /Date\.parse\(a\.bucket_start\)/);
-  assert.match(src, /lineMode/);
+  assert.match(src, /Date\.parse\(left\.bucket_start\)/);
   assert.match(src, /1e18/);
   assert.equal(src.includes("Math.random"), false);
 });

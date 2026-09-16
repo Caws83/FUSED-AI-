@@ -1,4 +1,5 @@
 import { Badge } from "./Badge.tsx";
+import { ChainBadge } from "./ChainBadge.tsx";
 
 export type LaunchCardProps = {
   imageUrl?: string;
@@ -15,6 +16,7 @@ export type LaunchCardProps = {
   marketCap?: string | null;
   volume?: string | null;
   state?: string | null;
+  chainId?: number;
 };
 
 export function LaunchCard({
@@ -32,29 +34,31 @@ export function LaunchCard({
   marketCap,
   volume,
   state,
+  chainId,
 }: LaunchCardProps) {
   const badge = (state ?? "").toUpperCase() === "GRADUATED" || dexVersion === "uniswap_v4" || dexVersion === "v4"
     ? "GRADUATED"
     : "CURVE";
   return (
     <article className="fused-card fused-launch">
-      <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+      <div className="fused-launch-head">
         <div
+          className="fused-launch-avatar"
           style={{
-            width: 48,
-            height: 48,
-            borderRadius: 16,
             background: imageUrl
               ? `center / cover url(${imageUrl})`
               : "linear-gradient(135deg, var(--fused-lime), var(--fused-blue))",
           }}
           aria-hidden="true"
         />
-        <div>
+        <div className="fused-launch-copy">
           <strong>
-            {name} <span style={{ color: "var(--fused-muted)" }}>{symbol}</span>
+            {name} <span className="fused-launch-symbol">{symbol}</span>
           </strong>
-          <div style={{ color: "var(--fused-muted)", fontSize: 13 }}>by {creator}</div>
+          <div className="fused-launch-sub">
+            {typeof chainId === "number" ? <ChainBadge chainId={chainId} /> : null}
+            <span>by {creator}</span>
+          </div>
         </div>
         <Badge tone={badge === "GRADUATED" ? "blue" : "lime"}>{badge}</Badge>
       </div>

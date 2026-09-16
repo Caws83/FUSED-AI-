@@ -7,6 +7,7 @@ export { SectionHeader } from "./SectionHeader.tsx";
 export { EmptyState } from "./EmptyState.tsx";
 export { PostCard, type PostCardProps } from "./PostCard.tsx";
 export { LaunchCard, type LaunchCardProps } from "./LaunchCard.tsx";
+export { ChainBadge, chainBadgeLabel } from "./ChainBadge.tsx";
 export { RewardAssetCard, type RewardAssetCardProps } from "./RewardAssetCard.tsx";
 export { WalletButton, type WalletButtonProps } from "./WalletButton.tsx";
 export { walletHeaderCopy } from "./walletHeader.ts";

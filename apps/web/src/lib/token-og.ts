@@ -29,7 +29,7 @@ function publicFileCandidates(rel: string): string[] {
 
 export function resolvePublicAssetPath(rel: string): string | null {
   for (const candidate of publicFileCandidates(rel)) {
-    if (existsSync(candidate)) return candidate;
+    if (existsSync(/* turbopackIgnore: true */ candidate)) return candidate;
   }
   return null;
 }
@@ -37,7 +37,7 @@ export function resolvePublicAssetPath(rel: string): string | null {
 export async function readPublicAsset(rel: string): Promise<Buffer | null> {
   const file = resolvePublicAssetPath(rel);
   if (!file) return null;
-  return readFile(file);
+  return readFile(/* turbopackIgnore: true */ file);
 }
 
 export function tokenOgImageSrc(

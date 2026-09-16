@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@fused-ai/ui";
-import { extractXPostUrl, xStatusUrl } from "@fused-ai/social";
+import { extractXPostUrl, xStatusUrl } from "@fused-ai/social/x-url";
 import { takeFuseHandoff } from "../lib/fuse-handoff.ts";
 
 export type FusedDraft = {

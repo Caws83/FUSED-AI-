@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Badge, Card, ZoomableTokenImage } from "@fused-ai/ui";
+import { Badge, Card, ChainBadge, ZoomableTokenImage } from "@fused-ai/ui";
 import { tokenImageSrc } from "@fused-ai/media/token-image";
-import { originXPostHref } from "@fused-ai/social";
+import { originXPostHref } from "@fused-ai/social/x-url";
 import type { IndexedLaunch } from "@fused-ai/types";
 import { fdvWei, marketCapWei } from "@fused-ai/blockchain/fused";
 
@@ -23,10 +23,7 @@ import {
   stateBadge,
 } from "../lib/format.ts";
 
-import {
-  chainLabelFor,
-  nativeCurrencyFor,
-} from "../lib/wallet.ts";
+import { nativeCurrencyFor } from "../lib/wallet.ts";
 
 type TradeRow = {
   traded_at: string;
@@ -209,10 +206,7 @@ export function TokenTerminal({
 
                 {originHref ? <CreatedFromX href={originHref} /> : null}
 
-                <span>
-                  {chainLabelFor(chainId) ??
-                    `Chain ${chainId}`}
-                </span>
+                <ChainBadge chainId={chainId} />
 
                 <span className="fused-token-address">
                   {launch.token}
