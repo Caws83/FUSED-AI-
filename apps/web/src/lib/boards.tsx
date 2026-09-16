@@ -2,10 +2,10 @@ import { LaunchCard } from "@fused-ai/ui";
 import { tokenImageSrc } from "@fused-ai/media/token-image";
 import type { IndexedLaunch } from "@fused-ai/types";
 import { fdvWei, marketCapWei } from "@fused-ai/blockchain/fused";
-import { formatAge, formatNative, progressFromLaunch, shortAddr, stateBadge } from "./format.ts";
+import { formatAge, formatHeadlineUsd, formatNative, progressFromLaunch, shortAddr, stateBadge } from "./format.ts";
 import { nativeCurrencyFor } from "./wallet.ts";
 
-export function launchCardProps(launch: IndexedLaunch) {
+export function launchCardProps(launch: IndexedLaunch, ethUsd: number | null = null) {
   const state = stateBadge(launch.lifecycleState, launch.dexVersion);
   const price = BigInt(launch.priceX18 ?? "0");
   const circ = BigInt(launch.circulating ?? "0");
@@ -21,18 +21,24 @@ export function launchCardProps(launch: IndexedLaunch) {
     launchState: state,
     createdAt: formatAge(launch.createdAt, launch.blockNumber),
     progressPct: progressFromLaunch(launch),
-    marketCap: formatNative(mc.toString(), nativeCurrencyFor(launch.chainId).symbol),
+    marketCap: formatHeadlineUsd(mc, launch.chainId, ethUsd),
     volume: formatNative(launch.volumeQuote, nativeCurrencyFor(launch.chainId).symbol),
     state,
   };
 }
 
-export function LaunchGrid({ launches }: { launches: IndexedLaunch[] }) {
+export function LaunchGrid({
+  launches,
+  ethUsd = null,
+}: {
+  launches: IndexedLaunch[];
+  ethUsd?: number | null;
+}) {
   return (
     <div className="fused-grid-3">
       {launches.map((launch) => (
         <a key={`${launch.chainId}:${launch.token}`} href={`/token/${launch.token}?chainId=${launch.chainId}`} style={{ color: "inherit" }}>
-          <LaunchCard {...launchCardProps(launch)} />
+          <LaunchCard {...launchCardProps(launch, ethUsd)} />
         </a>
       ))}
     </div>
@@ -51,9 +57,9 @@ export function splitBoards(launches: IndexedLaunch[]) {
   };
 }
 
-export function fdvLabel(launch: IndexedLaunch): string {
+export function fdvLabel(launch: IndexedLaunch, ethUsd: number | null = null): string {
   const price = BigInt(launch.priceX18 ?? "0");
   const supply = BigInt(launch.supply ?? "0");
   if (price === 0n || supply === 0n) return "—";
-  return formatNative(fdvWei(price, supply).toString(), nativeCurrencyFor(launch.chainId).symbol);
+  return formatHeadlineUsd(fdvWei(price, supply), launch.chainId, ethUsd);
 }

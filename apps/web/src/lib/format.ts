@@ -1,3 +1,52 @@
+const WEI = 10n ** 18n;
+
+export function isUsdStableQuoteChain(chainId: number | null | undefined): boolean {
+  return chainId === 5042 || chainId === 5042002;
+}
+
+export function quoteWeiToUsdWei(
+  quoteWei: bigint,
+  chainId: number,
+  ethUsd: number | null | undefined,
+): bigint | null {
+  if (quoteWei < 0n) return null;
+  if (isUsdStableQuoteChain(chainId)) return quoteWei;
+  if (ethUsd == null || !Number.isFinite(ethUsd) || ethUsd <= 0) return null;
+  const scaled = BigInt(Math.round(ethUsd * 1_000_000));
+  return (quoteWei * scaled) / 1_000_000n;
+}
+
+/** Headline USD compact: $3.71, $40.2K, $1.25M. Never labels USDC. */
+export function formatUsdCompactFromWei(wei: bigint): string {
+  if (wei <= 0n) return "$0.00";
+  const abs = wei < 0n ? -wei : wei;
+  const whole = abs / WEI;
+  if (whole >= 1_000_000_000n) {
+    const tenths = (abs * 10n) / (WEI * 1_000_000_000n);
+    return `$${(Number(tenths) / 10).toFixed(1)}B`;
+  }
+  if (whole >= 1_000_000n) {
+    const hundredths = (abs * 100n) / (WEI * 1_000_000n);
+    return `$${(Number(hundredths) / 100).toFixed(2)}M`;
+  }
+  if (whole >= 1_000n) {
+    const tenths = (abs * 10n) / (WEI * 1_000n);
+    return `$${(Number(tenths) / 10).toFixed(1)}K`;
+  }
+  const cents = (abs * 100n + WEI / 2n) / WEI;
+  return `$${(Number(cents) / 100).toFixed(2)}`;
+}
+
+export function formatHeadlineUsd(
+  quoteWei: bigint,
+  chainId: number,
+  ethUsd: number | null | undefined,
+): string {
+  const usdWei = quoteWeiToUsdWei(quoteWei, chainId, ethUsd);
+  if (usdWei == null) return "—";
+  return formatUsdCompactFromWei(usdWei);
+}
+
 export function formatNative(
   wei: string | bigint | null | undefined,
   symbol = "ETH",

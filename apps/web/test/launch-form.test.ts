@@ -54,6 +54,7 @@ test("token and explore pages do not hardcode fake market data", () => {
     assert.equal(source.includes("123456789"), false);
   }
   assert.match(terminal, /marketCapWei/);
+  assert.match(terminal, /formatHeadlineUsd/);
   assert.match(terminal, /volume24h/);
   assert.match(terminal, /holderCount/);
 });

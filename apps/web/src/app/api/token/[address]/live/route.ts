@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { Hex } from "viem";
 import { loadEnv, loadRepoEnv, parseSupportedChainId } from "@fused-ai/config";
+import { fetchEthUsd } from "../../../../../lib/eth-usd.ts";
 import { createDatabaseClient } from "@fused-ai/database";
 import { STATE_LABEL } from "@fused-ai/blockchain";
 import {
@@ -73,6 +74,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ addr
       const candles15m = chainId ? await db.listCandles(chainId, address, 900, 180) : { ok: true as const, value: [] };
       const candles1h = chainId ? await db.listCandles(chainId, address, 3600, 180) : { ok: true as const, value: [] };
       const stats = chainId ? await db.tokenStats(chainId, address) : { ok: true as const, value: { volumeTotal: "0", volume24h: "0", tradeCount: 0, holderCount: 0 } };
+      const ethUsd = await fetchEthUsd();
       await db.close();
 
       if (launch.ok && launch.value) {
@@ -92,12 +94,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ addr
             3600: candles1h.ok ? candles1h.value : [],
           },
           stats: stats.ok ? stats.value : { volumeTotal: "0", volume24h: "0", tradeCount: 0, holderCount: 0 },
+          ethUsd,
         });
       }
     }
 
     const onchain = await loadOnchainLaunch(address, null, requestedChainId);
     if (!onchain) return NextResponse.json({ ok: false }, { status: 404 });
+    const ethUsd = await fetchEthUsd();
     return NextResponse.json({
       ok: true,
       indexing: true,
@@ -108,6 +112,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ addr
       trades: [],
       candles: { 60: [], 300: [], 900: [], 3600: [] },
       stats: { volumeTotal: "0", volume24h: "0", tradeCount: 0, holderCount: 0 },
+      ethUsd,
     });
   } catch {
     return NextResponse.json({ ok: false }, { status: 503 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Navigation } from "@fused-ai/ui";
 import { navFor } from "../lib/nav.ts";
@@ -11,6 +11,9 @@ export function SiteHeader({ walletConfigured }: { walletConfigured: boolean }) 
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [preferredChainId, setPreferredChainId] = useState(DEFAULT_PREFERRED_CHAIN_ID);
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
   return (
     <header className="fused-nav">
       <div className="fused-wrap fused-nav-inner">

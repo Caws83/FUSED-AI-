@@ -1,12 +1,14 @@
 import { EmptyState, SectionHeader } from "@fused-ai/ui";
 import { boardEmptyCopy, loadIndexedLaunches, loadIndexerFreshness } from "../../lib/launches.ts";
 import { LaunchGrid } from "../../lib/boards.tsx";
+import { fetchEthUsd } from "../../lib/eth-usd.ts";
 
 export const dynamic = "force-dynamic";
 
 export default async function ExplorePage() {
   const launches = await loadIndexedLaunches();
   const freshness = await loadIndexerFreshness(launches.length);
+  const ethUsd = await fetchEthUsd();
   const empty = launches.length === 0;
   return (
     <main className="fused-section">
@@ -18,7 +20,7 @@ export default async function ExplorePage() {
         {empty ? (
           <EmptyState {...boardEmptyCopy(freshness.indexing, "newly")} />
         ) : (
-          <LaunchGrid launches={launches} />
+          <LaunchGrid launches={launches} ethUsd={ethUsd} />
         )}
       </div>
     </main>

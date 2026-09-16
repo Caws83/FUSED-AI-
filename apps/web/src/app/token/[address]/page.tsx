@@ -3,6 +3,7 @@ import { SectionHeader } from "@fused-ai/ui";
 import { loadEnv, loadRepoEnv, parseSupportedChainId } from "@fused-ai/config";
 import { loadLaunchPage, tradeFactoryAddress } from "../../../lib/launches.ts";
 import { TokenTerminal } from "../../../components/TokenTerminal.tsx";
+import { fetchEthUsd } from "../../../lib/eth-usd.ts";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -21,6 +22,7 @@ export default async function TokenPage({
   const loaded = await loadLaunchPage(address, parseSupportedChainId(query.chainId));
   if (!loaded) notFound();
   const factory = env.publicLaunchEnabled ? tradeFactoryAddress(loaded.launch, env) : null;
+  const ethUsd = await fetchEthUsd();
   return (
     <main className="fused-section">
       <div className="fused-wrap" style={{ maxWidth: 1180 }}>
@@ -31,6 +33,7 @@ export default async function TokenPage({
           chainId={loaded.launch.chainId}
           graduationTargetUsd={env.graduationTargetUsdDisplay}
           indexing={!loaded.indexed}
+          ethUsd={ethUsd}
         />
       </div>
     </main>

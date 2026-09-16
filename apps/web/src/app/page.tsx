@@ -4,6 +4,7 @@ import { QuickFuse } from "../components/QuickFuse.tsx";
 import { boardEmptyCopy, loadIndexedLaunches, loadIndexerFreshness } from "../lib/launches.ts";
 import { loadTrendingPosts } from "../lib/social.ts";
 import { LaunchGrid, splitBoards } from "../lib/boards.tsx";
+import { fetchEthUsd } from "../lib/eth-usd.ts";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -21,6 +22,7 @@ export default async function HomePage() {
   const posts = await loadTrendingPosts();
   const boards = splitBoards(launches);
   const emptyAll = launches.length === 0 && freshness.indexing;
+  const ethUsd = await fetchEthUsd();
 
   return (
     <main>
@@ -94,7 +96,7 @@ export default async function HomePage() {
           {boards.live.length === 0 ? (
             <EmptyState {...boardEmptyCopy(emptyAll, "live")} />
           ) : (
-            <LaunchGrid launches={boards.live} />
+            <LaunchGrid launches={boards.live} ethUsd={ethUsd} />
           )}
         </div>
       </section>
@@ -105,7 +107,7 @@ export default async function HomePage() {
           {boards.newly.length === 0 ? (
             <EmptyState {...boardEmptyCopy(emptyAll, "newly")} />
           ) : (
-            <LaunchGrid launches={boards.newly} />
+            <LaunchGrid launches={boards.newly} ethUsd={ethUsd} />
           )}
         </div>
       </section>
@@ -116,7 +118,7 @@ export default async function HomePage() {
           {boards.graduating.length === 0 ? (
             <EmptyState {...boardEmptyCopy(emptyAll, "graduating")} />
           ) : (
-            <LaunchGrid launches={boards.graduating} />
+            <LaunchGrid launches={boards.graduating} ethUsd={ethUsd} />
           )}
         </div>
       </section>
@@ -127,7 +129,7 @@ export default async function HomePage() {
           {boards.graduated.length === 0 ? (
             <EmptyState {...boardEmptyCopy(emptyAll, "graduated")} />
           ) : (
-            <LaunchGrid launches={boards.graduated} />
+            <LaunchGrid launches={boards.graduated} ethUsd={ethUsd} />
           )}
         </div>
       </section>
