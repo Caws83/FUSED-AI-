@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useAccount, useConfig } from "wagmi";
 import { parseEther, parseEventLogs } from "viem";
-import { Button, Card } from "@fused-ai/ui";
+import { Button, Card, ZoomableTokenImage } from "@fused-ai/ui";
 import {
   FUSED_ERROR_MESSAGES,
   FUSED_FACTORY_ABI,
@@ -47,6 +47,7 @@ export function ManualLaunch({
   const [generatingLogo, setGeneratingLogo] = useState(false);
   const [fusingPost, setFusingPost] = useState(false);
   const [logoError, setLogoError] = useState<string | null>(null);
+  const [fusedSource, setFusedSource] = useState<FusedDraft["source"]>(null);
   const [txHash, setTxHash] = useState<`0x${string}` | null>(null);
   const [token, setToken] = useState<`0x${string}` | null>(null);
 
@@ -56,6 +57,16 @@ export function ManualLaunch({
   const chainId = launch?.chainId ?? null;
   const chainName = chainLabelFor(chainId ?? walletChainId) ?? "this network";
   const quoteSymbol = nativeCurrencyFor(chainId ?? (isConnected ? walletChainId : ROBINHOOD_MAINNET_CHAIN_ID)).symbol;
+  const originPost = sourcePost
+    ? {
+        postId: sourcePost.postId,
+        url: sourcePost.url,
+        username: sourcePost.authorUsername,
+        excerpt: sourcePost.text,
+      }
+    : fusedSource
+      ? { ...fusedSource, excerpt: description }
+      : null;
   const params = useMemo(() => {
     return toCreateParams({ name, symbol, metadataURI: description });
   }, [name, symbol, description]);
@@ -81,6 +92,7 @@ export function ManualLaunch({
     } else {
       setLogoError(draft.imageError || "Logo generation failed. Upload a logo or retry.");
     }
+    setFusedSource(draft.source);
   }
 
   async function onUpload(file: File | undefined) {
@@ -232,7 +244,9 @@ export function ManualLaunch({
         body: JSON.stringify({
           imageId,
           imageUrl: imagePreview,
-          sourcePostId: sourcePost?.postId,
+          sourcePostId: originPost?.postId,
+          sourcePostUrl: originPost?.url,
+          sourceExcerpt: originPost?.excerpt,
           description,
           chainId: walletChainId,
         }),
@@ -270,67 +284,109 @@ export function ManualLaunch({
         <h2 className="fused-h2" style={{ fontSize: 28 }}>
           Confirm launch
         </h2>
-        {imagePreview ? (
-          <img src={imagePreview} alt="" width={72} height={72} className="fused-logo-preview" />
-        ) : null}
-        <dl className="fused-review">
+        <p className="fused-review-lead">
+          Check these details before your wallet signs. AI never signs.
+        </p>
+
+        <div className="fused-review-identity">
+          {imagePreview ? (
+            <ZoomableTokenImage
+              src={imagePreview}
+              alt={`${name || "Token"} logo`}
+              width={96}
+              height={96}
+              className="fused-logo-preview fused-review-logo"
+            />
+          ) : (
+            <div className="fused-review-logo-fallback" aria-hidden="true" />
+          )}
           <div>
-            <dt>Token name</dt>
-            <dd>{params.name}</dd>
+            <p className="fused-review-name">{params.name}</p>
+            <p className="fused-review-ticker">${params.symbol}</p>
           </div>
-          <div>
-            <dt>Ticker</dt>
-            <dd>{params.symbol}</dd>
-          </div>
-          <div>
-            <dt>Wallet</dt>
-            <dd>
-              {address.slice(0, 6)}…{address.slice(-4)}
-            </dd>
-          </div>
-          <div>
-            <dt>Chain</dt>
-            <dd>
-              {chainName} ({chainId ?? walletChainId ?? "—"})
-            </dd>
-          </div>
-          <div>
-            <dt>Factory</dt>
-            <dd style={{ wordBreak: "break-all" }}>{factory ?? "Unavailable on this network"}</dd>
-          </div>
-          {locker ? (
-            <div>
-              <dt>Locker</dt>
-              <dd style={{ wordBreak: "break-all" }}>{locker}</dd>
+        </div>
+
+        <section className="fused-review-section">
+          <h3>Token</h3>
+          <dl className="fused-review">
+            {description.trim() ? (
+              <div className="fused-review-wide">
+                <dt>Description</dt>
+                <dd className="fused-review-copy">{description.trim()}</dd>
+              </div>
+            ) : null}
+            <div className="fused-review-wide">
+              <dt>Creator buy</dt>
+              <dd>
+                {creatorBuy.trim()
+                  ? `${creatorBuy} ${quoteSymbol} through the bonding curve`
+                  : `0 ${quoteSymbol} — no creator buy`}
+              </dd>
             </div>
-          ) : null}
-          <div>
-            <dt>Quote</dt>
-            <dd>{quoteSymbol}</dd>
-          </div>
-          <div>
-            <dt>Lifecycle</dt>
-            <dd>Bonding curve, then Uniswap at graduation</dd>
-          </div>
-          <div>
-            <dt>Creator buy</dt>
-            <dd>
-              {creatorBuy.trim()
-                ? `${creatorBuy} ${quoteSymbol} through the same bonding curve`
-                : `0 ${quoteSymbol} — no creator buy. The curve starts with virtual reserves only.`}
-            </dd>
-          </div>
-          {sourcePost ? (
+            {originPost ? (
+              <div className="fused-review-wide">
+                <dt>Origin post</dt>
+                <dd>
+                  <a href={originPost.url} target="_blank" rel="noopener noreferrer">
+                    @{originPost.username}
+                  </a>
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+        </section>
+
+        <section className="fused-review-section">
+          <h3>Network</h3>
+          <dl className="fused-review">
             <div>
-              <dt>Origin post</dt>
-              <dd>@{sourcePost.authorUsername}</dd>
+              <dt>Chain</dt>
+              <dd>
+                {chainName}
+                <span className="fused-review-aside">
+                  {chainId ?? walletChainId ?? "—"}
+                </span>
+              </dd>
             </div>
-          ) : null}
-          <div>
-            <dt>Action</dt>
-            <dd>FusedFactory.create on the connected chain</dd>
-          </div>
-        </dl>
+            <div>
+              <dt>Quote</dt>
+              <dd>{quoteSymbol}</dd>
+            </div>
+            <div className="fused-review-wide">
+              <dt>Wallet</dt>
+              <dd className="fused-review-mono">
+                {address.slice(0, 6)}…{address.slice(-4)}
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <section className="fused-review-section">
+          <h3>Launch</h3>
+          <dl className="fused-review">
+            <div className="fused-review-wide">
+              <dt>Lifecycle</dt>
+              <dd>Bonding curve, then Uniswap at graduation</dd>
+            </div>
+            <div className="fused-review-wide">
+              <dt>Action</dt>
+              <dd>FusedFactory.create on the connected chain</dd>
+            </div>
+            <div className="fused-review-wide">
+              <dt>Factory</dt>
+              <dd className="fused-review-mono">
+                {factory ?? "Unavailable on this network"}
+              </dd>
+            </div>
+            {locker ? (
+              <div className="fused-review-wide">
+                <dt>Locker</dt>
+                <dd className="fused-review-mono">{locker}</dd>
+              </div>
+            ) : null}
+          </dl>
+        </section>
+
         {error ? <p className="fused-form-error">{error}</p> : null}
         <div className="fused-cta-row">
           <Button type="button" variant="ghost" onClick={() => setStep("form")} disabled={pending}>
@@ -421,7 +477,13 @@ export function ManualLaunch({
         </div>
         {imagePreview ? (
           <div className="fused-token-preview">
-            <img src={imagePreview} alt="" width={72} height={72} className="fused-logo-preview" />
+            <ZoomableTokenImage
+              src={imagePreview}
+              alt={`${name || "Token"} logo`}
+              width={72}
+              height={72}
+              className="fused-logo-preview"
+            />
             <Button
               type="button"
               variant="ghost"

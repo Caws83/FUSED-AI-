@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@fused-ai/ui";
+import { extractXPostUrl, xStatusUrl } from "@fused-ai/social";
 import { takeFuseHandoff } from "../lib/fuse-handoff.ts";
 
 export type FusedDraft = {
@@ -12,6 +13,7 @@ export type FusedDraft = {
   imageId: string | null;
   imageUrl: string | null;
   imageError: string | null;
+  source: { postId: string; url: string; username: string } | null;
 };
 
 export function FusePost({
@@ -25,15 +27,17 @@ export function FusePost({
 }) {
   const [text, setText] = useState("");
   const [fusing, setFusing] = useState(false);
+  const [fused, setFused] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fusingRef = useRef(false);
+  const fusedRef = useRef(false);
   const onBusyRef = useRef(onBusy);
   const onFusedRef = useRef(onFused);
   onBusyRef.current = onBusy;
   onFusedRef.current = onFused;
 
   async function fuseWithText(raw: string) {
-    if (fusingRef.current || disabled) return;
+    if (fusingRef.current || fusedRef.current || disabled) return;
     setError(null);
     const pasted = raw.trim();
     if (pasted.length < 8) {
@@ -42,6 +46,8 @@ export function FusePost({
     }
     fusingRef.current = true;
     setFusing(true);
+    setFused(false);
+    fusedRef.current = false;
     onBusyRef.current?.(true);
     try {
       const res = await fetch("/api/ai/fuse", {
@@ -60,6 +66,7 @@ export function FusePost({
         setError(json.error || "AI draft is not configured.");
         return;
       }
+      const extracted = extractXPostUrl(pasted);
       onFusedRef.current({
         name: json.draft.name,
         ticker: json.draft.ticker,
@@ -68,7 +75,12 @@ export function FusePost({
         imageId: json.image?.id ?? null,
         imageUrl: json.image?.url ?? null,
         imageError: json.imageError ?? null,
+        source: extracted
+          ? { postId: extracted.postId, username: extracted.username, url: xStatusUrl(extracted) }
+          : null,
       });
+      setFused(true);
+      fusedRef.current = true;
     } catch {
       setError("AI draft failed.");
     } finally {
@@ -86,7 +98,7 @@ export function FusePost({
   }, []);
 
   async function onFuse() {
-    if (fusingRef.current || disabled) return;
+    if (fusingRef.current || fusedRef.current || disabled) return;
     await fuseWithText(text);
   }
 
@@ -106,13 +118,19 @@ export function FusePost({
           className="fused-input"
           rows={5}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            if (fused) {
+              fusedRef.current = false;
+              setFused(false);
+            }
+          }}
           placeholder="Paste a tweet or post here"
           disabled={fusing || disabled}
           maxLength={2000}
         />
       </label>
-      <Button type="button" variant="lime" onClick={() => void onFuse()} disabled={fusing || disabled}>
+      <Button type="button" variant="lime" onClick={() => void onFuse()} disabled={fusing || fused || disabled}>
         {fusing ? "Fusing..." : "FUSE IT"}
       </Button>
       {error ? <p className="fused-form-error">{error}</p> : null}
