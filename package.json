@@ -38,5 +38,11 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "dependencies": {
+    "@reown/appkit": "^1.8.24",
+    "@reown/appkit-adapter-wagmi": "^1.8.24",
+    "viem": "^2.56.5",
+    "wagmi": "^3.7.7"
   }
 }
