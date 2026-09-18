@@ -10,8 +10,8 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const PIPELINE = [
-  { step: 1, before: "FUSE from", mark: "/brand/x-logo.png", after: "post" },
-  { step: 2, label: "TRADE the curve" },
+  { step: 1, before: "FUSE", mark: "/brand/x-logo.png", after: "post", suffix: "into token" },
+  { step: 2, label: "TRADE bonding curve" },
   { step: 3, before: "GRADUATE to", mark: "/brand/uniswap-logo.png", after: "Uniswap" },
 ] as const;
 
@@ -54,6 +54,7 @@ export default async function HomePage() {
                         <img src={item.mark} alt="" className="fused-pipeline-mark" />
                         <span>{item.after}</span>
                       </span>
+                      {"suffix" in item && item.suffix ? <span>{item.suffix}</span> : null}
                     </>
                   )}
                 </strong>
