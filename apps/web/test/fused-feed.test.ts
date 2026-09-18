@@ -63,10 +63,10 @@ test("POST /api/social/posts validates wallet and empty text", () => {
   assert.equal(route.includes("signMessage"), false);
 });
 
-test("FUSED FEED renders on /trending and is readable without a wallet", () => {
-  const page = src("src/app/trending/page.tsx");
+test("FUSED FEED renders on /community and is readable without a wallet", () => {
+  const page = src("src/app/community/page.tsx");
   const composer = src("src/components/FeedComposer.tsx");
-  assert.match(page, /FUSED FEED/);
+  assert.match(page, /Community/);
   assert.match(page, /Find the conversation\. Fuse the moment\./);
   assert.match(page, /loadFusedFeedPosts/);
   assert.match(page, /<FeedComposer/);
@@ -110,4 +110,14 @@ test("homepage feed slice uses native FUSED posts", () => {
   assert.match(home, /<FeedPosts/);
   assert.equal(home.includes("loadTrendingPosts"), false);
   assert.match(home, /<QuickFuse/);
+});
+
+test("nav labels the feed Community and /trending redirects there", () => {
+  const nav = src("src/lib/nav.ts");
+  assert.match(nav, /href: "\/community"/);
+  assert.match(nav, /label: "Community"/);
+  assert.equal(nav.includes("/trending"), false);
+  assert.equal(nav.includes("Trending"), false);
+  const redirect = src("src/app/trending/page.tsx");
+  assert.match(redirect, /permanentRedirect\("\/community"\)/);
 });

@@ -152,6 +152,11 @@ textarea {
   color: var(--fused-lime-ink);
 }
 
+.fused-badge-green {
+  background: rgba(22, 163, 74, 0.16);
+  color: #15803d;
+}
+
 .fused-badge-blue {
   background: rgba(31, 111, 255, 0.12);
   color: var(--fused-blue);
@@ -992,6 +997,55 @@ textarea {
   display: block;
   width: 16px;
   height: 16px;
+}
+
+.fused-docs {
+  display: grid;
+  gap: 18px;
+}
+
+.fused-docs-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.fused-docs-toc a {
+  font-weight: 650;
+  color: var(--fused-muted);
+}
+
+.fused-docs-toc a:hover {
+  color: var(--fused-ink);
+}
+
+.fused-docs-section {
+  scroll-margin-top: 88px;
+  display: grid;
+  gap: 10px;
+}
+
+.fused-docs-section h3 {
+  margin: 0;
+  font-family: var(--fused-display);
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
+
+.fused-docs-section p,
+.fused-docs-section li {
+  color: var(--fused-muted);
+}
+
+.fused-docs-section p {
+  margin: 0;
+}
+
+.fused-docs-section ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
 }
 
 .fused-progress {

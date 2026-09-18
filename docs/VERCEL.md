@@ -56,7 +56,7 @@ This route does not use X, AI, database, or contracts. If this URL 500s, the Ver
 
 ## Minimum env for the first public website
 
-None required. Homepage, Trending, Launch (“Launching soon”), Rewards, and Explore must render.
+None required. Homepage, Community, Launch (“Launching soon”), Rewards, and Explore must render.
 
 `DATABASE_URL` is **not** required for the shell. Without it, token boards show **Indexing…**. Token detail pages still open from onchain `getMarket` when the factory is configured. Charts/trades/holders need Postgres + the indexer.
 

@@ -36,7 +36,7 @@ Post → SocialProvider → AI draft → user review → wallet sign
 | AI | `services/ai-launch` |
 | Contracts | `contracts/` |
 
-Public routes (`/`, `/trending`, `/launch`, `/rewards`, `/explore`) use product
+Public routes (`/`, `/community`, `/launch`, `/rewards`, `/explore`) use product
 language. `/status` is the developer panel.
 
 ## Quick start

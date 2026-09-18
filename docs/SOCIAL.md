@@ -9,7 +9,7 @@ implemented provider is X (Twitter API v2).
 X URL or tracked account
   → official API (bearer token)
   → SocialPost
-  → /trending or /launch?post={id}
+  → /community or /launch?post={id}
   → user enters name / ticker
   → wallet signs LaunchFactory.launch
 ```
