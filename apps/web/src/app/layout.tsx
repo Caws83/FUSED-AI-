@@ -68,8 +68,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   colorScheme: "light dark",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f4f7fb" },
     { media: "(prefers-color-scheme: dark)", color: "#0a1520" },
+    { media: "(prefers-color-scheme: light)", color: "#f4f7fb" },
   ],
 };
 
@@ -79,7 +79,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const pub = loadPublicEnv();
   const walletConfigured = publicWalletAvailability(pub).status === "OK";
   const showStatus = isStatusPageEnabled();
-  const theme = (await cookies()).get(THEME_COOKIE)?.value === "dark" ? "dark" : "light";
+  const theme = (await cookies()).get(THEME_COOKIE)?.value === "light" ? "light" : "dark";
 
   return (
     <html lang="en" data-theme={theme} style={{ colorScheme: theme }} suppressHydrationWarning>

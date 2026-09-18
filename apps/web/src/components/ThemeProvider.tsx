@@ -12,7 +12,7 @@ type ThemeContextValue = {
 };
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: "light",
+  theme: "dark",
   setTheme: () => {},
 });
 
@@ -29,7 +29,7 @@ export function applyTheme(theme: Theme) {
 
 export function ThemeProvider({
   children,
-  initialTheme = "light",
+  initialTheme = "dark",
 }: {
   children: ReactNode;
   initialTheme?: Theme;
