@@ -801,6 +801,17 @@ textarea {
   width: 100%;
 }
 
+.fused-feed-composer {
+  max-width: 720px;
+  margin: 0 0 22px;
+}
+
+.fused-feed-list {
+  display: grid;
+  gap: 16px;
+  max-width: 720px;
+}
+
 .fused-feature-icon {
   width: 40px;
   height: 40px;

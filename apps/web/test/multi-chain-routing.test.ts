@@ -62,6 +62,25 @@ test("Connect Wallet is one header button until connectors are revealed", () => 
   assert.match(providers, /ARC_MAINNET_CHAIN_ID/);
 });
 
+test("header waits for client wallet state before showing a chain or address", () => {
+  const header = readFileSync(join(root, "src/components/SiteHeader.tsx"), "utf8");
+  assert.match(header, /walletUiReady/);
+  assert.match(header, /walletUiReady \? networkLabelFor\(selectedNetworkId\) : "Select Network"/);
+  assert.match(header, /walletUiReady && isConnected && truncatedAddress/);
+  assert.equal(header.includes("suppressHydrationWarning"), false);
+  assert.equal(header.includes("dynamic("), false);
+});
+
+test("AppKit Networks modal closes after a successful chain switch", () => {
+  const header = readFileSync(join(root, "src/components/SiteHeader.tsx"), "utf8");
+  assert.match(header, /openModal\(\{ view: "Networks" \}\)/);
+  assert.match(header, /open: modalOpen/);
+  assert.match(header, /previousNetworkId/);
+  assert.match(header, /if \(!modalOpen \|\| !selectedNetworkId \|\| previous === selectedNetworkId\) return;/);
+  assert.match(header, /void closeModal\(\);/);
+  assert.equal(header.includes("setTimeout"), false);
+});
+
 test("mobile header keeps one connect control and moves network into the menu", () => {
   const header = readFileSync(join(root, "src/components/SiteHeader.tsx"), "utf8");
   const css = readFileSync(join(root, "../../packages/ui/src/styles.css"), "utf8");

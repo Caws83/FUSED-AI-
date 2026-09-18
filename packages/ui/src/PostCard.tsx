@@ -40,8 +40,13 @@ export function PostCard({
         <div className="fused-post-meta">
           <strong>
             {author}
-            {verified ? <span className="fused-verified" title="Verified">✓</span> : null}{" "}
-            <span style={{ color: "var(--fused-muted)", fontWeight: 500 }}>@{username}</span>
+            {verified ? <span className="fused-verified" title="Verified">✓</span> : null}
+            {username.trim() ? (
+              <>
+                {" "}
+                <span style={{ color: "var(--fused-muted)", fontWeight: 500 }}>@{username}</span>
+              </>
+            ) : null}
           </strong>
           <time dateTime={timestamp}>{timestamp}</time>
         </div>

@@ -1,8 +1,8 @@
-import { EmptyState, FusedLogo, PostCard, SectionHeader } from "@fused-ai/ui";
-import { formatEngagement } from "@fused-ai/social";
+import { EmptyState, FusedLogo, SectionHeader } from "@fused-ai/ui";
 import { QuickFuse } from "../components/QuickFuse.tsx";
+import { FeedPosts } from "../components/FeedPosts.tsx";
 import { boardEmptyCopy, loadIndexedLaunches, loadIndexerFreshness } from "../lib/launches.ts";
-import { loadTrendingPosts } from "../lib/social.ts";
+import { loadFusedFeedPosts } from "../lib/social.ts";
 import { LaunchGrid, splitBoards } from "../lib/boards.tsx";
 import { fetchEthUsd } from "../lib/eth-usd.ts";
 
@@ -19,7 +19,7 @@ const PIPELINE = [
 export default async function HomePage() {
   const launches = await loadIndexedLaunches();
   const freshness = await loadIndexerFreshness(launches.length);
-  const posts = await loadTrendingPosts();
+  const posts = await loadFusedFeedPosts();
   const boards = splitBoards(launches);
   const emptyAll = launches.length === 0 && freshness.indexing;
   const ethUsd = await fetchEthUsd();
@@ -57,28 +57,8 @@ export default async function HomePage() {
 
       <section className="fused-section">
         <div className="fused-wrap">
-          <SectionHeader kicker="Trending posts" title="Find the conversation. Fuse the moment." />
-          {posts.length === 0 ? (
-            <EmptyState title="No conversations yet." body="Live posts will appear here as soon as the feed is connected." />
-          ) : (
-            <div style={{ display: "grid", gap: 16, maxWidth: 720 }}>
-              {posts.slice(0, 3).map((post) => (
-                <PostCard
-                  key={post.postId}
-                  author={post.authorDisplayName || post.authorUsername}
-                  username={post.authorUsername}
-                  text={post.text}
-                  timestamp={new Date(post.publishedAt).toLocaleString()}
-                  engagement={formatEngagement(post)}
-                  avatarUrl={post.avatarUrl}
-                  verified={post.verified}
-                  mediaUrl={post.media.find((m) => m.type === "photo")?.url}
-                  fuseDisabled={false}
-                  fuseHref={`/launch?post=${encodeURIComponent(post.postId)}`}
-                />
-              ))}
-            </div>
-          )}
+          <SectionHeader kicker="FUSED feed" title="Find the conversation. Fuse the moment." />
+          <FeedPosts posts={posts.slice(0, 3)} />
         </div>
       </section>
 

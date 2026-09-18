@@ -111,6 +111,8 @@ test("client uses postgres connection options helper and per-factory cursors", (
   assert.match(src, /listLaunchesByLauncher/);
   assert.match(src, /listLaunchesForChains/);
   assert.match(src, /findLaunchesByToken/);
+  assert.match(src, /listRecentSocialPosts/);
+  assert.match(src, /ORDER BY published_at DESC/);
 });
 
 test("public Postgres URLs require TLS; local and Railway private DNS do not", async () => {

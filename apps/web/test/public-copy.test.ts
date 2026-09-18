@@ -15,6 +15,8 @@ const PUBLIC_PAGES = [
   "src/app/explore/page.tsx",
   "src/app/token/[address]/page.tsx",
   "src/components/QuickFuse.tsx",
+  "src/components/FeedComposer.tsx",
+  "src/components/FeedPosts.tsx",
   "src/components/SiteHeader.tsx",
   "src/components/ManualLaunch.tsx",
   "src/components/FusePost.tsx",

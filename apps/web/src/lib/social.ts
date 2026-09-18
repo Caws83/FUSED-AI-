@@ -1,6 +1,7 @@
 import { loadEnv, loadRepoEnv, socialAvailability } from "@fused-ai/config";
 import { createDatabaseClient } from "@fused-ai/database";
 import { createSocialProvider } from "@fused-ai/social";
+import { FUSED_FEED_LIST_LIMIT, FUSED_SOCIAL_PLATFORM } from "@fused-ai/validation";
 import type { SocialPost } from "@fused-ai/types";
 
 export async function loadSourcePost(postId: string | undefined): Promise<SocialPost | null> {
@@ -44,6 +45,22 @@ export async function loadTrendingPosts(): Promise<SocialPost[]> {
     }
     await db.close();
     return [...feed.value.posts];
+  } catch {
+    return [];
+  }
+}
+
+export async function loadFusedFeedPosts(): Promise<SocialPost[]> {
+  try {
+    loadRepoEnv();
+    const env = loadEnv();
+    const db = createDatabaseClient(env);
+    const listed = await db.listRecentSocialPosts({
+      platform: FUSED_SOCIAL_PLATFORM,
+      limit: FUSED_FEED_LIST_LIMIT,
+    });
+    await db.close();
+    return listed.ok ? listed.value : [];
   } catch {
     return [];
   }

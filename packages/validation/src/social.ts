@@ -1,7 +1,15 @@
 import type { SocialMedia, SocialPost, TrackedAccount } from "@fused-ai/types";
 import { clampText, sanitizeHttpUrl } from "@fused-ai/shared";
+import { FUSE_POST_TEXT_MAX } from "./fuseDraft.ts";
 
-const PLATFORMS = new Set(["x", "twitter", "mastodon", "farcaster"]);
+export const FUSED_SOCIAL_PLATFORM = "fused" as const;
+export const FUSED_FEED_TEXT_MIN = 8;
+export const FUSED_FEED_TEXT_MAX = FUSE_POST_TEXT_MAX;
+export const FUSED_FEED_LIST_LIMIT = 50;
+export const FUSED_FEED_SITE_URL = "https://www.fusedai.org/trending";
+
+const PLATFORMS = new Set(["x", "twitter", "mastodon", "farcaster", FUSED_SOCIAL_PLATFORM]);
+const EVM_ADDRESS = /^0x[a-fA-F0-9]{40}$/;
 const EPOCH = "1970-01-01T00:00:00.000Z";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -106,7 +114,7 @@ export function parseSocialPost(input: unknown): SocialPost | null {
     platform: platform as SocialPost["platform"],
     postId,
     authorId,
-    authorUsername: clampText(authorUsername, 32),
+    authorUsername: clampText(authorUsername, 42),
     authorDisplayName: typeof input.authorDisplayName === "string" ? clampText(input.authorDisplayName, 80) : undefined,
     avatarUrl: avatarUrl ?? undefined,
     verified: input.verified === true ? true : input.verified === false ? false : undefined,
@@ -125,4 +133,43 @@ export function parseSocialPost(input: unknown): SocialPost | null {
     fetchedAt,
     language: typeof input.language === "string" ? clampText(input.language, 16) : undefined,
   };
+}
+
+export type FusedFeedCreate =
+  | { ok: true; address: string; text: string }
+  | { ok: false; error: string };
+
+export function parseFusedFeedCreate(input: unknown): FusedFeedCreate {
+  if (!isRecord(input)) return { ok: false, error: "Invalid request." };
+  const address = typeof input.address === "string" ? input.address.trim() : "";
+  const raw = typeof input.text === "string" ? input.text : "";
+  const text = clampText(raw.trim(), FUSED_FEED_TEXT_MAX);
+  if (!EVM_ADDRESS.test(address)) return { ok: false, error: "Connect a wallet to post." };
+  if (!text) return { ok: false, error: "Write something before posting." };
+  if (text.length < FUSED_FEED_TEXT_MIN) {
+    return { ok: false, error: `Write at least ${FUSED_FEED_TEXT_MIN} characters.` };
+  }
+  return { ok: true, address, text };
+}
+
+export function fusedFeedSocialPost(args: {
+  postId: string;
+  address: string;
+  text: string;
+  now?: Date;
+}): SocialPost | null {
+  const now = (args.now ?? new Date()).toISOString();
+  return parseSocialPost({
+    platform: FUSED_SOCIAL_PLATFORM,
+    postId: args.postId,
+    authorId: args.address,
+    authorUsername: args.address,
+    authorDisplayName: args.address,
+    text: args.text,
+    url: FUSED_FEED_SITE_URL,
+    media: [],
+    metrics: {},
+    publishedAt: now,
+    fetchedAt: now,
+  });
 }

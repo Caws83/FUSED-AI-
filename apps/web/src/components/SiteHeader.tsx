@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Navigation } from "@fused-ai/ui";
 import { useAppKit, useAppKitAccount, useAppKitState } from "@reown/appkit/react";
@@ -26,17 +26,36 @@ function networkLabelFor(selectedNetworkId: string | undefined): string {
 export function SiteHeader({ walletConfigured }: { walletConfigured: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [walletUiReady, setWalletUiReady] = useState(false);
   const { open: openModal, close: closeModal } = useAppKit();
   const { isConnected, address } = useAppKitAccount();
-  const { selectedNetworkId } = useAppKitState();
+  const { selectedNetworkId, open: modalOpen } = useAppKitState();
+  const previousNetworkId = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    setWalletUiReady(true);
+  }, []);
 
   useEffect(() => {
     setOpen(false);
     void closeModal();
   }, [pathname]);
 
+  useEffect(() => {
+    if (!walletUiReady) return;
+    const previous = previousNetworkId.current;
+    if (previous === undefined) {
+      previousNetworkId.current = selectedNetworkId;
+      return;
+    }
+    previousNetworkId.current = selectedNetworkId;
+    if (!modalOpen || !selectedNetworkId || previous === selectedNetworkId) return;
+    void closeModal();
+  }, [walletUiReady, selectedNetworkId, modalOpen, closeModal]);
+
   const truncatedAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "";
-  const networkLabel = networkLabelFor(selectedNetworkId);
+  const networkLabel = walletUiReady ? networkLabelFor(selectedNetworkId) : "Select Network";
+  const walletLabel = walletUiReady && isConnected && truncatedAddress ? truncatedAddress : "Connect Wallet";
 
   function openNetworkModal() {
     setOpen(false);
@@ -73,7 +92,7 @@ export function SiteHeader({ walletConfigured }: { walletConfigured: boolean }) 
                 {networkLabel}
               </button>
               <button type="button" className="fused-btn-connect" onClick={openWalletModal}>
-                {isConnected ? truncatedAddress : "Connect Wallet"}
+                {walletLabel}
               </button>
             </div>
           ) : null}
@@ -86,7 +105,7 @@ export function SiteHeader({ walletConfigured }: { walletConfigured: boolean }) 
                 {networkLabel}
               </button>
               <button type="button" className="fused-btn-connect" onClick={openWalletModal}>
-                {isConnected ? truncatedAddress : "Connect Wallet"}
+                {walletLabel}
               </button>
             </div>
           ) : null}

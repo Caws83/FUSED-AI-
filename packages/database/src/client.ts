@@ -56,6 +56,7 @@ export type DatabaseClient = {
   upsertTokenMetadata(row: TokenMetadataInput): Promise<Result<true>>;
   upsertSocialPost(post: SocialPost): Promise<Result<true>>;
   getSocialPost(platform: string, postId: string): Promise<Result<SocialPost | null>>;
+  listRecentSocialPosts(opts?: { platform?: string; limit?: number }): Promise<Result<SocialPost[]>>;
   upsertTrackedAccount(account: TrackedAccount): Promise<Result<true>>;
   markSocialSync(id: string, postCount: number): Promise<Result<true>>;
   lastSocialSync(): Promise<Result<{ lastSyncAt: string | null; postCount: number }>>;
@@ -145,6 +146,24 @@ function mapLaunch(row: Record<string, unknown>): IndexedLaunch {
     priceX18: row.price_x18 == null ? null : String(row.price_x18),
     volumeQuote: row.volume_quote == null ? null : String(row.volume_quote),
     holderCount: row.holder_count == null ? null : Number(row.holder_count),
+  };
+}
+
+function mapSocialPost(row: Record<string, unknown>): SocialPost {
+  return {
+    platform: String(row.platform) as SocialPost["platform"],
+    postId: String(row.post_id),
+    authorId: String(row.author_id),
+    authorUsername: String(row.author_username),
+    authorDisplayName: row.author_display_name ? String(row.author_display_name) : undefined,
+    avatarUrl: row.avatar_url ? String(row.avatar_url) : undefined,
+    verified: typeof row.verified === "boolean" ? row.verified : undefined,
+    text: String(row.text),
+    url: String(row.url),
+    media: Array.isArray(row.media) ? (row.media as SocialPost["media"]) : [],
+    metrics: (row.metrics ?? {}) as SocialPost["metrics"],
+    publishedAt: new Date(String(row.published_at)).toISOString(),
+    fetchedAt: new Date(String(row.fetched_at)).toISOString(),
   };
 }
 
@@ -670,23 +689,28 @@ export function createDatabaseClient(env: FusedEnv): DatabaseClient {
         `;
         const row = rows[0] as Record<string, unknown> | undefined;
         if (!row) return ok(null);
-        return ok({
-          platform: String(row.platform) as SocialPost["platform"],
-          postId: String(row.post_id),
-          authorId: String(row.author_id),
-          authorUsername: String(row.author_username),
-          authorDisplayName: row.author_display_name ? String(row.author_display_name) : undefined,
-          avatarUrl: row.avatar_url ? String(row.avatar_url) : undefined,
-          verified: typeof row.verified === "boolean" ? row.verified : undefined,
-          text: String(row.text),
-          url: String(row.url),
-          media: Array.isArray(row.media) ? (row.media as SocialPost["media"]) : [],
-          metrics: (row.metrics ?? {}) as SocialPost["metrics"],
-          publishedAt: new Date(String(row.published_at)).toISOString(),
-          fetchedAt: new Date(String(row.fetched_at)).toISOString(),
-        });
+        return ok(mapSocialPost(row));
       } catch (error) {
         return err(databaseUnavailable(error instanceof Error ? error.message : "post read failed"));
+      }
+    },
+    listRecentSocialPosts: async (opts) => {
+      const a = availability();
+      if (a.status !== "OK") return fail(a);
+      const client = conn();
+      if (!client) return fail(a);
+      const platform = opts?.platform ?? "fused";
+      const limit = Math.min(50, Math.max(1, Math.floor(opts?.limit ?? 50)));
+      try {
+        const rows = await client`
+          SELECT * FROM fused_social_posts
+          WHERE platform = ${platform}
+          ORDER BY published_at DESC
+          LIMIT ${limit}
+        `;
+        return ok((rows as Record<string, unknown>[]).map(mapSocialPost));
+      } catch (error) {
+        return err(databaseUnavailable(error instanceof Error ? error.message : "post list failed"));
       }
     },
     upsertTrackedAccount: async (account) => {

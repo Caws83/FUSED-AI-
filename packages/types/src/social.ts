@@ -1,4 +1,4 @@
-export type SocialPlatform = "x" | "twitter" | "mastodon" | "farcaster";
+export type SocialPlatform = "x" | "twitter" | "mastodon" | "farcaster" | "fused";
 
 export type TrackedAccount = {
   id: string;
