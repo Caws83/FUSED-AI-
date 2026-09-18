@@ -3,6 +3,7 @@ import { Button } from "./Button.tsx";
 export type PostCardProps = {
   author: string;
   username: string;
+  displayName?: string;
   text: string;
   timestamp: string;
   engagement: string;
@@ -18,6 +19,7 @@ export type PostCardProps = {
 export function PostCard({
   author,
   username,
+  displayName,
   text,
   timestamp,
   engagement,
@@ -29,6 +31,7 @@ export function PostCard({
   fuseHref,
   onFuse,
 }: PostCardProps) {
+  const nickname = displayName?.trim() ?? "";
   return (
     <article className="fused-card fused-post">
       <div className="fused-post-head">
@@ -37,16 +40,23 @@ export function PostCard({
           style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
           aria-hidden="true"
         />
-        <div className="fused-post-meta">
+        <div className="fused-post-author">
+          {nickname ? <strong>{nickname}</strong> : null}
           <span className="fused-post-subline">
-            <strong>{author}</strong>
-            {verified ? <span className="fused-verified" title="Verified">✓</span> : null}
-            {username.trim() ? (
+            {nickname ? (
+              author
+            ) : (
               <>
-                {" "}
-                <span style={{ color: "var(--fused-muted)", fontWeight: 500 }}>@{username}</span>
+                <strong>{author}</strong>
+                {verified ? <span className="fused-verified" title="Verified">✓</span> : null}
+                {username.trim() ? (
+                  <>
+                    {" "}
+                    <span style={{ color: "var(--fused-muted)", fontWeight: 500 }}>@{username}</span>
+                  </>
+                ) : null}
               </>
-            ) : null}
+            )}
             {" · "}
             <time dateTime={timestamp}>{timestamp}</time>
           </span>

@@ -57,6 +57,8 @@ export type SocialPost = {
   authorId: string;
   authorUsername: string;
   authorDisplayName?: string;
+  /** Live overlay from fused_profiles.display_name. Not stored on the post. */
+  profileDisplayName?: string;
   avatarUrl?: string;
   verified?: boolean;
   text: string;

@@ -511,9 +511,20 @@ textarea::placeholder {
   min-width: 0;
 }
 
+.fused-post-author strong {
+  color: var(--fused-ink);
+  font-size: 15px;
+  line-height: 1.25;
+}
+
 .fused-post-subline {
   color: var(--fused-muted);
   font-size: 13px;
+}
+
+.fused-post-subline strong {
+  color: var(--fused-ink);
+  font-size: inherit;
 }
 
 .fused-avatar {
@@ -976,7 +987,7 @@ textarea::placeholder {
   padding: 0;
   border: 1px solid var(--fused-line-strong);
   border-radius: 50%;
-  background: var(--fused-white);
+  background: var(--fused-surface);
   cursor: pointer;
 }
 
@@ -995,7 +1006,7 @@ textarea::placeholder {
   max-height: min(80vh, 560px);
   overflow: auto;
   padding: 18px 16px 16px;
-  background: var(--fused-white);
+  background: var(--fused-surface);
   border: 1px solid var(--fused-line);
   border-radius: 18px;
   box-shadow: var(--fused-shadow);

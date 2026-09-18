@@ -158,12 +158,14 @@ function mapLaunch(row: Record<string, unknown>): IndexedLaunch {
 
 function mapSocialPost(row: Record<string, unknown>): SocialPost {
   const profilePfp = row.profile_pfp_url ? String(row.profile_pfp_url) : "";
+  const profileName = row.profile_display_name ? String(row.profile_display_name).trim() : "";
   return {
     platform: String(row.platform) as SocialPost["platform"],
     postId: String(row.post_id),
     authorId: String(row.author_id),
     authorUsername: String(row.author_username),
     authorDisplayName: row.author_display_name ? String(row.author_display_name) : undefined,
+    profileDisplayName: profileName || undefined,
     avatarUrl: profilePfp || (row.avatar_url ? String(row.avatar_url) : undefined),
     verified: typeof row.verified === "boolean" ? row.verified : undefined,
     text: String(row.text),
@@ -739,6 +741,7 @@ export function createDatabaseClient(env: FusedEnv): DatabaseClient {
             p.metrics,
             p.published_at,
             p.fetched_at,
+            pr.display_name AS profile_display_name,
             pr.pfp_url AS profile_pfp_url
           FROM fused_social_posts p
           LEFT JOIN fused_profiles pr

@@ -46,18 +46,22 @@ test("profile Save is an off-chain signed update with nonce replay protection", 
   assert.equal(editor.includes("siwe"), false);
 });
 
-test("feed cards keep PFP and wallet, and Edit Profile lives in the header menu", () => {
+test("feed cards overlay profile nickname above the wallet and keep Edit Profile in the header", () => {
   const card = readFileSync(join(root, "../../packages/ui/src/PostCard.tsx"), "utf8");
   const feed = src("src/components/FeedPosts.tsx");
-  const page = src("src/app/trending/page.tsx");
+  const page = src("src/app/community/page.tsx");
   const header = src("src/components/SiteHeader.tsx");
   const menu = src("src/components/ProfileMenu.tsx");
   assert.match(card, /avatarUrl/);
+  assert.match(card, /displayName/);
+  assert.match(card, /fused-post-author/);
   assert.match(card, /fused-post-subline/);
-  assert.equal(feed.includes("displayName="), false);
+  assert.match(feed, /displayName=\{post\.profileDisplayName\}/);
   assert.match(feed, /avatarUrl=\{post\.avatarUrl\}/);
+  assert.match(feed, /author=\{shortenAddress\(post\.authorId\)\}/);
   assert.match(feed, /writeFuseHandoff\(text\)/);
   assert.match(feed, /fuseThis\(post\.text\)/);
+  assert.equal(feed.includes("fuseThis(`${"), false);
   assert.equal(page.includes("EditProfile"), false);
   assert.match(header, /<ProfileMenu/);
   assert.match(menu, /<EditProfile/);
@@ -71,6 +75,7 @@ test("runtime profile files do not hardcode local nicknames or seed records", ()
     "src/components/FeedPosts.tsx",
     "src/components/SiteHeader.tsx",
     "src/lib/profile-update.ts",
+    "src/app/community/page.tsx",
     "src/app/trending/page.tsx",
     "src/app/api/social/profile/route.ts",
   ];

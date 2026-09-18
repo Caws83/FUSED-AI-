@@ -69,13 +69,19 @@ test("creator rewards API does not invent claimable amounts", () => {
   assert.equal(src.includes("await db.migrate()"), false);
 });
 
-test("the site defaults to light and can switch to dark from the footer", () => {
+test("the site defaults to dark and can switch to light from the footer", () => {
   const layout = readFileSync(join(root, "src/app/layout.tsx"), "utf8");
   const css = readFileSync(join(root, "../../packages/ui/src/styles.css"), "utf8");
   const footer = readFileSync(join(root, "src/components/SiteFooter.tsx"), "utf8");
   const header = readFileSync(join(root, "src/components/SiteHeader.tsx"), "utf8");
+  const providers = readFileSync(join(root, "src/components/Providers.tsx"), "utf8");
+  const themeProvider = readFileSync(join(root, "src/components/ThemeProvider.tsx"), "utf8");
   assert.match(layout, /colorScheme:\s*"light dark"/);
   assert.match(layout, /fused-theme/);
+  assert.match(layout, /\.value === "light" \? "light" : "dark"/);
+  assert.match(themeProvider, /initialTheme = "dark"/);
+  assert.match(providers, /themeMode: "dark"/);
+  assert.match(providers, /initialTheme = "dark"/);
   assert.match(css, /\[data-theme="dark"\]/);
   assert.match(css, /fused-theme-switch/);
   assert.match(footer, /ThemeSwitch/);

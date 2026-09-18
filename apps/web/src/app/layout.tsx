@@ -79,7 +79,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const pub = loadPublicEnv();
   const walletConfigured = publicWalletAvailability(pub).status === "OK";
   const showStatus = isStatusPageEnabled();
-  const theme = (await cookies()).get(THEME_COOKIE)?.value === "dark" ? "dark" : "light";
+  const theme = (await cookies()).get(THEME_COOKIE)?.value === "light" ? "light" : "dark";
 
   return (
     <html lang="en" data-theme={theme} style={{ colorScheme: theme }} suppressHydrationWarning>

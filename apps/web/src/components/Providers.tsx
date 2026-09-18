@@ -64,7 +64,7 @@ if (!globalRef.__fusedAppKit) {
     adapters: [wagmiAdapter],
     networks,
     projectId,
-    themeMode: "light",
+    themeMode: "dark",
     allowUnsupportedChain: true,
     defaultNetwork: robinhoodMainnet,
     metadata: {
@@ -99,7 +99,7 @@ function AppKitThemeSync() {
 
 export function Providers({
   children,
-  initialTheme = "light",
+  initialTheme = "dark",
 }: {
   children: ReactNode;
   wallet?: WalletRuntimeConfig | null;

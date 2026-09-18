@@ -124,7 +124,7 @@ test("client uses postgres connection options helper and per-factory cursors", (
   assert.match(src, /getFusedProfile/);
   assert.match(src, /upsertFusedProfile/);
   assert.match(src, /profile_pfp_url/);
-  assert.equal(src.includes("profile_display_name"), false);
+  assert.match(src, /profile_display_name/);
   assert.match(src, /ORDER BY p.published_at DESC/);
 });
 
@@ -174,6 +174,7 @@ test("feed lists overlay profile name and pfp without rewriting posts", async (t
   const raw = before.value.find((row) => row.postId === postId);
   assert.ok(raw);
   assert.equal(raw?.authorDisplayName, wallet);
+  assert.equal(raw?.profileDisplayName, undefined);
   assert.equal(raw?.avatarUrl, undefined);
 
   const first = await db.upsertFusedProfile({
@@ -202,6 +203,7 @@ test("feed lists overlay profile name and pfp without rewriting posts", async (t
   if (!after.ok) throw new Error("expected posts after profile");
   const overlaid = after.value.find((row) => row.postId === postId);
   assert.equal(overlaid?.authorDisplayName, wallet);
+  assert.equal(overlaid?.profileDisplayName, "Ada");
   assert.equal(overlaid?.avatarUrl, "https://cdn.example/ada.png");
   assert.equal(overlaid?.text, "old post before a profile existed");
 
@@ -225,6 +227,7 @@ test("feed lists overlay profile name and pfp without rewriting posts", async (t
   if (!listed.ok) throw new Error("expected posts after new post");
   const fresh = listed.value.find((row) => row.postId === newPostId);
   assert.equal(fresh?.authorDisplayName, wallet);
+  assert.equal(fresh?.profileDisplayName, "Ada");
   assert.equal(fresh?.avatarUrl, "https://cdn.example/ada.png");
   await db.close();
 });

@@ -32,6 +32,7 @@ export function FeedPosts({ posts }: { posts: readonly SocialPost[] }) {
           key={`${post.platform}-${post.postId}`}
           author={shortenAddress(post.authorId)}
           username=""
+          displayName={post.profileDisplayName}
           text={post.text}
           timestamp={relativeTime(post.publishedAt)}
           engagement=""
