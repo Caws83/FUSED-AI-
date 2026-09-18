@@ -18,6 +18,15 @@ test("footer links to documentation", () => {
   assert.match(footer, />Docs</);
 });
 
+test("footer includes a light and dark theme switch", () => {
+  const footer = readFileSync(join(root, "src/components/SiteFooter.tsx"), "utf8");
+  const switchSrc = readFileSync(join(root, "src/components/ThemeSwitch.tsx"), "utf8");
+  assert.match(footer, /ThemeSwitch/);
+  assert.match(switchSrc, /Light/);
+  assert.match(switchSrc, /Dark/);
+  assert.match(switchSrc, /fused-theme/);
+});
+
 test("roadmap lists completed app launch, then token, Arc, X Money, and NFTs", () => {
   const page = readFileSync(join(root, "src/app/roadmap/page.tsx"), "utf8");
   assert.match(page, /App live on Robinhood Chain/);

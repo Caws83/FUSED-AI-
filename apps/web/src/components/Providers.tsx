@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider, type Config } from "wagmi";
 import { defineChain, type AppKitNetwork } from "@reown/appkit/networks";
@@ -13,6 +13,7 @@ import {
   ROBINHOOD_MAINNET_CHAIN_ID,
 } from "@fused-ai/config/public";
 import { chainLabelFor, nativeCurrencyFor } from "../lib/wallet.ts";
+import { ThemeProvider, useTheme } from "./ThemeProvider.tsx";
 
 const queryClient = new QueryClient();
 
@@ -52,9 +53,14 @@ const wagmiAdapter = new WagmiAdapter({
   ssr: true,
 });
 
-const globalRef = globalThis as typeof globalThis & { __fusedAppKit?: boolean };
+type FusedAppKit = ReturnType<typeof createAppKit>;
+
+const globalRef = globalThis as typeof globalThis & {
+  __fusedAppKit?: boolean;
+  __fusedAppKitInstance?: FusedAppKit;
+};
 if (!globalRef.__fusedAppKit) {
-  createAppKit({
+  globalRef.__fusedAppKitInstance = createAppKit({
     adapters: [wagmiAdapter],
     networks,
     projectId,
@@ -78,15 +84,35 @@ if (!globalRef.__fusedAppKit) {
   globalRef.__fusedAppKit = true;
 }
 
+function AppKitThemeSync() {
+  const { theme } = useTheme();
+  useEffect(() => {
+    const kit = globalRef.__fusedAppKitInstance as { setThemeMode?: (mode: "light" | "dark") => void } | undefined;
+    try {
+      kit?.setThemeMode?.(theme);
+    } catch {
+      /* AppKit may be unavailable before init */
+    }
+  }, [theme]);
+  return null;
+}
+
 export function Providers({
   children,
+  initialTheme = "light",
 }: {
   children: ReactNode;
   wallet?: WalletRuntimeConfig | null;
+  initialTheme?: "light" | "dark";
 }) {
   return (
     <WagmiProvider config={wagmiAdapter.wagmiConfig as Config}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider initialTheme={initialTheme}>
+          <AppKitThemeSync />
+          {children}
+        </ThemeProvider>
+      </QueryClientProvider>
     </WagmiProvider>
   );
 }

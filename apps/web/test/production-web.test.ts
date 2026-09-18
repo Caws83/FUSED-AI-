@@ -69,10 +69,18 @@ test("creator rewards API does not invent claimable amounts", () => {
   assert.equal(src.includes("await db.migrate()"), false);
 });
 
-test("the site stays light even when the device theme is dark", () => {
+test("the site defaults to light and can switch to dark from the footer", () => {
   const layout = readFileSync(join(root, "src/app/layout.tsx"), "utf8");
   const css = readFileSync(join(root, "../../packages/ui/src/styles.css"), "utf8");
-  assert.match(layout, /colorScheme:\s*"only light"/);
-  assert.match(css, /color-scheme:\s*light only/);
+  const footer = readFileSync(join(root, "src/components/SiteFooter.tsx"), "utf8");
+  const header = readFileSync(join(root, "src/components/SiteHeader.tsx"), "utf8");
+  assert.match(layout, /colorScheme:\s*"light dark"/);
+  assert.match(layout, /fused-theme/);
+  assert.match(css, /\[data-theme="dark"\]/);
+  assert.match(css, /fused-theme-switch/);
+  assert.match(footer, /ThemeSwitch/);
+  assert.match(header, /fused-ai-logo-white\.png/);
+  assert.equal(layout.includes("only light"), false);
+  assert.equal(css.includes("color-scheme: light only"), false);
 });
 
