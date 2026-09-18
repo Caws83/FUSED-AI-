@@ -456,6 +456,18 @@ textarea {
   gap: 12px;
 }
 
+.fused-post-author {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fused-post-subline {
+  color: var(--fused-muted);
+  font-size: 13px;
+}
+
 .fused-avatar {
   width: 40px;
   height: 40px;
@@ -806,6 +818,23 @@ textarea {
   margin: 0 0 22px;
 }
 
+.fused-profile-editor {
+  max-width: 720px;
+  margin: 0 0 22px;
+}
+
+.fused-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 0;
+}
+
+.fused-profile-editor input[type="file"] {
+  min-height: 0;
+  padding: 0;
+}
+
 .fused-feed-list {
   display: grid;
   gap: 16px;
@@ -889,6 +918,83 @@ textarea {
   flex: none;
   gap: 8px;
   min-width: 0;
+}
+
+.fused-profile-menu {
+  position: relative;
+  flex: none;
+}
+
+.fused-profile-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--fused-line-strong);
+  border-radius: 50%;
+  background: var(--fused-white);
+  cursor: pointer;
+}
+
+.fused-profile-trigger .fused-avatar,
+.fused-profile-avatar {
+  width: 32px;
+  height: 32px;
+}
+
+.fused-profile-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  width: min(320px, calc(100vw - 24px));
+  max-height: min(80vh, 560px);
+  overflow: auto;
+  padding: 18px 16px 16px;
+  background: var(--fused-white);
+  border: 1px solid var(--fused-line);
+  border-radius: 18px;
+  box-shadow: var(--fused-shadow);
+}
+
+.fused-profile-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--fused-muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.fused-profile-summary {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  padding-right: 24px;
+}
+
+.fused-profile-summary .fused-avatar {
+  width: 48px;
+  height: 48px;
+}
+
+.fused-profile-summary span {
+  color: var(--fused-muted);
+  font-size: 13px;
+}
+
+.fused-profile-popover .fused-profile-editor {
+  margin: 0;
+  max-width: none;
 }
 
 .fused-nav-desktop-tools {
@@ -1235,7 +1341,7 @@ textarea {
 
   .fused-logo {
     gap: 8px;
-    max-width: calc(100% - 52px);
+    max-width: calc(100% - 96px);
   }
 
   .fused-logo-image {

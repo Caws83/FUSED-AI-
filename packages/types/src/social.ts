@@ -43,6 +43,14 @@ export type SocialMetrics = {
   bookmarks?: number;
 };
 
+/** Optional public nickname/PFP for a wallet. Canonical identity is the address. */
+export type FusedProfile = {
+  walletAddress: string;
+  displayName: string | null;
+  pfpUrl: string | null;
+  nonce: number;
+};
+
 export type SocialPost = {
   platform: SocialPlatform;
   postId: string;

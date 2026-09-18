@@ -40,6 +40,16 @@ CREATE TABLE IF NOT EXISTS fused_social_posts (
   PRIMARY KEY (platform, post_id)
 );
 
+-- Optional nickname + PFP overlay. Posts still belong to wallet addresses.
+CREATE TABLE IF NOT EXISTS fused_profiles (
+  wallet_address     text PRIMARY KEY,
+  display_name       text NOT NULL,
+  pfp_url            text,
+  nonce              bigint NOT NULL DEFAULT 0,
+  created_at         timestamptz NOT NULL DEFAULT now(),
+  updated_at         timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS fused_social_sync (
   id                 text PRIMARY KEY,
   last_sync_at       timestamptz,

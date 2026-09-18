@@ -35,6 +35,7 @@ export function FeedPosts({ posts }: { posts: readonly SocialPost[] }) {
           text={post.text}
           timestamp={relativeTime(post.publishedAt)}
           engagement=""
+          avatarUrl={post.avatarUrl}
           fuseDisabled={false}
           fuseLabel="FUSE THIS"
           onFuse={() => fuseThis(post.text)}

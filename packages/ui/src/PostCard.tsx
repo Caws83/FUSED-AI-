@@ -38,8 +38,8 @@ export function PostCard({
           aria-hidden="true"
         />
         <div className="fused-post-meta">
-          <strong>
-            {author}
+          <span className="fused-post-subline">
+            <strong>{author}</strong>
             {verified ? <span className="fused-verified" title="Verified">✓</span> : null}
             {username.trim() ? (
               <>
@@ -47,8 +47,9 @@ export function PostCard({
                 <span style={{ color: "var(--fused-muted)", fontWeight: 500 }}>@{username}</span>
               </>
             ) : null}
-          </strong>
-          <time dateTime={timestamp}>{timestamp}</time>
+            {" · "}
+            <time dateTime={timestamp}>{timestamp}</time>
+          </span>
         </div>
       </div>
       <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{text}</p>

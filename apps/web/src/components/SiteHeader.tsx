@@ -11,6 +11,7 @@ import {
   chainLabelFor,
 } from "@fused-ai/config/public";
 import { navFor } from "../lib/nav.ts";
+import { ProfileMenu } from "./ProfileMenu.tsx";
 
 function networkLabelFor(selectedNetworkId: string | undefined): string {
   const match = selectedNetworkId?.match(/^eip155:(\d+)$/);
@@ -108,6 +109,9 @@ export function SiteHeader({ walletConfigured }: { walletConfigured: boolean }) 
                 {walletLabel}
               </button>
             </div>
+          ) : null}
+          {walletConfigured && walletUiReady && isConnected ? (
+            <ProfileMenu onOpen={() => setOpen(false)} />
           ) : null}
           <button
             type="button"

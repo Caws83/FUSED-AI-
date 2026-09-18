@@ -12,4 +12,12 @@ export {
   parseTrackedAccount,
   parseTrackedAccounts,
 } from "./social.ts";
+export {
+  FUSED_PROFILE_NAME_MAX,
+  FUSED_PROFILE_PFP_MAX,
+  fusedProfileUpdateMessage,
+  parseFusedDisplayName,
+  parseFusedPfpUrl,
+  parseFusedProfileUpdate,
+} from "./profile.ts";
 export { lookupBySymbol, lookupTokenizedAsset, parseTokenizedAsset, parseTokenizedAssetRegistry } from "./tokenizedAsset.ts";

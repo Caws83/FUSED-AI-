@@ -11,6 +11,7 @@ export {
 } from "./availability.ts";
 
 export type {
+  FusedProfile,
   SocialMedia,
   SocialMetrics,
   SocialPlatform,

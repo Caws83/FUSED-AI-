@@ -3,10 +3,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import postgres from "postgres";
 import { databaseUnavailable, type Availability } from "@fused-ai/types";
-import { err, fail, ok, type Result } from "@fused-ai/shared";
+import { err, fail, lowercaseAddress, ok, type Result } from "@fused-ai/shared";
 import { databaseAvailability, type FusedEnv } from "@fused-ai/config";
 import { postgresClientOptions } from "./postgres-options.ts";
-import type { HexAddress, IndexedLaunch, SocialPost, TrackedAccount } from "@fused-ai/types";
+import type { FusedProfile, HexAddress, IndexedLaunch, SocialPost, TrackedAccount } from "@fused-ai/types";
 
 export type LaunchInsert = {
   chainId: number;
@@ -57,6 +57,13 @@ export type DatabaseClient = {
   upsertSocialPost(post: SocialPost): Promise<Result<true>>;
   getSocialPost(platform: string, postId: string): Promise<Result<SocialPost | null>>;
   listRecentSocialPosts(opts?: { platform?: string; limit?: number }): Promise<Result<SocialPost[]>>;
+  getFusedProfile(walletAddress: string): Promise<Result<FusedProfile>>;
+  upsertFusedProfile(input: {
+    walletAddress: string;
+    displayName: string;
+    pfpUrl: string | null;
+    expectedNonce: number;
+  }): Promise<Result<{ applied: boolean; profile: FusedProfile | null }>>;
   upsertTrackedAccount(account: TrackedAccount): Promise<Result<true>>;
   markSocialSync(id: string, postCount: number): Promise<Result<true>>;
   lastSocialSync(): Promise<Result<{ lastSyncAt: string | null; postCount: number }>>;
@@ -150,13 +157,14 @@ function mapLaunch(row: Record<string, unknown>): IndexedLaunch {
 }
 
 function mapSocialPost(row: Record<string, unknown>): SocialPost {
+  const profilePfp = row.profile_pfp_url ? String(row.profile_pfp_url) : "";
   return {
     platform: String(row.platform) as SocialPost["platform"],
     postId: String(row.post_id),
     authorId: String(row.author_id),
     authorUsername: String(row.author_username),
     authorDisplayName: row.author_display_name ? String(row.author_display_name) : undefined,
-    avatarUrl: row.avatar_url ? String(row.avatar_url) : undefined,
+    avatarUrl: profilePfp || (row.avatar_url ? String(row.avatar_url) : undefined),
     verified: typeof row.verified === "boolean" ? row.verified : undefined,
     text: String(row.text),
     url: String(row.url),
@@ -165,6 +173,20 @@ function mapSocialPost(row: Record<string, unknown>): SocialPost {
     publishedAt: new Date(String(row.published_at)).toISOString(),
     fetchedAt: new Date(String(row.fetched_at)).toISOString(),
   };
+}
+
+function mapFusedProfile(row: Record<string, unknown>): FusedProfile {
+  const pfp = row.pfp_url == null ? "" : String(row.pfp_url);
+  return {
+    walletAddress: String(row.wallet_address),
+    displayName: row.display_name == null ? null : String(row.display_name),
+    pfpUrl: pfp || null,
+    nonce: Number(row.nonce),
+  };
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code: string }).code === "23505";
 }
 
 export function createDatabaseClient(env: FusedEnv): DatabaseClient {
@@ -703,14 +725,99 @@ export function createDatabaseClient(env: FusedEnv): DatabaseClient {
       const limit = Math.min(50, Math.max(1, Math.floor(opts?.limit ?? 50)));
       try {
         const rows = await client`
-          SELECT * FROM fused_social_posts
-          WHERE platform = ${platform}
-          ORDER BY published_at DESC
+          SELECT
+            p.platform,
+            p.post_id,
+            p.author_id,
+            p.author_username,
+            p.author_display_name,
+            p.avatar_url,
+            p.verified,
+            p.text,
+            p.url,
+            p.media,
+            p.metrics,
+            p.published_at,
+            p.fetched_at,
+            pr.pfp_url AS profile_pfp_url
+          FROM fused_social_posts p
+          LEFT JOIN fused_profiles pr
+            ON lower(p.author_id) = pr.wallet_address
+          WHERE p.platform = ${platform}
+          ORDER BY p.published_at DESC
           LIMIT ${limit}
         `;
         return ok((rows as Record<string, unknown>[]).map(mapSocialPost));
       } catch (error) {
         return err(databaseUnavailable(error instanceof Error ? error.message : "post list failed"));
+      }
+    },
+    getFusedProfile: async (walletAddress) => {
+      const a = availability();
+      if (a.status !== "OK") return fail(a);
+      const client = conn();
+      if (!client) return fail(a);
+      let wallet: string;
+      try {
+        wallet = lowercaseAddress(walletAddress);
+      } catch {
+        return err(databaseUnavailable("invalid address"));
+      }
+      try {
+        const rows = await client`
+          SELECT wallet_address, display_name, pfp_url, nonce
+          FROM fused_profiles
+          WHERE wallet_address = ${wallet}
+          LIMIT 1
+        `;
+        const row = rows[0] as Record<string, unknown> | undefined;
+        if (!row) {
+          return ok({ walletAddress: wallet, displayName: null, pfpUrl: null, nonce: 0 });
+        }
+        return ok(mapFusedProfile(row));
+      } catch (error) {
+        return err(databaseUnavailable(error instanceof Error ? error.message : "profile read failed"));
+      }
+    },
+    upsertFusedProfile: async (input) => {
+      const a = availability();
+      if (a.status !== "OK") return fail(a);
+      const client = conn();
+      if (!client) return fail(a);
+      let wallet: string;
+      try {
+        wallet = lowercaseAddress(input.walletAddress);
+      } catch {
+        return err(databaseUnavailable("invalid address"));
+      }
+      try {
+        const updated = await client`
+          UPDATE fused_profiles
+          SET display_name = ${input.displayName},
+              pfp_url = ${input.pfpUrl},
+              nonce = nonce + 1,
+              updated_at = now()
+          WHERE wallet_address = ${wallet} AND nonce = ${input.expectedNonce}
+          RETURNING wallet_address, display_name, pfp_url, nonce
+        `;
+        const updatedRow = updated[0] as Record<string, unknown> | undefined;
+        if (updatedRow) return ok({ applied: true, profile: mapFusedProfile(updatedRow) });
+        if (input.expectedNonce !== 0) return ok({ applied: false, profile: null });
+        try {
+          const inserted = await client`
+            INSERT INTO fused_profiles (wallet_address, display_name, pfp_url, nonce, created_at, updated_at)
+            VALUES (${wallet}, ${input.displayName}, ${input.pfpUrl}, 1, now(), now())
+            RETURNING wallet_address, display_name, pfp_url, nonce
+          `;
+          const insertedRow = inserted[0] as Record<string, unknown> | undefined;
+          if (!insertedRow) return ok({ applied: false, profile: null });
+          return ok({ applied: true, profile: mapFusedProfile(insertedRow) });
+        } catch (error) {
+          if (isUniqueViolation(error)) return ok({ applied: false, profile: null });
+          throw error;
+        }
+      } catch (error) {
+        return err(databaseUnavailable(error instanceof Error ? error.message : "profile upsert failed"));
       }
     },
     upsertTrackedAccount: async (account) => {

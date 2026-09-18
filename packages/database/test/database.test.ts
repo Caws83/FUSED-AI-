@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
@@ -15,8 +16,15 @@ test("missing DATABASE_URL is DATABASE / NOT_CONFIGURED, not a fake connection",
   assert.equal(ping.ok, false);
 });
 
-test("schema declares social posts and application token metadata", () => {
+test("schema declares social posts, optional profiles, and application token metadata", () => {
   assert.match(schema, /CREATE TABLE IF NOT EXISTS fused_social_posts/);
+  assert.match(schema, /CREATE TABLE IF NOT EXISTS fused_profiles/);
+  assert.match(schema, /wallet_address     text PRIMARY KEY/);
+  assert.match(schema, /display_name       text NOT NULL/);
+  assert.match(schema, /pfp_url            text/);
+  assert.match(schema, /nonce              bigint NOT NULL DEFAULT 0/);
+  assert.equal(/INSERT\s+INTO\s+fused_profiles/i.test(schema), false);
+  assert.doesNotMatch(schema, /\bIan\b|\bbugs\b/i);
   assert.match(schema, /CREATE TABLE IF NOT EXISTS fused_token_metadata/);
   assert.match(schema, /image_url/);
   assert.match(schema, /source_post_url/);
@@ -112,7 +120,12 @@ test("client uses postgres connection options helper and per-factory cursors", (
   assert.match(src, /listLaunchesForChains/);
   assert.match(src, /findLaunchesByToken/);
   assert.match(src, /listRecentSocialPosts/);
-  assert.match(src, /ORDER BY published_at DESC/);
+  assert.match(src, /LEFT JOIN fused_profiles/);
+  assert.match(src, /getFusedProfile/);
+  assert.match(src, /upsertFusedProfile/);
+  assert.match(src, /profile_pfp_url/);
+  assert.equal(src.includes("profile_display_name"), false);
+  assert.match(src, /ORDER BY p.published_at DESC/);
 });
 
 test("public Postgres URLs require TLS; local and Railway private DNS do not", async () => {
@@ -123,5 +136,96 @@ test("public Postgres URLs require TLS; local and Railway private DNS do not", a
   assert.equal(postgresSslMode("postgres://postgres:x@altaria.proxy.rlwy.net:49142/railway?sslmode=disable"), false);
   const remote = postgresClientOptions("postgres://postgres:x@altaria.proxy.rlwy.net:49142/railway");
   assert.equal(remote.ssl, "require");
+});
+
+test("feed lists overlay profile name and pfp without rewriting posts", async (t) => {
+  loadRepoEnv();
+  const env = loadEnv();
+  if (!env.databaseUrl) {
+    t.skip("DATABASE_URL not configured");
+    return;
+  }
+  const db = createDatabaseClient(env);
+  const migrated = await db.migrate();
+  if (!migrated.ok) {
+    t.skip("reason" in migrated.error ? migrated.error.reason : "database unavailable");
+    return;
+  }
+  const wallet = `0x${randomBytes(20).toString("hex")}`;
+  const postId = `profile-overlay-${Date.now()}`;
+  const savedPost = await db.upsertSocialPost({
+    platform: "fused",
+    postId,
+    authorId: wallet,
+    authorUsername: wallet,
+    authorDisplayName: wallet,
+    text: "old post before a profile existed",
+    url: "https://www.fusedai.org/trending",
+    media: [],
+    metrics: {},
+    publishedAt: new Date().toISOString(),
+    fetchedAt: new Date().toISOString(),
+  });
+  assert.equal(savedPost.ok, true);
+
+  const before = await db.listRecentSocialPosts({ platform: "fused", limit: 50 });
+  assert.equal(before.ok, true);
+  if (!before.ok) throw new Error("expected posts");
+  const raw = before.value.find((row) => row.postId === postId);
+  assert.ok(raw);
+  assert.equal(raw?.authorDisplayName, wallet);
+  assert.equal(raw?.avatarUrl, undefined);
+
+  const first = await db.upsertFusedProfile({
+    walletAddress: wallet,
+    displayName: "Ada",
+    pfpUrl: "https://cdn.example/ada.png",
+    expectedNonce: 0,
+  });
+  assert.equal(first.ok, true);
+  if (!first.ok) throw new Error("expected profile");
+  assert.equal(first.value.applied, true);
+  assert.equal(first.value.profile?.nonce, 1);
+
+  const replay = await db.upsertFusedProfile({
+    walletAddress: wallet,
+    displayName: "Replay",
+    pfpUrl: "https://cdn.example/replay.png",
+    expectedNonce: 0,
+  });
+  assert.equal(replay.ok, true);
+  if (!replay.ok) throw new Error("expected replay");
+  assert.equal(replay.value.applied, false);
+
+  const after = await db.listRecentSocialPosts({ platform: "fused", limit: 50 });
+  assert.equal(after.ok, true);
+  if (!after.ok) throw new Error("expected posts after profile");
+  const overlaid = after.value.find((row) => row.postId === postId);
+  assert.equal(overlaid?.authorDisplayName, wallet);
+  assert.equal(overlaid?.avatarUrl, "https://cdn.example/ada.png");
+  assert.equal(overlaid?.text, "old post before a profile existed");
+
+  const newPostId = `profile-overlay-new-${Date.now()}`;
+  const newPost = await db.upsertSocialPost({
+    platform: "fused",
+    postId: newPostId,
+    authorId: wallet,
+    authorUsername: wallet,
+    authorDisplayName: wallet,
+    text: "new post after a profile existed",
+    url: "https://www.fusedai.org/trending",
+    media: [],
+    metrics: {},
+    publishedAt: new Date().toISOString(),
+    fetchedAt: new Date().toISOString(),
+  });
+  assert.equal(newPost.ok, true);
+  const listed = await db.listRecentSocialPosts({ platform: "fused", limit: 50 });
+  assert.equal(listed.ok, true);
+  if (!listed.ok) throw new Error("expected posts after new post");
+  const fresh = listed.value.find((row) => row.postId === newPostId);
+  assert.equal(fresh?.authorDisplayName, wallet);
+  assert.equal(fresh?.avatarUrl, "https://cdn.example/ada.png");
+  await db.close();
 });
 
