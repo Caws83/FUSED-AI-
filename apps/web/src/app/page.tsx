@@ -58,7 +58,7 @@ export default async function HomePage() {
       <section className="fused-section">
         <div className="fused-wrap">
           <SectionHeader kicker="FUSED feed" title="Find the conversation. Fuse the moment." />
-          <FeedPosts posts={posts.slice(0, 3)} />
+          <FeedPosts posts={posts.slice(0, 4)} layout="grid" />
         </div>
       </section>
 

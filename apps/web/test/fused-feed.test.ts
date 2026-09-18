@@ -108,6 +108,8 @@ test("homepage feed slice uses native FUSED posts", () => {
   const home = src("src/app/page.tsx");
   assert.match(home, /loadFusedFeedPosts/);
   assert.match(home, /<FeedPosts/);
+  assert.match(home, /posts\.slice\(0, 4\)/);
+  assert.match(home, /layout="grid"/);
   assert.equal(home.includes("loadTrendingPosts"), false);
   assert.match(home, /<QuickFuse/);
 });

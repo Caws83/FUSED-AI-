@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import { createPortal } from "react-dom";
 
 export function ZoomableTokenImage({
   src,
@@ -43,33 +44,36 @@ export function ZoomableTokenImage({
       >
         <img src={src} alt="" width={width} height={height} className={className} />
       </button>
-      {open ? (
-        <div
-          className="fused-token-zoom"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={titleId}
-          onClick={() => setOpen(false)}
-        >
-          <p id={titleId} className="fused-sr-only">
-            {label}
-          </p>
-          <img
-            src={src}
-            alt=""
-            className="fused-token-zoom-image"
-            onClick={(event) => event.stopPropagation()}
-          />
-          <button
-            type="button"
-            className="fused-token-zoom-close"
-            aria-label="Close image"
-            onClick={() => setOpen(false)}
-          >
-            <span aria-hidden="true">×</span>
-          </button>
-        </div>
-      ) : null}
+      {open
+        ? createPortal(
+            <div
+              className="fused-token-zoom"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              onClick={() => setOpen(false)}
+            >
+              <p id={titleId} className="fused-sr-only">
+                {label}
+              </p>
+              <img
+                src={src}
+                alt=""
+                className="fused-token-zoom-image"
+                onClick={(event) => event.stopPropagation()}
+              />
+              <button
+                type="button"
+                className="fused-token-zoom-close"
+                aria-label="Close image"
+                onClick={() => setOpen(false)}
+              >
+                <span aria-hidden="true">×</span>
+              </button>
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }

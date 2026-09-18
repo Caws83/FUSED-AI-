@@ -119,7 +119,7 @@ textarea::placeholder {
 .fused-btn-primary,
 .fused-btn-lime {
   background: var(--fused-lime);
-  color: var(--fused-lime-ink);
+  color: #1a2a08;
   box-shadow: 0 8px 24px rgba(200, 245, 74, 0.35);
 }
 
@@ -894,6 +894,36 @@ textarea::placeholder {
   max-width: 720px;
 }
 
+.fused-feed-grid {
+  max-width: none;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.fused-feed-grid .fused-post {
+  min-width: 0;
+}
+
+.fused-feed-grid .fused-post > p {
+  overflow-wrap: anywhere;
+}
+
+.fused-feed-grid .fused-form-error {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 960px) {
+  .fused-feed-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .fused-feed-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .fused-feature-icon {
   width: 40px;
   height: 40px;
@@ -1316,18 +1346,18 @@ textarea::placeholder {
 .fused-token-zoom {
   position: fixed;
   inset: 0;
-  z-index: 80;
+  z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 28px 20px;
-  background: rgba(7, 20, 34, 0.78);
+  padding: 72px 24px 32px;
+  background: rgba(7, 20, 34, 0.82);
   cursor: zoom-out;
 }
 
 .fused-token-zoom-image {
   max-width: min(92vw, 720px);
-  max-height: 86vh;
+  max-height: calc(100vh - 120px);
   width: auto;
   height: auto;
   object-fit: contain;
@@ -1338,18 +1368,20 @@ textarea::placeholder {
 }
 
 .fused-token-zoom-close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 40px;
-  height: 40px;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 201;
+  width: 44px;
+  height: 44px;
   border: 0;
   border-radius: 12px;
-  background: var(--fused-surface);
-  color: var(--fused-ink);
+  background: #ffffff;
+  color: #0a1628;
   font-size: 28px;
   line-height: 1;
   cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
 }
 
 .fused-tabs {
@@ -1370,6 +1402,7 @@ textarea::placeholder {
 .fused-tab[data-on="true"] {
   background: var(--fused-lime);
   border-color: transparent;
+  color: #1a2a08;
 }
 
 .fused-trades {
@@ -2028,6 +2061,7 @@ img.fused-logo-image-dark {
 
 [data-theme="dark"] .fused-btn-lime,
 [data-theme="dark"] .fused-btn-primary {
+  color: #1a2a08;
   box-shadow: 0 8px 28px rgba(200, 245, 74, 0.28);
 }
 

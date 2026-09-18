@@ -7,7 +7,13 @@ import type { SocialPost } from "@fused-ai/types";
 import { relativeTime, shortenAddress } from "../lib/feed.ts";
 import { writeFuseHandoff } from "../lib/fuse-handoff.ts";
 
-export function FeedPosts({ posts }: { posts: readonly SocialPost[] }) {
+export function FeedPosts({
+  posts,
+  layout = "list",
+}: {
+  posts: readonly SocialPost[];
+  layout?: "list" | "grid";
+}) {
   const router = useRouter();
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -25,7 +31,7 @@ export function FeedPosts({ posts }: { posts: readonly SocialPost[] }) {
   }
 
   return (
-    <div className="fused-feed-list">
+    <div className={layout === "grid" ? "fused-feed-list fused-feed-grid" : "fused-feed-list"}>
       {notice ? <p className="fused-form-error">{notice}</p> : null}
       {posts.map((post) => (
         <PostCard
