@@ -10,10 +10,9 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const PIPELINE = [
-  { id: "FUSE", caption: "From a post" },
-  { id: "CURVE", caption: "Trade the curve" },
-  { id: "TRADE", caption: "Live buys and sells" },
-  { id: "GRAD", caption: "Graduate to Uniswap" },
+  { step: 1, label: "FUSE from a post" },
+  { step: 2, label: "TRADE the curve" },
+  { step: 3, before: "GRADUATE to", mark: "/brand/uniswap-logo.png", after: "Uniswap" },
 ] as const;
 
 export default async function HomePage() {
@@ -42,13 +41,22 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="fused-pipeline" aria-label="How Fuse works">
-            {PIPELINE.map((step) => (
-              <div className="fused-pipeline-step" key={step.id}>
-                <div className="fused-pipeline-orb">{step.id.slice(0, 1)}</div>
-                <div>
-                  <strong>{step.id}</strong>
-                  <span>{step.caption}</span>
-                </div>
+            {PIPELINE.map((item) => (
+              <div className="fused-pipeline-step" key={item.step}>
+                <div className="fused-pipeline-orb">{item.step}</div>
+                <strong>
+                  {"label" in item ? (
+                    item.label
+                  ) : (
+                    <>
+                      <span>{item.before}</span>
+                      <span className="fused-pipeline-uniswap">
+                        <img src={item.mark} alt="" className="fused-pipeline-mark" />
+                        <span>{item.after}</span>
+                      </span>
+                    </>
+                  )}
+                </strong>
               </div>
             ))}
           </div>
