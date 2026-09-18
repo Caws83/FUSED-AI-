@@ -7,14 +7,24 @@ type Variant = "mark" | "wordmark" | "horizontal";
 
 function WingedMark() {
   return (
-    <img
-      src="/brand/fused-ai-logo.png"
-      alt=""
-      aria-hidden="true"
-      className="fused-logo-mark-image"
-      width={1520}
-      height={998}
-    />
+    <>
+      <img
+        src="/brand/fused-ai-logo.png"
+        alt=""
+        aria-hidden="true"
+        className="fused-logo-mark-image fused-logo-image-light"
+        width={1520}
+        height={998}
+      />
+      <img
+        src="/brand/fused-ai-logo-white.png"
+        alt=""
+        aria-hidden="true"
+        className="fused-logo-mark-image fused-logo-image-dark"
+        width={1520}
+        height={998}
+      />
+    </>
   );
 }
 

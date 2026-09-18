@@ -17,7 +17,7 @@ test("fused is an accepted social platform", () => {
     authorId: ADDRESS,
     authorUsername: ADDRESS,
     text: "Just launched ROAD on Robinhood Chain",
-    url: "https://www.fusedai.org/trending",
+    url: "https://www.fusedai.org/community",
     publishedAt: "2026-09-18T12:00:00.000Z",
     fetchedAt: "2026-09-18T12:00:00.000Z",
   });

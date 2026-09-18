@@ -81,6 +81,7 @@ export function CandleChart({
   const wrapRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<HoverState>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
+  const [themeTick, setThemeTick] = useState(0);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -94,6 +95,15 @@ export function CandleChart({
       });
     });
     observer.observe(wrap);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const observer = new MutationObserver(() => {
+      setThemeTick((value) => value + 1);
+    });
+    observer.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
     return () => observer.disconnect();
   }, []);
 
@@ -114,10 +124,13 @@ export function CandleChart({
     canvas.style.height = `${height}px`;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const background = "#f7fafc";
-    const grid = "rgba(16, 32, 51, 0.06)";
-    const text = "#6b7684";
-    const line = "#1f8a3a";
+    const styles = wrapRef.current ? getComputedStyle(wrapRef.current) : null;
+    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    const background = styles?.getPropertyValue("--fused-surface-2").trim() || (isDark ? "#101c28" : "#f7fafc");
+    const grid = isDark ? "rgba(168, 196, 220, 0.12)" : "rgba(16, 32, 51, 0.06)";
+    const text = styles?.getPropertyValue("--fused-muted").trim() || (isDark ? "#8b9cad" : "#6b7684");
+    const line = isDark ? "#c8f54a" : "#1f8a3a";
+    const pointFill = isDark ? "#0a1520" : "#ffffff";
     const chartWidth = Math.max(1, width - LEFT_PAD - RIGHT_PAD);
     const priceBottom = height - BOTTOM_PAD;
     const priceHeight = Math.max(1, priceBottom - TOP_PAD);
@@ -219,7 +232,7 @@ export function CandleChart({
       if (!latest && plotted.length > 8) return;
       ctx.beginPath();
       ctx.arc(point.x, point.y, latest ? 4.5 : 3, 0, Math.PI * 2);
-      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle = pointFill;
       ctx.fill();
       ctx.strokeStyle = line;
       ctx.lineWidth = 2;
@@ -237,7 +250,7 @@ export function CandleChart({
       ctx.beginPath();
       ctx.roundRect(tagX, tagY, labelWidth, 22, 6);
       ctx.fill();
-      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle = isDark ? "#1a2a08" : "#ffffff";
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
       ctx.fillText(label, tagX + 7, tagY + 11);
@@ -246,7 +259,7 @@ export function CandleChart({
     if (hover && hover.index >= 0 && hover.index < plotted.length) {
       const candle = plotted[hover.index];
       ctx.setLineDash([3, 4]);
-      ctx.strokeStyle = "rgba(16, 32, 51, 0.16)";
+      ctx.strokeStyle = isDark ? "rgba(200, 245, 74, 0.22)" : "rgba(16, 32, 51, 0.16)";
       ctx.beginPath();
       ctx.moveTo(candle.x, TOP_PAD);
       ctx.lineTo(candle.x, priceBottom);
@@ -294,7 +307,7 @@ export function CandleChart({
         ctx.fillText(value, tooltipX + tooltipWidth - 12, y);
       });
     }
-  }, [candles, emptyLabel, hover, size]);
+  }, [candles, emptyLabel, hover, size, themeTick]);
 
   function handlePointerMove(event: React.PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;

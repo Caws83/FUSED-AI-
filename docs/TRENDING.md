@@ -27,5 +27,5 @@ Weights (env, not UI constants):
 | `TRENDING_TOTALS_WEIGHT` | 0.30 |
 | `TRENDING_PRIORITY_WEIGHT` | 0.10 |
 
-Missing metrics are not shown as invented numbers. `/trending` stays empty until
+Missing metrics are not shown as invented numbers. `/community` stays empty until
 the provider returns real posts.

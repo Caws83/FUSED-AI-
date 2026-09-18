@@ -6,7 +6,7 @@ export const FUSED_SOCIAL_PLATFORM = "fused" as const;
 export const FUSED_FEED_TEXT_MIN = 8;
 export const FUSED_FEED_TEXT_MAX = FUSE_POST_TEXT_MAX;
 export const FUSED_FEED_LIST_LIMIT = 50;
-export const FUSED_FEED_SITE_URL = "https://www.fusedai.org/trending";
+export const FUSED_FEED_SITE_URL = "https://www.fusedai.org/community";
 
 const PLATFORMS = new Set(["x", "twitter", "mastodon", "farcaster", FUSED_SOCIAL_PLATFORM]);
 const EVM_ADDRESS = /^0x[a-fA-F0-9]{40}$/;

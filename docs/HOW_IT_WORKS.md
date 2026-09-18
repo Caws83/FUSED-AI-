@@ -74,7 +74,7 @@ requires a signed transaction from the user’s wallet.
 
 | Surface | Language |
 |---------|----------|
-| `/`, `/trending`, `/launch`, `/rewards`, `/explore` | Product copy. Empty states, never “not configured”. |
+| `/`, `/community`, `/launch`, `/rewards`, `/explore` | Product copy. Empty states, never “not configured”. |
 | `/status` | Adapter, RPC, database, contracts, registry. No secrets or full keyed URLs. |
 
 ## Current honesty

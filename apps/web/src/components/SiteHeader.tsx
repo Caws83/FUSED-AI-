@@ -76,7 +76,15 @@ export function SiteHeader({ walletConfigured }: { walletConfigured: boolean }) 
             src="/brand/fused-ai-logo.png"
             alt=""
             aria-hidden="true"
-            className="fused-logo-image"
+            className="fused-logo-image fused-logo-image-light"
+            width={1520}
+            height={998}
+          />
+          <img
+            src="/brand/fused-ai-logo-white.png"
+            alt=""
+            aria-hidden="true"
+            className="fused-logo-image fused-logo-image-dark"
             width={1520}
             height={998}
           />

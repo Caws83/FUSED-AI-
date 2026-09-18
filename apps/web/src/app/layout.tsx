@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
 import { DM_Sans, Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
 import { isStatusPageEnabled, loadPublicEnv, publicWalletAvailability } from "@fused-ai/config/public";
 import { SiteHeader } from "../components/SiteHeader.tsx";
@@ -65,19 +66,25 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  colorScheme: "only light",
-  themeColor: "#f4f7fb",
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f4f7fb" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a1520" },
+  ],
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+const THEME_COOKIE = "fused-theme";
+
+export default async function RootLayout({ children }: { children: ReactNode }) {
   const pub = loadPublicEnv();
   const walletConfigured = publicWalletAvailability(pub).status === "OK";
   const showStatus = isStatusPageEnabled();
+  const theme = (await cookies()).get(THEME_COOKIE)?.value === "dark" ? "dark" : "light";
 
   return (
-    <html lang="en">
+    <html lang="en" data-theme={theme} style={{ colorScheme: theme }} suppressHydrationWarning>
       <body className={`${dmSans.className} ${plusJakarta.variable} ${spaceGrotesk.variable} fused-shell`}>
-        <Providers>
+        <Providers initialTheme={theme}>
           <SiteHeader walletConfigured={walletConfigured} />
           {children}
           <SiteFooter showStatus={showStatus} />
