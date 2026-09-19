@@ -569,7 +569,7 @@ textarea::placeholder {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
   gap: 28px;
-  align-items: center;
+  align-items: end;
 }
 
 .fused-hero-banner {
@@ -596,6 +596,68 @@ textarea::placeholder {
   line-height: 1;
   letter-spacing: -0.03em;
   white-space: nowrap;
+}
+
+.fused-hero-aside {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.fused-how-it-works {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--fused-ink);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.fused-how-it-works:hover {
+  color: var(--fused-lime);
+}
+
+.fused-how-it-works-play {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--fused-lime);
+  color: #1a2a08;
+  box-shadow: 0 6px 18px rgba(200, 245, 74, 0.28);
+}
+
+.fused-how-it-works-play svg {
+  width: 14px;
+  height: 14px;
+  margin-left: 2px;
+}
+
+.fused-video-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 72px 24px 32px;
+  background: rgba(7, 20, 34, 0.86);
+  cursor: zoom-out;
+}
+
+.fused-video-modal-player {
+  width: min(920px, 92vw);
+  max-height: calc(100vh - 120px);
+  border-radius: 18px;
+  background: #000;
+  cursor: default;
 }
 
 .fused-hero-copy {

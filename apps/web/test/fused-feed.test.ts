@@ -112,6 +112,8 @@ test("homepage feed slice uses native FUSED posts", () => {
   assert.match(home, /layout="grid"/);
   assert.equal(home.includes("loadTrendingPosts"), false);
   assert.match(home, /<QuickFuse/);
+  assert.match(home, /HowItWorks/);
+  assert.match(home, /how-it-works\.mp4/);
 });
 
 test("nav labels the feed Community and /trending redirects there", () => {

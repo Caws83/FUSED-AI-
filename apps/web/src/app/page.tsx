@@ -1,4 +1,5 @@
 import { EmptyState, FusedLogo, SectionHeader } from "@fused-ai/ui";
+import { HowItWorks } from "../components/HowItWorks.tsx";
 import { QuickFuse } from "../components/QuickFuse.tsx";
 import { FeedPosts } from "../components/FeedPosts.tsx";
 import { boardEmptyCopy, loadIndexedLaunches, loadIndexerFreshness } from "../lib/launches.ts";
@@ -40,7 +41,9 @@ export default async function HomePage() {
               </a>
             </div>
           </div>
-          <div className="fused-pipeline" aria-label="How Fuse works">
+          <div className="fused-hero-aside">
+            <HowItWorks src="/brand/how-it-works.mp4" />
+            <div className="fused-pipeline" aria-label="How Fuse works">
             {PIPELINE.map((item) => (
               <div className="fused-pipeline-step" key={item.step}>
                 <div className="fused-pipeline-orb">{item.step}</div>
@@ -60,6 +63,7 @@ export default async function HomePage() {
                 </strong>
               </div>
             ))}
+            </div>
           </div>
         </div>
       </section>
