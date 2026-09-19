@@ -1533,12 +1533,16 @@ textarea::placeholder {
   .fused-hero-banner {
     flex-direction: column;
     align-items: flex-start;
-    gap: 16px;
+    gap: 0;
+  }
+
+  .fused-hero-banner .fused-brand-mark {
+    display: none;
   }
 
   .fused-hero-banner h1 {
     white-space: normal;
-    font-size: clamp(32px, 9vw, 48px);
+    font-size: clamp(26px, 7.4vw, 38px);
     line-height: 0.95;
   }
 
